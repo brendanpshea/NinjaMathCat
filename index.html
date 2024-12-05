@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Math Ninja</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="battle-scene">
+            <div id="player-stats">
+                <div class="health-bar">
+                    <div id="player-health" class="health-fill"></div>
+                </div>
+                <div id="player-level">Level: 1</div>
+            </div>
+            
+            <canvas id="game-canvas"></canvas>
+            
+            <div id="monster-stats">
+                <div class="health-bar">
+                    <div id="monster-health" class="health-fill"></div>
+                </div>
+                <div id="monster-level">Wolf Lvl 1</div>
+            </div>
+        </div>
+
+        <div id="question-area">
+            <div id="question-text"></div>
+            <div id="answers"></div>
+        </div>
+
+        <div id="game-controls">
+            <select id="grade-select">
+                <option value="0">K (Early)</option>
+                <option value="0.5">K (Late)</option>
+                <option value="1">1st Grade</option>
+                <option value="1.5">1st Grade (Late)</option>
+                <option value="2">2nd Grade</option>
+            </select>
+            <button id="start-battle">Start Battle!</button>
+        </div>
+    </div>
+
+    <!-- Load scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/questions.js"></script>
+    <script src="js/sprites.js"></script>
+    <script src="js/characters.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

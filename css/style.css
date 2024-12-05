@@ -1,0 +1,157 @@
+/* style.css */
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+}
+
+#game-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#battle-scene {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#game-canvas {
+    width: 600px;
+    height: 300px;
+    background: #e8e8e8;
+    border-radius: 5px;
+}
+
+.health-bar {
+    width: 150px;
+    height: 20px;
+    background: #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.health-fill {
+    width: 100%;
+    height: 100%;
+    background: #4CAF50;
+    transition: width 0.3s ease;
+}
+
+#question-area {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#question-text {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+#answers {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.answer-button {
+    padding: 10px 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.answer-button:hover {
+    background: #45a049;
+}
+
+#game-controls {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#grade-select {
+    padding: 5px 10px;
+    margin-right: 10px;
+}
+
+#start-battle {
+    padding: 5px 20px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#start-battle:hover {
+    background: #1976D2;
+}
+
+/* animations.css */
+@keyframes attack-right {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(20px); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes attack-left {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-20px); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes hit-flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes energy-blast {
+    0% { 
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% { 
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+.player-attack {
+    animation: attack-right 0.5s ease-in-out;
+}
+
+.monster-attack {
+    animation: attack-left 0.5s ease-in-out;
+}
+
+.hit {
+    animation: hit-flash 0.3s ease-in-out;
+}
+
+.energy-blast {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(circle, #4CAF50, #45a049);
+    border-radius: 50%;
+    animation: energy-blast 0.5s ease-in-out;
+}
