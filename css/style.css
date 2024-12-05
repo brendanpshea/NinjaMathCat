@@ -155,3 +155,69 @@ body {
     border-radius: 50%;
     animation: energy-blast 0.5s ease-in-out;
 }
+
+body {
+    font-family: 'Comic Sans MS', sans-serif;
+    background-color: #f0f8ff;
+    margin: 0;
+    padding: 0;
+}
+#game-container {
+    text-align: center;
+    padding: 20px;
+}
+#welcome-header {
+    background-color: #ffcccb;
+    color: #4b0082;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+}
+#welcome-header h1 {
+    font-size: 3em;
+    margin: 0;
+}
+#welcome-header h2 {
+    margin-top: 10px;
+}
+#start-section {
+    background-color: #fafad2;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+.grade-label {
+    font-size: 1.5em;
+    color: #2e8b57;
+}
+#grade-select {
+    font-size: 1.2em;
+    padding: 10px;
+    margin: 10px 0;
+    border: 2px solid #4b0082;
+    border-radius: 5px;
+}
+#start-battle {
+    font-size: 1.5em;
+    background-color: #ff69b4;
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+#start-battle:hover {
+    background-color: #ff1493;
+}
+#ninja-cat-image {
+    margin-top: 20px;
+}
+#ninja-cat-image img {
+    width: 200px;
+    height: auto;
+}
+#battle-scene, #question-area, #game-controls {
+    display: none; /* Hidden initially; will appear after the game starts */
+}

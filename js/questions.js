@@ -447,7 +447,8 @@ class QuestionFactory {
             { type: NumberSequence, maxGrade: 2.0 },
             { type: OrderingQuestion, minGrade: 0.5, maxGrade: 2.0 },
             { type: ComparisonQuestion, minGrade: 0.5, maxGrade: 2.0 },
-            { type: WordProblem, minGrade: 0.5, maxGrade: 2.0 }
+            { type: WordProblem, minGrade: 0.5, maxGrade: 2.0 },
+            { type: SkipCounting, minGrade: 0.5, maxGrade: 2.0 }
         ];
 
         // Filter types for the current grade level
