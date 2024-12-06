@@ -248,43 +248,6 @@ class ShapeIdentification extends Question {
     }
 }
 
-class OrderingQuestion extends Question {
-    generate() {
-        // Define the range and number of numbers to generate
-        const range = this.getNumberRange();
-        const numberCount = this.grade <= 0.5 ? 3 : Utils.random(3, 5); // Fewer numbers for younger students
-        const numbers = Array.from({ length: numberCount }, () => Utils.random(range.min, range.max));
-
-        // Decide order type and update question text
-        const isAscending = Utils.random(0, 1) === 0;
-        const orderText = isAscending ? 'smallest to biggest ➡️' : 'biggest to smallest ⬅️';
-        this.questionText = `Arrange these numbers from ${orderText}: ${numbers.join(', ')}`;
-
-        // Calculate correct order
-        const correctOrder = isAscending
-            ? [...numbers].sort((a, b) => a - b)
-            : [...numbers].sort((a, b) => b - a);
-
-        // Set correct and incorrect answers
-        this.correctAnswer = correctOrder.join(', ');
-        this.wrongAnswers = this.generateWrongAnswers(numbers, correctOrder);
-        this.feedback = "Start with the smallest (or biggest) number and work your way through step by step.";
-
-        return this;
-    }
-
-    generateWrongAnswers(numbers, correctOrder) {
-        const wrongAnswers = new Set();
-        while (wrongAnswers.size < 3) {
-            let shuffled = Utils.shuffle([...numbers]);
-            if (shuffled.join(', ') !== correctOrder.join(', ')) {
-                wrongAnswers.add(shuffled.join(', '));
-            }
-        }
-        return Array.from(wrongAnswers);
-    }
-}
-
 class ComparisonQuestion extends Question {
     generate() {
         const range = this.getNumberRange();
@@ -411,7 +374,7 @@ class MoneyCounting extends Question {
         const total = selectedCoins.reduce((sum, coin) => sum + coin.value, 0);
 
         // Generate the visuals for the question
-        const visuals = selectedCoins.map(coin => coin.visual).join(' ');
+        const visuals = selectedCoins.map(coin => coin.visual).join('');
 
         this.questionText = `How much money is this? ${visuals}`;
         this.correctAnswer = `$${(total / 100).toFixed(2)}`; // Convert cents to dollars and format as currency
@@ -445,7 +408,6 @@ class QuestionFactory {
             { type: PatternRecognition, maxGrade: 2.0 },
             { type: MoneyCounting, minGrade: 1.0, maxGrade: 2.0 },
             { type: NumberSequence, maxGrade: 2.0 },
-            { type: OrderingQuestion, minGrade: 0.5, maxGrade: 2.0 },
             { type: ComparisonQuestion, minGrade: 0.5, maxGrade: 2.0 },
             { type: WordProblem, minGrade: 0.5, maxGrade: 2.0 },
             { type: SkipCounting, minGrade: 0.5, maxGrade: 2.0 }
@@ -463,7 +425,3 @@ class QuestionFactory {
         return new QuestionType(grade).generate();
     }
 }
-
-
-// Run tests if in debug mode
-if (DEBUG) testQuestions();

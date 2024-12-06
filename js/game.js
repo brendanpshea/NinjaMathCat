@@ -28,6 +28,18 @@ class Game {
         
         this.setupEventListeners();
         this.loadImages();
+
+         // Add base dimensions that will serve as our reference point
+         this.BASE_WIDTH = 600;
+         this.BASE_HEIGHT = 300;
+         this.scale = 1;  // Will store our current scale factor
+         
+         // Calculate initial scale
+         this.calculateScale();
+         
+         // Initial canvas sizing
+         this.resizeCanvas();
+
     }
 
     loadImages() {
@@ -48,13 +60,48 @@ class Game {
             this.grade = parseFloat(e.target.value);
         });
         
+        document.getElementById('start-battle').addEventListener('click', () => this.startBattle());
+        document.getElementById('grade-select').addEventListener('change', (e) => {
+            this.grade = parseFloat(e.target.value);
+        });
+    
+        // Add new event listener for restart button
+        document.getElementById('restart-game').addEventListener('click', () => this.restartGame());
+        
+    
         // Handle window resize
         window.addEventListener('resize', () => this.handleResize());
     }
 
-    handleResize() {
-        // Could add responsive canvas sizing here if needed
+     // Add this new method to calculate the scale factor
+    calculateScale() {
+        // Get the game container's width
+        const container = document.getElementById('game-container');
+        const containerWidth = container.clientWidth;
+        
+        // Calculate scale based on container width
+        // Subtract 40px to account for container padding (20px on each side)
+        this.scale = Math.min(1, (containerWidth - 40) / this.BASE_WIDTH);
+    }
+
+    // Add this new method to handle canvas resizing
+    resizeCanvas() {
+        this.calculateScale();
+        
+        // Apply the new dimensions
+        this.canvas.width = Math.floor(this.BASE_WIDTH * this.scale);
+        this.canvas.height = Math.floor(this.BASE_HEIGHT * this.scale);
+        
+        // Scale the context to maintain proper rendering
+        this.ctx.scale(this.scale, this.scale);
+        
+        // Redraw the game state
         this.drawSprites();
+    }
+
+    // Modify the existing handleResize method
+    handleResize() {
+        this.resizeCanvas();
     }
 
     startBattle() {
@@ -62,6 +109,9 @@ class Game {
         this.questionCount = 0;
         this.player = new Player('Math Ninja', 1);
         this.monster = new Monster('WOLF', 1);
+
+         // Show the restart button when battle starts
+        document.getElementById('restart-button-container').classList.add('visible');
         
         // Create background and sprites
         this.background = new Background(this.canvas, this.imagePaths.background);
@@ -101,7 +151,7 @@ class Game {
         const questionText = document.getElementById('question-text');
         const answersDiv = document.getElementById('answers');
         
-        questionText.textContent = `Question ${this.questionCount}/${this.maxQuestions}: ${this.currentQuestion.questionText}`;
+        questionText.textContent = `Question ${this.currentQuestion.questionText}`;
         answersDiv.innerHTML = '';
         
         this.currentQuestion.getAllAnswers().forEach(answer => {
@@ -258,7 +308,71 @@ class Game {
         }
         requestAnimationFrame(() => this.animate());
     }
+
+    // New method to handle game restart
+restartGame() {
+    // First, clean up the current game state
+    this.battleActive = false;
+    this.questionCount = 0;
+    
+    // Hide the restart button
+    document.getElementById('restart-button-container').classList.remove('visible');
+    
+    // Reset the battle UI elements
+    document.getElementById('question-text').textContent = '';
+    document.getElementById('answers').innerHTML = '';
+    document.getElementById('start-battle').textContent = 'Start Adventure!';
+    
+    // Clear the canvas
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Reset object references
+    this.player = null;
+    this.monster = null;
+    this.playerSprite = null;
+    this.monsterSprite = null;
+    this.background = null;
+    
+    // Show the welcome screen elements again
+    document.getElementById('welcome-header').style.display = 'block';
+    document.getElementById('start-section').style.display = 'block';
+    document.getElementById('ninja-cat-image').style.display = 'block';
+    document.getElementById('battle-scene').style.display = 'none';
+    document.getElementById('question-area').style.display = 'none';
 }
+    // New method to handle game restart
+    restartGame() {
+        // First, clean up the current game state
+        this.battleActive = false;
+        this.questionCount = 0;
+        
+        // Hide the restart button
+        document.getElementById('restart-button-container').classList.remove('visible');
+        
+        // Reset the battle UI elements
+        document.getElementById('question-text').textContent = '';
+        document.getElementById('answers').innerHTML = '';
+        document.getElementById('start-battle').textContent = 'Start Adventure!';
+        
+        // Clear the canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Reset object references
+        this.player = null;
+        this.monster = null;
+        this.playerSprite = null;
+        this.monsterSprite = null;
+        this.background = null;
+        
+        // Show the welcome screen elements again
+        document.getElementById('welcome-header').style.display = 'block';
+        document.getElementById('start-section').style.display = 'block';
+        document.getElementById('ninja-cat-image').style.display = 'block';
+        document.getElementById('battle-scene').style.display = 'none';
+        document.getElementById('question-area').style.display = 'none';
+    }
+}
+
 
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {

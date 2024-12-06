@@ -229,3 +229,31 @@ body {
     border-radius: 50%;
     animation: energy-blast 0.5s ease-in-out;
 }
+
+#restart-button-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 100;
+    /* Hide the button by default */
+    display: none;
+}
+
+/* New class that will be added when the game starts */
+#restart-button-container.visible {
+    display: block;
+}
+#restart-game {
+        padding: 8px 16px;
+        background-color: #ff4444;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        /* Smooth transition for hover effect */
+        transition: background-color 0.2s ease;
+}
+
+#restart-game:hover {
+        background-color: #ff6666;
+}
