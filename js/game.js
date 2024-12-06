@@ -151,7 +151,7 @@ class Game {
         const questionText = document.getElementById('question-text');
         const answersDiv = document.getElementById('answers');
         
-        questionText.textContent = `Question ${this.currentQuestion.questionText}`;
+        questionText.textContent = `${this.currentQuestion.questionText}`;
         answersDiv.innerHTML = '';
         
         this.currentQuestion.getAllAnswers().forEach(answer => {

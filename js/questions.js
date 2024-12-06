@@ -145,7 +145,7 @@ class CountingObjects extends Question {
         const count = Utils.random(range.min, range.max);
         const objects = this.grade <= 0.5 ? '🔵' : ['🔵', '🌟', '❤️', '🎈'][Utils.random(0, 3)];
         
-        this.questionText = `Count the ${objects}: ${objects.repeat(count)}`;
+        this.questionText = `Count the objects: ${objects.repeat(count)}`;
         this.correctAnswer = count;
         this.difficulty = Math.ceil(count / (range.max * 0.6));
         this.wrongAnswers = this.generateWrongAnswers();
@@ -452,7 +452,7 @@ class MoneyCounting extends Question {
         const total = selectedCoins.reduce((sum, coin) => sum + coin.value, 0);
 
         // Generate the visuals for the question
-        const visuals = selectedCoins.map(coin => coin.visual).join('');
+        const visuals = selectedCoins.map(coin => coin.visual).join(' + ');
 
         this.questionText = `How much money is this? ${visuals}`;
         this.correctAnswer = `$${(total / 100).toFixed(2)}`; // Convert cents to dollars and format as currency
