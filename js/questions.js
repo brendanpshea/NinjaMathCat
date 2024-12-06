@@ -1,4 +1,65 @@
 // questions.js
+
+// This is a utility function we can use for both classes
+function generateWrongAnswersForNumerical(correctAnswer, grade, options = {}) {
+    const {
+        requirePositive = true,  // Whether answers must be > 0
+        minWrong = 3,           // How many wrong answers we need
+        maxAttempts = 50        // Prevent infinite loops
+    } = options;
+    
+    const answers = new Set();
+    let attempts = 0;
+    
+    // First pass: try to generate answers using standard method
+    while (answers.size < minWrong && attempts < maxAttempts) {
+        attempts++;
+        
+        // Use a wider variation range for more possibilities
+        const variation = Math.max(2, Math.floor(grade * 3));
+        let wrong = correctAnswer + (Utils.random(0, 1) ? 1 : -1) * 
+            Utils.random(1, variation);
+            
+        // Special handling for small numbers
+        if (correctAnswer <= 3) {
+            // Generate alternative wrong answers appropriate for small numbers
+            const alternatives = [
+                correctAnswer + 1,
+                correctAnswer + 2,
+                correctAnswer * 2,
+                requirePositive ? Math.max(1, correctAnswer - 1) : correctAnswer - 1
+            ];
+            wrong = alternatives[Utils.random(0, alternatives.length - 1)];
+        }
+        
+        // Validate the wrong answer
+        if ((!requirePositive || wrong > 0) && wrong !== correctAnswer) {
+            answers.add(wrong);
+        }
+    }
+    
+    // Second pass: if we still need more answers, use guaranteed unique values
+    const backupAnswers = [
+        correctAnswer + 1,
+        correctAnswer + 2,
+        correctAnswer + 3,
+        correctAnswer * 2,
+        Math.max(1, correctAnswer - 1)
+    ].filter(num => 
+        (!requirePositive || num > 0) && 
+        num !== correctAnswer && 
+        !answers.has(num)
+    );
+    
+    // Add backup answers until we have enough
+    for (const answer of backupAnswers) {
+        if (answers.size >= minWrong) break;
+        answers.add(answer);
+    }
+    
+    return Array.from(answers).slice(0, minWrong);
+}
+
 class Question {
     constructor(grade) {
         this.grade = grade;
@@ -71,13 +132,10 @@ class Subtraction extends Question {
     }
 
     generateWrongAnswers() {
-        const answers = new Set();
-        while (answers.size < 3) {
-            const wrong = this.correctAnswer + (Utils.random(0, 1) ? 1 : -1) * 
-                Utils.random(1, Math.max(2, Math.floor(this.grade * 3)));
-            if (wrong >= 0 && wrong !== this.correctAnswer) answers.add(wrong);
-        }
-        return Array.from(answers);
+        return generateWrongAnswersForNumerical(this.correctAnswer, this.grade, {
+            requirePositive: true,
+            minWrong: 3
+        });
     }
 }
 
@@ -97,13 +155,10 @@ class CountingObjects extends Question {
     }
 
     generateWrongAnswers() {
-        const answers = new Set();
-        while (answers.size < 3) {
-            const wrong = this.correctAnswer + (Utils.random(0, 1) ? 1 : -1) * 
-                Utils.random(1, Math.max(2, Math.floor(this.grade * 2)));
-            if (wrong > 0 && wrong !== this.correctAnswer) answers.add(wrong);
-        }
-        return Array.from(answers);
+        return generateWrongAnswersForNumerical(this.correctAnswer, this.grade, {
+            requirePositive: true,
+            minWrong: 3
+        });
     }
 }
 
@@ -222,13 +277,36 @@ class WordProblem extends Question {
 
     generateWrongAnswers(correctAnswer) {
         const answers = new Set();
-        while (answers.size < 3) {
+        let attempts = 0;
+        const maxAttempts = 50; // Prevent infinite loops
+        
+        while (answers.size < 3 && attempts < maxAttempts) {
+            attempts++;
+            // Ensure we generate numbers within a reasonable range
+            const variation = Math.max(2, Math.floor(this.grade * 3));
             const wrong = correctAnswer + (Utils.random(0, 1) ? 1 : -1) * 
-                Utils.random(1, Math.max(2, Math.floor(this.grade * 2)));
-            if (wrong > 0 && wrong !== correctAnswer) {
+                Utils.random(1, variation);
+                
+            // For very small correct answers, ensure we have enough options
+            if (correctAnswer <= 3) {
+                // Add some additional options for small numbers
+                const alternatives = [
+                    correctAnswer + 2,
+                    correctAnswer + 3,
+                    correctAnswer * 2,
+                    Math.max(1, correctAnswer - 1)
+                ];
+                answers.add(alternatives[Utils.random(0, alternatives.length - 1)]);
+            } else if (wrong > 0 && wrong !== correctAnswer) {
                 answers.add(wrong);
             }
         }
+        
+        // If we couldn't generate enough unique wrong answers, fill with safe alternatives
+        while (answers.size < 3) {
+            answers.add(correctAnswer + answers.size + 1);
+        }
+        
         return Array.from(answers);
     }
 }
@@ -394,6 +472,8 @@ class MoneyCounting extends Question {
         }
         return Array.from(answers);
     }
+
+    
 }
 
 
@@ -424,4 +504,5 @@ class QuestionFactory {
         const QuestionType = types[Math.floor(Math.random() * types.length)];
         return new QuestionType(grade).generate();
     }
+
 }
