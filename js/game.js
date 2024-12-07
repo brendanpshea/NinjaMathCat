@@ -1,62 +1,92 @@
 // game.js
 class Game {
     constructor() {
+        // ... keep existing canvas setup ...
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
         this.canvas.width = 600;
         this.canvas.height = 300;
         
+        // ... keep existing null initializations ...
         this.player = null;
         this.monster = null;
         this.playerSprite = null;
         this.monsterSprite = null;
         this.background = null;
         
+        // ... keep existing game state variables ...
         this.currentQuestion = null;
         this.battleActive = false;
         this.grade = 0;
         this.questionCount = 0;
-        this.maxQuestions = 10;  // Questions per battle
+        this.maxQuestions = 10;
 
-        this.currentQuestion = null;
-        
-        
-        // Define image paths
-        this.imagePaths = {
-            background: 'assets/sprites/backgrounds/forest.png',
-            ninjaCat: 'assets/sprites/characters/ninja-cat.png',
-            wolf: 'assets/sprites/characters/wolf.png',
-            energyBlast: 'assets/sprites/effects/energy-blast.png'
-        };
-        
-        this.setupEventListeners();
-        this.loadImages();
+         // Initialize the image loader
+    this.imageLoader = new ImageLoader();
+    
+    // Define image paths
+    this.imagePaths = {
+        background: 'assets/sprites/backgrounds/forest.png',
+        ninjaCat: 'assets/sprites/characters/ninja-cat.png',
+        energyBlast: 'assets/sprites/effects/energy-blast.png'
+    };
 
-         // Add base dimensions that will serve as our reference point
-         this.BASE_WIDTH = 600;
-         this.BASE_HEIGHT = 300;
-         this.scale = 1;  // Will store our current scale factor
-         
-         // Calculate initial scale
-         this.calculateScale();
-         
-         // Initial canvas sizing
-         this.resizeCanvas();
+    this.defeatedMonsters = 0;
+    this.monsterSprites = [];
+    this.currentMonsterIndex = 0;
+    
+    this.setupEventListeners();
+    this.loadAssets();
 
+        this.initializeGame();
+        
+        // Set up scaling
+        this.BASE_WIDTH = 600;
+        this.BASE_HEIGHT = 300;
+        this.scale = 1;
+        this.calculateScale();
+        this.resizeCanvas();
     }
 
-    loadImages() {
-        this.preloadedImages = {};
-        Object.entries(this.imagePaths).forEach(([key, path]) => {
-            const img = new Image();
-            img.src = path;
-            img.onload = () => {
-                this.preloadedImages[key] = img;
-                debug(`Loaded image: ${key}`);
-            };
-        });
+    async loadAssets() {
+        try {
+            // Load core game images
+            await this.imageLoader.loadImages(this.imagePaths);
+            
+            // Load monster sprites
+            this.monsterSprites = await this.imageLoader.discoverMonsterImages('assets/sprites/monsters');
+            
+            debug(`Loaded ${this.monsterSprites.length} monster sprites`);
+            
+        } catch (error) {
+            console.error('Failed to load game assets:', error);
+        }
+    }
+    
+    getNextMonsterSprite() {
+        if (this.monsterSprites.length === 0) return this.imagePaths.ninjaCat; // Fallback
+        
+        const sprite = this.monsterSprites[this.currentMonsterIndex];
+        this.currentMonsterIndex = (this.currentMonsterIndex + 1) % this.monsterSprites.length;
+        return sprite.src;
     }
 
+    async initializeGame() {
+        try {
+            // Load core game images
+            await this.imageLoader.loadImages(this.imagePaths);
+            
+            // Load monster sprites
+            this.monsterSprites = await this.imageLoader.discoverMonsterImages('assets/sprites/monsters');
+            
+            debug(`Loaded ${this.monsterSprites.length} monster sprites`);
+            
+        } catch (error) {
+            console.error('Failed to load game assets:', error);
+        }
+    }
+
+    
     setupEventListeners() {
         document.getElementById('start-battle').addEventListener('click', () => this.startBattle());
         document.getElementById('grade-select').addEventListener('change', (e) => {
@@ -137,7 +167,7 @@ class Game {
             100, // y position
             100, // width
             100, // height
-            this.imagePaths.wolf
+            this.getNextMonsterSprite()
         );
         
         // Reset UI
@@ -303,9 +333,23 @@ class Game {
 
     checkBattleEnd() {
         if (this.monster.currentHealth <= 0) {
-            this.endBattle('Victory! 🎉');
-            return true;
+            this.defeatedMonsters++;
+            // Create new monster with increasing strength based on defeats
+            const level = Math.floor(this.defeatedMonsters / this.monsterSprites.length) + 1;
+            this.monster = new Monster('Monster', level);
+            this.monsterSprite = new Sprite(
+                this.canvas,
+                450, // x position
+                100, // y position
+                100, // width
+                100, // height
+                this.getNextMonsterSprite()
+            );
+            this.updateDefeatedCounter();
+            this.updateHealthDisplays();
+            return false; // Continue battle with new monster
         }
+
         if (this.player.currentHealth <= 0) {
             this.endBattle('Defeat! 😢');
             return true;
@@ -336,6 +380,8 @@ class Game {
         // First, clean up the current game state
         this.battleActive = false;
         this.questionCount = 0;
+        this.defeatedMonsters = 0;
+        this.currentMonsterIndex = 0;
         
         // Hide the restart button
         document.getElementById('restart-button-container').classList.remove('visible');
@@ -362,6 +408,14 @@ class Game {
         document.getElementById('battle-scene').style.display = 'none';
         document.getElementById('question-area').style.display = 'none';
     }
+
+    // Add this method to your Game class
+updateDefeatedCounter() {
+    const counterElement = document.getElementById('monsters-defeated');
+    if (counterElement) {
+        counterElement.textContent = `Monsters Defeated: ${this.defeatedMonsters}`;
+    }
+}
 }
 
 
