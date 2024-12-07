@@ -17,6 +17,9 @@ class Game {
         this.grade = 0;
         this.questionCount = 0;
         this.maxQuestions = 10;  // Questions per battle
+
+        this.currentQuestion = null;
+        
         
         // Define image paths
         this.imagePaths = {
@@ -88,6 +91,9 @@ class Game {
     resizeCanvas() {
         this.calculateScale();
         
+        // Reset the transform before scaling
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        
         // Apply the new dimensions
         this.canvas.width = Math.floor(this.BASE_WIDTH * this.scale);
         this.canvas.height = Math.floor(this.BASE_HEIGHT * this.scale);
@@ -98,7 +104,7 @@ class Game {
         // Redraw the game state
         this.drawSprites();
     }
-
+    
     // Modify the existing handleResize method
     handleResize() {
         this.resizeCanvas();
@@ -164,35 +170,50 @@ class Game {
 
     async handleAnswer(answer) {
         if (!this.battleActive) return;
-        
+    
         const correct = this.currentQuestion.isCorrect(answer);
         const buttons = document.querySelectorAll('.answer-button');
         buttons.forEach(btn => btn.disabled = true);
-        
-        if (correct) {
-            await this.playerAttack();
-            this.handleMonsterDamage();
-        } else {
+    
+        const feedbackText = document.getElementById('feedback-text');
+    
+        if (!correct) {
+            // Retrieve the correct answer
+            const correctAnswer = this.currentQuestion.getCorrectAnswer();
+    
+            // Display incorrect feedback with the correct answer
+            feedbackText.textContent = `❌ Incorrect! The correct answer is ${correctAnswer}.`;
+            feedbackText.classList.remove('correct-feedback'); // Ensure correct-feedback class is removed
+            feedbackText.classList.add('incorrect-feedback'); // Add incorrect-feedback class for styling
+    
+            // Trigger monster attack and handle player damage
             await this.monsterAttack();
             this.handlePlayerDamage();
+        } else {
+            // No feedback for correct answers
+            // Proceed with player attack and handle monster damage
+            await this.playerAttack();
+            this.handleMonsterDamage();
         }
-        
+    
         this.updateHealthDisplays();
-        
+    
         if (this.checkBattleEnd()) return;
-        
+    
         // Generate next question or end battle if max questions reached
         if (this.questionCount >= this.maxQuestions) {
             this.endBattle('Battle Complete!');
             return;
         }
-        
+    
         // Generate next question after a short delay
         setTimeout(() => {
+            feedbackText.textContent = ''; // Clear feedback
             buttons.forEach(btn => btn.disabled = false);
             this.generateQuestion();
         }, 1500);
     }
+    
 
     async playerAttack() {
         return new Promise(resolve => {
@@ -309,37 +330,7 @@ class Game {
         requestAnimationFrame(() => this.animate());
     }
 
-    // New method to handle game restart
-restartGame() {
-    // First, clean up the current game state
-    this.battleActive = false;
-    this.questionCount = 0;
     
-    // Hide the restart button
-    document.getElementById('restart-button-container').classList.remove('visible');
-    
-    // Reset the battle UI elements
-    document.getElementById('question-text').textContent = '';
-    document.getElementById('answers').innerHTML = '';
-    document.getElementById('start-battle').textContent = 'Start Adventure!';
-    
-    // Clear the canvas
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    
-    // Reset object references
-    this.player = null;
-    this.monster = null;
-    this.playerSprite = null;
-    this.monsterSprite = null;
-    this.background = null;
-    
-    // Show the welcome screen elements again
-    document.getElementById('welcome-header').style.display = 'block';
-    document.getElementById('start-section').style.display = 'block';
-    document.getElementById('ninja-cat-image').style.display = 'block';
-    document.getElementById('battle-scene').style.display = 'none';
-    document.getElementById('question-area').style.display = 'none';
-}
     // New method to handle game restart
     restartGame() {
         // First, clean up the current game state

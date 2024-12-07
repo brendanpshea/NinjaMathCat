@@ -257,3 +257,15 @@ body {
 #restart-game:hover {
         background-color: #ff6666;
 }
+
+/* Feedback Text Styles */
+#feedback-text {
+    margin-top: 10px;
+    font-weight: bold;
+    transition: color 0.3s ease; /* Smooth color transition */
+}
+
+/* Incorrect Feedback */
+.incorrect-feedback {
+    color: red;
+}

@@ -84,6 +84,10 @@ class Question {
     isCorrect(answer) {
         return answer === this.correctAnswer;
     }
+    
+    getCorrectAnswer() {
+        return this.correctAnswer;
+    }
 }
 
 class Addition extends Question {
