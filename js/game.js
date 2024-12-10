@@ -372,7 +372,7 @@ class Game {
         levelDiv.classList.add('level-up');
         setTimeout(() => levelDiv.classList.remove('level-up'), 1000);
 
-        this.grade = this.grade + 0.5;
+        this.grade = this.grade + 0.25;
 
         // Update player stats display
         this.updateHealthDisplays();

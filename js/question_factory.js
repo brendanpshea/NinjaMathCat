@@ -2,25 +2,28 @@
 // Description: Factory class for generating random questions based on grade level.
 
 // import all question types
-import { CountingObjects, Addition, Subtraction, PatternRecognition, MoneyCounting, NumberSequence, ComparisonQuestion, SkipCounting } from "./question_types.js";
+import { CountingObjects, Addition, Subtraction, PatternRecognition, NumberSequence, ComparisonQuestion, SkipCounting } from "./question_types.js";
 import { WordProbAdd, WordProbMult, WordProbSub, WordProbDiv } from "./word_problem.js";
+import { MoneyCounting } from "./money_problem.js";
+import { TimeQuestion } from "./time_question.js";
 
 class QuestionFactory {
     static getQuestionTypes(grade) {
         // Define question types with their applicable grade ranges
         const types = [
                 { type: CountingObjects, minGrade: 0, maxGrade: 0.5 },
-                { type: Addition, minGrade: 0, maxGrade: 2.0 },
-                { type: Subtraction, minGrade: 0, maxGrade: 2.0 },
-                { type: PatternRecognition, minGrade: 0, maxGrade: 2.0 },
-                { type: MoneyCounting, minGrade: 1.0, maxGrade: 2.0 },
-                { type: NumberSequence, minGrade: 0, maxGrade: 2.0 },
-                { type: ComparisonQuestion, minGrade: 0.5, maxGrade: 2.0 },
-                { type: WordProbAdd, minGrade: 0.5, maxGrade: 2.0 },
-                { type: WordProbSub, minGrade: 0.5, maxGrade: 2.0 },
-                { type: WordProbDiv, minGrade: 0.5, maxGrade: 2.0 },
-                { type: WordProbMult, minGrade: 0.5, maxGrade: 2.0 },
-                { type: SkipCounting, minGrade: 0.5, maxGrade: 2.0 }
+                { type: Addition, minGrade: 0, maxGrade: 3.0 },
+                { type: Subtraction, minGrade: 0, maxGrade: 3.0 },
+                { type: PatternRecognition, minGrade: 0, maxGrade: 3.0 },
+                { type: MoneyCounting, minGrade: 1.0, maxGrade: 3.0 },
+                { type: NumberSequence, minGrade: 0, maxGrade: 1.0 },
+                { type: ComparisonQuestion, minGrade: 0.5, maxGrade: 3.0 },
+                { type: WordProbAdd, minGrade: 0.5, maxGrade: 3.0 },
+                { type: WordProbSub, minGrade: 0.5, maxGrade: 3.0 },
+                { type: WordProbDiv, minGrade: 0.5, maxGrade: 3.0 },
+                { type: WordProbMult, minGrade: 0.5, maxGrade: 3.0 },
+                { type: SkipCounting, minGrade: 0.5, maxGrade: 3.0 },
+                { type: TimeQuestion, minGrade: 0.5, maxGrade: 3.0 }
         ];
 
         // Filter types based on the current grade level

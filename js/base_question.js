@@ -66,7 +66,8 @@ class Question {
         if (this.grade <= 0.5) return { min: 1, max: 5 };
         if (this.grade <= 1.0) return { min: 1, max: 10 };
         if (this.grade <= 1.5) return { min: 1, max: 20 };
-        return { min: 1, max: 100 };
+        if (this.grade <= 2.0) return { min: 1, max: 50 };
+        return { min: 1, max: 500 };
     }
 
     getAllAnswers() {
