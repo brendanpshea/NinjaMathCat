@@ -1,4 +1,7 @@
 // game.js
+// Description: Main game logic and rendering for the Math Ninja game.
+
+import QuestionFactory from './question_factory.js';
 
 // Constants for image paths and selectors
 const IMAGE_PATHS = {
