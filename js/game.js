@@ -54,9 +54,15 @@ class Game {
         this.monsterSprites = [];
         this.currentMonsterIndex = 0;
 
+          // Add new properties for background management
+          this.backgroundSprites = [];
+          this.currentBackgroundIndex = 0;
+
         // Image loading
         this.imageLoader = new ImageLoader();
         this.imagePaths = IMAGE_PATHS;
+
+        
 
         // Scaling
         this.scale = 1;
@@ -68,9 +74,6 @@ class Game {
         this.initializeGame();
     }
 
-    /**
-     * Initializes the game by loading assets.
-     */
     async initializeGame() {
         try {
             // Load core game images
@@ -78,8 +81,12 @@ class Game {
 
             // Load monster sprites dynamically
             this.monsterSprites = await this.imageLoader.discoverMonsterImages('assets/sprites/monsters');
+            
+            // Load background sprites dynamically
+            this.backgroundSprites = await this.imageLoader.discoverBackgroundImages('assets/sprites/backgrounds');
 
             console.debug(`Loaded ${this.monsterSprites.length} monster sprites`);
+            console.debug(`Loaded ${this.backgroundSprites.length} background sprites`);
         } catch (error) {
             console.error('Failed to load game assets:', error);
         }
@@ -99,6 +106,21 @@ class Game {
 
         return this.monsterSprites[this.currentMonsterIndex++].src;
     }
+
+        /**
+     * Retrieves the next background sprite in sequence.
+     * @returns {string} The source path of the next background sprite.
+     */
+        getNextBackgroundSprite() {
+            if (this.backgroundSprites.length === 0) return this.imagePaths.background; // Fallback
+    
+            // Reset index if all backgrounds have been cycled through
+            if (this.currentBackgroundIndex >= this.backgroundSprites.length) {
+                this.currentBackgroundIndex = 0;
+            }
+    
+            return this.backgroundSprites[this.currentBackgroundIndex++].src;
+        }
 
     /**
      * Sets up all necessary event listeners.
@@ -170,7 +192,7 @@ class Game {
         document.getElementById(SELECTORS.restartButtonContainer).classList.add('visible');
 
         // Initialize background and sprites
-        this.background = new Background(this.canvas, this.imagePaths.background);
+        this.background = new Background(this.canvas, this.getNextBackgroundSprite());
 
         this.playerSprite = new Sprite(
             this.canvas,
@@ -347,6 +369,8 @@ class Game {
         levelDiv.classList.add('level-up');
         setTimeout(() => levelDiv.classList.remove('level-up'), 1000);
 
+        this.grade = this.grade + 0.5;
+
         // Update player stats display
         this.updateHealthDisplays();
     }
@@ -391,15 +415,10 @@ class Game {
             feedbackText.classList.remove('incorrect-feedback');
             feedbackText.classList.add('correct-feedback');
             
-            // If we've used all sprites, reset the index to cycle through them again
-            if (this.currentMonsterIndex >= this.monsterSprites.length) {
-                this.currentMonsterIndex = 0;
-            }
-            
             // Calculate level based on total monsters defeated
             const level = Math.floor(this.defeatedMonsters / 3) + 1;
             
-            // Delay spawning the next monster to give time to read the victory message
+            // Delay spawning the next monster and changing background
             setTimeout(() => {
                 feedbackText.textContent = '';
                 this.monster = new Monster('Monster', level);
@@ -411,9 +430,12 @@ class Game {
                     100,
                     this.getNextMonsterSprite()
                 );
+                // Change background for the new battle
+                this.background = new Background(this.canvas, this.getNextBackgroundSprite());
+                
                 this.updateDefeatedCounter();
                 this.updateHealthDisplays();
-            }, 2000); // 2 second delay
+            }, 2000);
             
             return false;
         }

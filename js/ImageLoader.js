@@ -71,6 +71,38 @@ class ImageLoader {
     }
 
     /**
+     * Discover and load background images (numbered background_01.png, background_02.png, etc.)
+     * @param {string} directory - Base directory path
+     * @returns {Promise<HTMLImageElement[]>} - Promise resolving to array of loaded images
+     */
+    async discoverBackgroundImages(directory) {
+        const images = [];
+        let index = 1;
+        let consecutiveFailures = 0;
+        const MAX_FAILURES = 3; // Stop after 3 consecutive failures
+
+        while (consecutiveFailures < MAX_FAILURES) {
+            const paddedIndex = String(index).padStart(2, '0');
+            const path = `${directory}/background_${paddedIndex}.png`;
+            
+            try {
+                const img = await this.loadImage(path);
+                images.push(img);
+                consecutiveFailures = 0;
+                index++;
+            } catch (error) {
+                consecutiveFailures++;
+                debug(`Failed to load background image ${path}`);
+            }
+        }
+
+        debug(`Loaded ${images.length} background images`);
+        return images;
+    }
+
+
+    
+    /**
      * Get a loaded image
      * @param {string} path - Path of the image to get
      * @returns {HTMLImageElement|undefined} - The loaded image or undefined if not loaded
