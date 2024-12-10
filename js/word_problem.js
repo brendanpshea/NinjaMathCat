@@ -1,43 +1,52 @@
-// word_problem.js
-// Description: Classes for generating word problems based on basic arithmetic operations.
+import { NumericalQuestion } from './base_question.js';
 
-import {QuestUtils, Question, NumericalQuestion, generateWrongAnswersForNumerical } from './base_question.js';
+// List of random names and nouns
+const names = [
+    "Mario", "Luigi", "Peach", "Sonic", "Knuckles",
+    "Pikachu", "Charmander", "Squirtle", "Dora", "Diego",
+    "Elsa", "Anna", "Olaf", "Moana", "Simba",
+    "Buzz", "Woody", "Spiderman", "Batman", "Wonder Woman",
+    "Harry", "Hermione", "Ron", "Katniss", "Shrek"
+];
 
+const nouns = [
+    "apples", "balloons", "candies", "crayons", "stickers",
+    "books", "flowers", "cookies", "pencils", "blocks",
+    "stars", "hearts", "moons", "animals", "robots",
+    "cars", "planes", "trains", "kites", "ice creams",
+    "bicycles", "balls", "boats", "hats", "sandwiches"
+];
 
-// WordProbAdd Question
-class WordProbAdd extends NumericalQuestion {
+// Utility functions for random names and nouns
+function randomName() {
+    return names[Math.floor(Math.random() * names.length)];
+}
+
+function randomNoun() {
+    return nouns[Math.floor(Math.random() * nouns.length)];
+}
+
+class WordProblem extends NumericalQuestion {
+    constructor(grade, templates) {
+        super(grade);
+        this.templates = templates;
+    }
+
     generate() {
         const range = this.getNumberRange();
-        const num1 = Utils.random(range.min, range.max - 1);
-        const num2 = Utils.random(range.min, range.max - num1); // Ensure non-negative answer
+        const template = this.templates[Math.floor(Math.random() * this.templates.length)];
 
-        // Problem templates for addition
-        const templates = [
-            {
-                text: (n1, n2) => `You have ${n1} apples and find ${n2} more. How many apples do you have in total?`,
-                operation: (n1, n2) => n1 + n2,
-                feedback: "Add the quantities together to find the total."
-            },
-            {
-                text: (n1, n2) => `There are ${n1} red balloons and ${n2} blue balloons. How many balloons are there altogether?`,
-                operation: (n1, n2) => n1 + n2,
-                feedback: "Combine the number of balloons to get the total."
-            },
-            {
-                text: (n1, n2) => `Sarah has ${n1} stickers and buys ${n2} more. How many stickers does she have now?`,
-                operation: (n1, n2) => n1 + n2,
-                feedback: "Sum the stickers to find the new total."
-            }
-        ];
+        // Generate operands based on the operation type
+        const [num1, num2] = this.generateOperands(range, template.operationType);
 
-        // Select a random template and generate the problem
-        const template = templates[Utils.random(0, templates.length - 1)];
-        const text = template.text(num1, num2);
-        const correctAnswer = template.operation(num1, num2);
+        // Insert random names and nouns for personalization
+        const name = randomName();
+        const noun = randomNoun();
 
-        this.questionText = text;
-        this.correctAnswer = correctAnswer;
-        this.difficulty = Math.ceil(correctAnswer / (range.max * 0.6));
+        // Populate the template
+        this.questionText = template.text(num1, num2, name, noun);
+        this.correctAnswer = template.operation(num1, num2);
+        this.difficulty = Math.ceil(this.correctAnswer / (range.max * 0.6));
         this.wrongAnswers = this.generateWrongAnswers({
             requirePositive: true,
             minWrong: 3
@@ -46,140 +55,104 @@ class WordProbAdd extends NumericalQuestion {
 
         return this;
     }
-}
 
-// WordProbSub Question
-class WordProbSub extends NumericalQuestion {
-    generate() {
-        const range = this.getNumberRange();
-        const num1 = Utils.random(range.min, range.max);
-        const num2 = Utils.random(0, num1); // Ensure non-negative answer
+    generateOperands(range, operationType) {
+        let num1, num2;
 
-        // Problem templates for subtraction
-        const templates = [
-            {
-                text: (n1, n2) => `You have ${n1} candies and give away ${n2}. How many candies do you have left?`,
-                operation: (n1, n2) => n1 - n2,
-                feedback: "Subtract the given away candies from the total."
-            },
-            {
-                text: (n1, n2) => `There are ${n1} books on a shelf. ${n2} books are removed. How many books remain?`,
-                operation: (n1, n2) => n1 - n2,
-                feedback: "Deduct the removed books to find the remaining number."
-            },
-            {
-                text: (n1, n2) => `Emily has ${n1} balloons. ${n2} balloons burst. How many balloons does she still have?`,
-                operation: (n1, n2) => n1 - n2,
-                feedback: "Take away the burst balloons from the total."
-            }
-        ];
+        switch (operationType) {
+            case 'addition':
+            case 'subtraction':
+                // Use full range for addition and subtraction
+                num1 = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+                num2 = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
 
-        // Select a random template and generate the problem
-        const template = templates[Utils.random(0, templates.length - 1)];
-        const text = template.text(num1, num2);
-        const correctAnswer = template.operation(num1, num2);
+                if (operationType === 'subtraction' && num1 < num2) {
+                    // Ensure num1 >= num2 for subtraction
+                    [num1, num2] = [num2, num1];
+                }
+                break;
 
-        this.questionText = text;
-        this.correctAnswer = correctAnswer;
-        this.difficulty = Math.ceil(num1 / (range.max * 0.6));
-        this.wrongAnswers = this.generateWrongAnswers({
-            require_positive: true,
-            minWrong: 3
-        });
-        this.feedback = template.feedback;
+            case 'multiplication':
+                // Use smaller ranges for multiplication
+                num1 = Math.floor(Math.random() * Math.min(range.max / 2, 10 - range.min)) + range.min;
+                num2 = Math.floor(Math.random() * Math.min(range.max / 10, 10 - range.min)) + range.min;
+                break;
 
-        return this;
+            case 'division':
+                // Ensure the dividend is a multiple of the divisor
+                num2 = Math.floor(Math.random() * Math.min(range.max / 3, 5)) + 1; // Small divisors
+                num1 = num2 * (Math.floor(Math.random() * 5) + 1); // Dividend is a multiple of divisor
+                break;
+
+            default:
+                throw new Error(`Unsupported operation type: ${operationType}`);
+        }
+
+        return [num1, num2];
     }
 }
 
-// WordProbDiv Question
-class WordProbDiv extends NumericalQuestion {
-    generate() {
-        const range = this.getNumberRange();
-        const divisor = Utils.random(1, Math.min(5, range.max)); // Avoid large divisors
-        const quotient = Utils.random(1, Math.floor(range.max / divisor));
-        const dividend = divisor * quotient;
+// Define templates with placeholders for random names and nouns
+const addTemplates = [
+    {
+        text: (n1, n2, name, noun) => `${name} has ${n1} ${noun} and finds ${n2} more. How many ${noun} does ${name} have in total?`,
+        operation: (n1, n2) => n1 + n2,
+        operationType: 'addition',
+        feedback: "Add the quantities together to find the total."
+    }
+];
 
-        // Problem templates for division
-        const templates = [
-            {
-                text: (d, q) => `There are ${d} cookies divided equally among ${q} friends. How many cookies does each friend get?`,
-                operation: (d, q) => d / q,
-                feedback: "Divide the total cookies by the number of friends."
-            },
-            {
-                text: (d, q) => `A farmer has ${d} apples and wants to pack them into boxes with ${q} apples each. How many boxes can he fill?`,
-                operation: (d, q) => d / q,
-                feedback: "Divide the apples by the number per box to find the number of boxes."
-            },
-            {
-                text: (d, q) => `There are ${d} stickers shared equally among ${q} students. How many stickers does each student receive?`,
-                operation: (d, q) => d / q,
-                feedback: "Split the stickers equally among the students by dividing."
-            }
-        ];
+const subTemplates = [
+    {
+        text: (n1, n2, name, noun) => `${name} had ${n1} ${noun} and gave away ${n2}. How many ${noun} does ${name} have left?`,
+        operation: (n1, n2) => n1 - n2,
+        operationType: 'subtraction',
+        feedback: "Subtract the given-away amount from the total."
+    }
+];
 
-        // Select a random template and generate the problem
-        const template = templates[Utils.random(0, templates.length - 1)];
-        const text = template.text(dividend, divisor);
-        const correctAnswer = template.operation(dividend, divisor);
+const divTemplates = [
+    {
+        text: (d, q, name, noun) => `${name} has ${d} ${noun} to share equally among ${q} friends. How many ${noun} does each friend get?`,
+        operation: (d, q) => d / q,
+        operationType: 'division',
+        feedback: "Divide the total by the number of friends."
+    }
+];
 
-        this.questionText = text;
-        this.correctAnswer = correctAnswer;
-        this.difficulty = Math.ceil(quotient / (range.max * 0.6));
-        this.wrongAnswers = this.generateWrongAnswers({
-            require_positive: true,
-            min_wrong: 3
-        });
-        this.feedback = template.feedback;
+const multTemplates = [
+    {
+        text: (n1, n2, name, noun) => `${name} bought ${n1} packs of ${noun}, each containing ${n2}. How many ${noun} did ${name} buy?`,
+        operation: (n1, n2) => n1 * n2,
+        operationType: 'multiplication',
+        feedback: "Multiply the packs by the quantity per pack."
+    }
+];
 
-        return this;
+// Define specific classes for each word problem type
+class WordProbAdd extends WordProblem {
+    constructor(grade) {
+        super(grade, addTemplates);
     }
 }
 
-// WordProbMult Question
-class WordProbMult extends NumericalQuestion {
-    generate() {
-        const range = this.getNumberRange();
-        const num1 = Utils.random(range.min, Math.floor(range.max / 2));
-        const num2 = Utils.random(1, Math.floor(range.max / num1));
-
-        // Problem templates for multiplication
-        const templates = [
-            {
-                text: (n1, n2) => `There are ${n1} packs of crayons with ${n2} crayons in each pack. How many crayons are there in total?`,
-                operation: (n1, n2) => n1 * n2,
-                feedback: "Multiply the number of packs by the number of crayons per pack."
-            },
-            {
-                text: (n1, n2) => `A classroom has ${n1} tables, and each table has ${n2} chairs. How many chairs are there altogether?`,
-                operation: (n1, n2) => n1 * n2,
-                feedback: "Multiply the number of tables by the number of chairs per table."
-            },
-            {
-                text: (n1, n2) => `There are ${n1} baskets with ${n2} apples in each. How many apples are there in total?`,
-                operation: (n1, n2) => n1 * n2,
-                feedback: "Find the total by multiplying the baskets by apples per basket."
-            }
-        ];
-
-        // Select a random template and generate the problem
-        const template = templates[Utils.random(0, templates.length - 1)];
-        const text = template.text(num1, num2);
-        const correctAnswer = template.operation(num1, num2);
-
-        this.questionText = text;
-        this.correctAnswer = correctAnswer;
-        this.difficulty = Math.ceil(correctAnswer / (range.max * 0.6));
-        this.wrongAnswers = this.generateWrongAnswers({
-            require_positive: true,
-            min_wrong: 3
-        });
-        this.feedback = template.feedback;
-
-        return this;
+class WordProbSub extends WordProblem {
+    constructor(grade) {
+        super(grade, subTemplates);
     }
 }
 
-// export all classes
+class WordProbDiv extends WordProblem {
+    constructor(grade) {
+        super(grade, divTemplates);
+    }
+}
+
+class WordProbMult extends WordProblem {
+    constructor(grade) {
+        super(grade, multTemplates);
+    }
+}
+
+// Export all classes
 export { WordProbAdd, WordProbSub, WordProbDiv, WordProbMult };

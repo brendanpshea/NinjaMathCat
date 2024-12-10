@@ -5,103 +5,110 @@ class ImageLoader {
     }
 
     /**
-     * Load a single image
+     * Load a single image with error handling
      * @param {string} path - Path to the image
-     * @returns {Promise<HTMLImageElement>} - Promise resolving to the loaded image
+     * @returns {Promise<HTMLImageElement|null>} - Promise resolving to the loaded image or null if failed
      */
     loadImage(path) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             if (this.loadedImages.has(path)) {
                 resolve(this.loadedImages.get(path));
                 return;
             }
 
             const img = new Image();
+            
             img.onload = () => {
                 this.loadedImages.set(path, img);
                 this.imageCount++;
-                debug(`Loaded image: ${path}`); // Fixed: using path instead of key
+                debug(`Loaded image: ${path}`);
                 resolve(img);
             };
-            img.onerror = () => reject(new Error(`Failed to load image: ${path}`));
+            
+            img.onerror = () => {
+                debug(`Failed to load image: ${path}`);
+                resolve(null);
+            };
+            
             img.src = path;
         });
     }
     
     /**
-     * Load multiple images at once
+     * Load multiple images at once, skipping any that fail
      * @param {Object} imageMap - Object mapping keys to image paths
-     * @returns {Promise<Map<string, HTMLImageElement>>} - Promise resolving to map of loaded images
+     * @returns {Promise<Map<string, HTMLImageElement>>} - Promise resolving to map of successfully loaded images
      */
-    loadImages(imageMap) {
-        const promises = Object.entries(imageMap).map(([key, path]) => 
-            this.loadImage(path).then(img => [key, img])
-        );
-        return Promise.all(promises).then(entries => new Map(entries));
+    async loadImages(imageMap) {
+        const loadedEntries = [];
+        
+        for (const [key, path] of Object.entries(imageMap)) {
+            const img = await this.loadImage(path);
+            if (img) {
+                loadedEntries.push([key, img]);
+            }
+        }
+        
+        return new Map(loadedEntries);
     }
 
     /**
-     * Discover and load monster images (numbered monster_01.png, monster_02.png, etc.)
+     * Generic function to discover and load sequentially numbered images
      * @param {string} directory - Base directory path
-     * @returns {Promise<HTMLImageElement[]>} - Promise resolving to array of loaded images
+     * @param {string} prefix - Prefix for the image files (e.g., "monster_" or "background_")
+     * @param {string} extension - File extension (e.g., ".png")
+     * @param {Object} options - Additional options
+     * @param {number} [options.maxFailures=3] - Maximum consecutive failures before stopping
+     * @param {number} [options.startIndex=1] - Starting index for image numbering
+     * @returns {Promise<HTMLImageElement[]>} - Promise resolving to array of successfully loaded images
      */
-    async discoverMonsterImages(directory) {
-        const images = [];
-        let index = 1;
-        let consecutiveFailures = 0;
-        const MAX_FAILURES = 3; // Stop after 3 consecutive failures
+    async discoverImages(directory, prefix, extension, options = {}) {
+        const {
+            maxFailures = 3,
+            startIndex = 1
+        } = options;
 
-        while (consecutiveFailures < MAX_FAILURES) {
+        const images = [];
+        let index = startIndex;
+        let consecutiveFailures = 0;
+
+        while (consecutiveFailures < maxFailures) {
             const paddedIndex = String(index).padStart(2, '0');
-            const path = `${directory}/monster_${paddedIndex}.png`;
+            const path = `${directory}/${prefix}${paddedIndex}${extension}`;
             
-            try {
-                const img = await this.loadImage(path);
+            const img = await this.loadImage(path);
+            if (img) {
                 images.push(img);
                 consecutiveFailures = 0;
-                index++;
-            } catch (error) {
+            } else {
                 consecutiveFailures++;
-                debug(`Failed to load monster image ${path}`);
             }
+            
+            index++;
         }
 
-        debug(`Loaded ${images.length} monster images`);
+        debug(`Loaded ${images.length} ${prefix} images`);
         return images;
     }
 
     /**
-     * Discover and load background images (numbered background_01.png, background_02.png, etc.)
+     * Discover and load monster images
      * @param {string} directory - Base directory path
      * @returns {Promise<HTMLImageElement[]>} - Promise resolving to array of loaded images
      */
-    async discoverBackgroundImages(directory) {
-        const images = [];
-        let index = 1;
-        let consecutiveFailures = 0;
-        const MAX_FAILURES = 3; // Stop after 3 consecutive failures
-
-        while (consecutiveFailures < MAX_FAILURES) {
-            const paddedIndex = String(index).padStart(2, '0');
-            const path = `${directory}/background_${paddedIndex}.png`;
-            
-            try {
-                const img = await this.loadImage(path);
-                images.push(img);
-                consecutiveFailures = 0;
-                index++;
-            } catch (error) {
-                consecutiveFailures++;
-                debug(`Failed to load background image ${path}`);
-            }
-        }
-
-        debug(`Loaded ${images.length} background images`);
-        return images;
+    discoverMonsterImages(directory) {
+        return this.discoverImages(directory, 'monster_', '.png');
     }
 
+    /**
+     * Discover and load background images
+     * @param {string} directory - Base directory path
+     * @returns {Promise<HTMLImageElement[]>} - Promise resolving to array of loaded images
+     */
+    discoverBackgroundImages(directory) {
+        return this.discoverImages(directory, 'background_', '.png');
+    }
 
-    
     /**
      * Get a loaded image
      * @param {string} path - Path of the image to get
