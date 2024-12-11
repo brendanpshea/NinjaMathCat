@@ -1,5 +1,5 @@
 // money_problem.js
-// Description: Generates money counting questions based on grade level.
+// Description: Generates money counting questions that scale smoothly with grade level
 
 import {generateWrongAnswersForNumerical, NumericalQuestion } from "./base_question.js";
 
@@ -16,77 +16,116 @@ class MoneyCounting extends NumericalQuestion {
         ];
     }
 
+    // Get available coins based on grade level
+    getAvailableCoins() {
+        // Smooth progression of coin introduction
+        if (this.grade <= 0.5) return this.coins.slice(0, 1);  // Only pennies
+        if (this.grade <= 1.0) return this.coins.slice(0, 2);  // Add nickels
+        if (this.grade <= 1.5) return this.coins.slice(0, 3);  // Add dimes
+        if (this.grade <= 2.0) return this.coins.slice(0, 4);  // Add quarters
+        return this.coins;  // All coins
+    }
+
+    // Get maximum total based on grade level
+    getMaxTotal() {
+        // Smooth progression of maximum amounts
+        if (this.grade <= 0.5) return 10;       // Up to 10 cents
+        if (this.grade <= 1.0) return 25;       // Up to 25 cents
+        if (this.grade <= 1.5) return 50;       // Up to 50 cents
+        if (this.grade <= 2.0) return 100;      // Up to $1
+        if (this.grade <= 2.5) return 200;      // Up to $2
+        return 500;                             // Up to $5
+    }
+
+    // Get complexity level based on grade
+    getComplexityLevel() {
+        // Returns a value between 0 and 1 indicating complexity
+        return Math.min(1, Math.max(0, (this.grade - 0.5) / 2.5));
+    }
+
     generate() {
-        if (this.grade <= 0.5) {
-            return this.generateKindergarten();
-        } else if (this.grade <= 1.0) {
-            return this.generateFirstGrade();
-        } else if (this.grade <= 2.0) {
-            return this.generateSecondGrade();
-        } else if (this.grade <= 2.5) {
-            return this.generateMidSecondGrade();
-        } else {
-            return this.generateThirdGrade();
-        }
-    }
-
-    /**
-     * Kindergarten (Grade 0-0.5)
-     * Focus: Penny recognition, counting pennies up to 10
-     */
-    generateKindergarten() {
-        const count = Utils.random(1, 10);
-        const penny = this.coins[0];
-        const visuals = Array(count).fill(penny.visual).join(' ');
-
-        this.questionText = `How many pennies are there? ${visuals}`;
-        this.correctAnswer = count === 1 ? "1 penny" : `${count} pennies`;
-        this.wrongAnswers = this.generateCountingWrongAnswers(count, "penny", "pennies");
-        this.feedback = "Count each penny one by one.";
-
-        return this;
-    }
-
-    /**
-     * First Grade (Grade 1.0)
-     * Focus: Pennies, nickels, and dimes; counting up to 25 cents
-     */
-    generateFirstGrade() {
+        // Probability distribution of question types based on grade
+        const complexity = this.getComplexityLevel();
+        
+        // As grade increases, shift probability toward more complex questions
         const questionTypes = [
-            this.generateSingleCoinCounting.bind(this),
-            this.generateSimpleMixedCoins.bind(this)
+            { type: this.generateCoinCounting.bind(this), weight: 1 - complexity },
+            { type: this.generateMixedCoins.bind(this), weight: complexity * 0.8 },
+            { type: this.generateMakingChange.bind(this), weight: complexity * 0.6 },
+            { type: this.generateWordProblem.bind(this), weight: complexity * 0.4 }
         ];
-        return questionTypes[Utils.random(0, questionTypes.length - 1)]();
+
+        // Filter out questions with zero weight and normalize remaining weights
+        const validTypes = questionTypes.filter(t => t.weight > 0);
+        const totalWeight = validTypes.reduce((sum, t) => sum + t.weight, 0);
+        const normalizedTypes = validTypes.map(t => ({
+            ...t,
+            weight: t.weight / totalWeight
+        }));
+
+        // Select question type based on weighted probability
+        const rand = Math.random();
+        let accumWeight = 0;
+        for (const type of normalizedTypes) {
+            accumWeight += type.weight;
+            if (rand <= accumWeight) {
+                return type.type();
+            }
+        }
+
+        return normalizedTypes[0].type(); // Fallback to first type
     }
 
-    generateSingleCoinCounting() {
-        const availableCoins = this.coins.slice(0, 3); // Pennies, nickels, dimes
+    generateCoinCounting() {
+        const availableCoins = this.getAvailableCoins();
+        const maxCoins = Math.max(2, Math.floor(3 + this.grade * 2)); // Scales from 2 to 8 coins
+        const count = Utils.random(1, Math.min(maxCoins, 10));
         const coin = availableCoins[Utils.random(0, availableCoins.length - 1)];
-        const count = Utils.random(1, Math.min(5, Math.floor(25 / coin.value)));
+        
         const visuals = Array(count).fill(coin.visual).join(' ');
         const totalCents = count * coin.value;
 
         this.questionText = `How much money is this? ${visuals}`;
-        this.correctAnswer = `${totalCents}¢`;
-        this.wrongAnswers = [
-            `${totalCents + coin.value}¢`,
-            `${totalCents - coin.value}¢`,
-            `${count}¢` // Common mistake: counting coins instead of value
-        ];
+        this.correctAnswer = totalCents >= 100 ? 
+            `$${(totalCents / 100).toFixed(2)}` : 
+            `${totalCents}¢`;
+        
+        // Generate grade-appropriate wrong answers
+        if (this.grade <= 1.0) {
+            // Simple wrong answers for early grades
+            this.wrongAnswers = [
+                `${totalCents + coin.value}¢`,
+                `${totalCents - coin.value}¢`,
+                `${count}¢` // Common mistake: counting coins instead of value
+            ];
+        } else {
+            this.wrongAnswers = this.generateWrongAnswers(totalCents / 100);
+        }
+
         this.feedback = `Count by ${coin.value}s.`;
-
         return this;
     }
 
-    generateSimpleMixedCoins() {
-        const availableCoins = this.coins.slice(0, 2); // Just pennies and nickels for mixed
-        const count = Utils.random(2, 4);
+    generateMixedCoins() {
+        const availableCoins = this.getAvailableCoins();
+        const maxTotal = this.getMaxTotal();
+        const complexity = this.getComplexityLevel();
+        
+        // Number of coins scales with grade and complexity
+        const minCoins = Math.max(2, Math.floor(complexity * 3));
+        const maxCoins = Math.max(3, Math.floor(complexity * 7));
+        const targetCount = Utils.random(minCoins, maxCoins);
+        
         const selectedCoins = [];
         let totalCents = 0;
 
-        while (selectedCoins.length < count && totalCents < 25) {
-            const coin = availableCoins[Utils.random(0, availableCoins.length - 1)];
-            if (totalCents + coin.value <= 25) {
+        // Strategic coin selection based on grade level
+        while (selectedCoins.length < targetCount && totalCents < maxTotal) {
+            // Higher grades get more varied coin combinations
+            const coinIndex = Utils.random(0, availableCoins.length - 1);
+            const coin = availableCoins[coinIndex];
+            
+            if (totalCents + coin.value <= maxTotal) {
                 selectedCoins.push(coin);
                 totalCents += coin.value;
             }
@@ -94,230 +133,138 @@ class MoneyCounting extends NumericalQuestion {
 
         const visuals = selectedCoins.map(coin => coin.visual).join(' + ');
         this.questionText = `How much money is this? ${visuals}`;
-        this.correctAnswer = `${totalCents}¢`;
-        this.wrongAnswers = [
-            `${totalCents + 5}¢`,
-            `${totalCents - 1}¢`,
-            `${selectedCoins.length}¢` // Common mistake: counting coins instead of value
-        ];
-        this.feedback = "Count the nickels first, then add the pennies.";
-
-        return this;
-    }
-
-    /**
-     * Second Grade (Grade 2.0)
-     * Focus: All coins up to quarters, amounts up to $1
-     */
-    generateSecondGrade() {
-        const questionTypes = [
-            this.generateQuarterCounting.bind(this),
-            this.generateMixedCoinsCounting.bind(this),
-            this.generateSimpleMakingChange.bind(this)
-        ];
-        return questionTypes[Utils.random(0, questionTypes.length - 1)]();
-    }
-
-    generateQuarterCounting() {
-        const count = Utils.random(1, 3);
-        const quarter = this.coins[3]; // Quarter
-        const visuals = Array(count).fill(quarter.visual).join(' + ');
-        const totalCents = count * quarter.value;
-
-        this.questionText = `How much money is this? ${visuals}`;
-        this.correctAnswer = `${totalCents}¢`;
-        this.wrongAnswers = [
-            `${totalCents + 25}¢`,
-            `${totalCents - 25}¢`,
-            `${count}¢` // Common mistake
-        ];
-        this.feedback = "Count by 25s.";
-
-        return this;
-    }
-
-    generateMixedCoinsCounting() {
-        const availableCoins = this.coins.slice(0, 4); // Up to quarters
-        const count = Utils.random(3, 5);
-        const selectedCoins = [];
-        let totalCents = 0;
-
-        while (selectedCoins.length < count && totalCents < 100) {
-            const coin = availableCoins[Utils.random(0, availableCoins.length - 1)];
-            if (totalCents + coin.value <= 100) {
-                selectedCoins.push(coin);
-                totalCents += coin.value;
-            }
-        }
-
-        const visuals = selectedCoins.map(coin => coin.visual).join(' + ');
-        this.questionText = `How much money is this? ${visuals}`;
-        this.correctAnswer = totalCents >= 100 ? '$1.00' : `${totalCents}¢`;
+        this.correctAnswer = totalCents >= 100 ? 
+            `$${(totalCents / 100).toFixed(2)}` : 
+            `${totalCents}¢`;
+        
         this.wrongAnswers = this.generateWrongAnswers(totalCents / 100);
-        this.feedback = "Start with the quarters, then count down to pennies.";
-
-        return this;
-    }
-
-    /**
-     * Mid-Second Grade (Grade 2.5)
-     * Focus: Mixed coins and bills up to $2, introduction to decimal notation
-     */
-    generateMidSecondGrade() {
-        const questionTypes = [
-            this.generateMixedMoneyUpToTwo.bind(this),
-            this.generateSimpleMakingChange.bind(this),
-            this.generateBasicMoneyWord.bind(this)
-        ];
-        return questionTypes[Utils.random(0, questionTypes.length - 1)]();
-    }
-
-    generateMixedMoneyUpToTwo() {
-        const maxAmount = 200; // $2.00
-        const count = Utils.random(3, 5);
-        const selectedCoins = [];
-        let totalCents = 0;
-
-        while (selectedCoins.length < count && totalCents < maxAmount) {
-            const coin = this.coins[Utils.random(0, this.coins.length - 1)];
-            if (totalCents + coin.value <= maxAmount) {
-                selectedCoins.push(coin);
-                totalCents += coin.value;
-            }
+        
+        // Feedback becomes more sophisticated with grade level
+        if (this.grade <= 1.5) {
+            this.feedback = "Start with the largest coins and count down.";
+        } else {
+            this.feedback = "Group similar coins together, count each group, then add the totals.";
         }
 
-        const visuals = selectedCoins.map(coin => coin.visual).join(' + ');
-        this.questionText = `How much money is this? ${visuals}`;
-        this.correctAnswer = `$${(totalCents / 100).toFixed(2)}`;
-        this.wrongAnswers = this.generateWrongAnswers(totalCents / 100);
-        this.feedback = "Count dollars first, then add the coins.";
-
         return this;
     }
 
-    generateSimpleMakingChange() {
-        const price = Utils.random(10, 90); // Up to 90 cents
-        const payment = 100; // $1.00
+    generateMakingChange() {
+        const maxTotal = this.getMaxTotal();
+        const complexity = this.getComplexityLevel();
+        
+        // Price increases with grade level
+        const minPrice = Math.max(10, Math.floor(maxTotal * 0.2));
+        const maxPrice = Math.floor(maxTotal * 0.8);
+        const price = Utils.random(minPrice, maxPrice);
+        
+        // Payment amount scales with grade
+        const payment = this.grade <= 2.0 ? 
+            Math.ceil(price / 100) * 100 : // Round to next dollar for lower grades
+            Math.ceil(price / 25) * 25;    // Round to quarter for higher grades
+        
         const change = payment - price;
 
-        this.questionText = `If something costs ${price}¢ and you pay with $1.00, how much change should you get back?`;
-        this.correctAnswer = `${change}¢`;
-        this.wrongAnswers = [
-            `${change + 5}¢`,
-            `${change - 5}¢`,
-            `${change + 10}¢`
-        ];
-        this.feedback = "Subtract from 100¢ or count up from the price to $1.00.";
+        // Question complexity increases with grade
+        if (this.grade <= 2.0) {
+            this.questionText = `If something costs ${price < 100 ? price + '¢' : '$' + (price / 100).toFixed(2)} ` +
+                `and you pay with $${(payment / 100).toFixed(2)}, how much change should you get back?`;
+        } else {
+            const items = ['toy', 'book', 'lunch', 'game'];
+            const item = items[Utils.random(0, items.length - 1)];
+            this.questionText = `A ${item} costs $${(price / 100).toFixed(2)}. ` +
+                `If you pay with $${(payment / 100).toFixed(2)}, how much change should you get back?`;
+        }
 
-        return this;
-    }
-
-    /**
-     * Third Grade (Grade 3.0)
-     * Focus: Complex money problems, making change, decimal notation
-     */
-    generateThirdGrade() {
-        const questionTypes = [
-            this.generateComplexMakingChange.bind(this),
-            this.generateMoneyWordProblem.bind(this),
-            this.generateMultiStepProblem.bind(this)
-        ];
-        return questionTypes[Utils.random(0, questionTypes.length - 1)]();
-    }
-
-    generateComplexMakingChange() {
-        const price = Utils.random(150, 450); // $1.50 to $4.50
-        const payment = Math.ceil(price / 100) * 100; // Round up to next dollar
-        const change = payment - price;
-
-        this.questionText = `If something costs $${(price / 100).toFixed(2)} and you pay with $${(payment / 100).toFixed(2)}, how much change should you get back?`;
-        this.correctAnswer = `$${(change / 100).toFixed(2)}`;
+        this.correctAnswer = change >= 100 ? 
+            `$${(change / 100).toFixed(2)}` : 
+            `${change}¢`;
+        
         this.wrongAnswers = this.generateWrongAnswers(change / 100);
-        this.feedback = "Subtract the price from the payment, or count up from the price.";
+        
+        // Feedback becomes more detailed with grade level
+        if (this.grade <= 2.0) {
+            this.feedback = "Count up from the price to the payment amount.";
+        } else {
+            this.feedback = "Subtract the price from the payment, or count up using coins and dollars.";
+        }
 
         return this;
     }
 
-    generateMoneyWordProblem() {
+    generateWordProblem() {
+        const complexity = this.getComplexityLevel();
+        const maxAmount = this.getMaxTotal();
+
+        // Scenario complexity increases with grade
         const scenarios = [
+            // Simple scenarios (lower grades)
             {
+                minGrade: 0.5,
+                template: (amount) => 
+                    `You have ${amount < 100 ? amount + '¢' : '$' + (amount / 100).toFixed(2)} to spend. ` +
+                    `If you buy a pencil for ${Math.floor(amount / 2)}¢, how much money do you have left?`,
+                calculate: (amount) => amount - Math.floor(amount / 2)
+            },
+            // Medium complexity (middle grades)
+            {
+                minGrade: 1.5,
                 template: (amount1, amount2) => 
-                    `You have $${amount1.toFixed(2)} and spend $${amount2.toFixed(2)} on lunch. How much money do you have left?`,
+                    `You have $${(amount1 / 100).toFixed(2)} and spend $${(amount2 / 100).toFixed(2)} ` +
+                    `on lunch. How much money do you have left?`,
                 calculate: (amount1, amount2) => amount1 - amount2
             },
+            // Complex scenarios (higher grades)
             {
-                template: (amount1, amount2) => 
-                    `You need $${amount1.toFixed(2)} for a toy. You have saved $${amount2.toFixed(2)}. How much more do you need?`,
-                calculate: (amount1, amount2) => amount1 - amount2
+                minGrade: 2.5,
+                template: (amount1, amount2, amount3) => 
+                    `You need $${(amount1 / 100).toFixed(2)} for a toy. ` +
+                    `You have saved $${(amount2 / 100).toFixed(2)} and your friend gives you $${(amount3 / 100).toFixed(2)}. ` +
+                    `How much more do you need?`,
+                calculate: (amount1, amount2, amount3) => amount1 - (amount2 + amount3)
             }
         ];
 
-        const scenario = scenarios[Utils.random(0, scenarios.length - 1)];
-        const amount1 = Utils.random(200, 500) / 100; // $2.00 to $5.00
-        const amount2 = Utils.random(100, Math.floor(amount1 * 100)) / 100;
-        const result = scenario.calculate(amount1, amount2);
+        // Filter scenarios based on grade level
+        const availableScenarios = scenarios.filter(s => this.grade >= s.minGrade);
+        const scenario = availableScenarios[Utils.random(0, availableScenarios.length - 1)];
 
-        this.questionText = scenario.template(amount1, amount2);
-        this.correctAnswer = `$${Math.abs(result).toFixed(2)}`;
-        this.wrongAnswers = this.generateWrongAnswers(Math.abs(result));
-        this.feedback = "Write out the problem and solve step by step.";
+        // Generate appropriate amounts based on grade level
+        const amount1 = Utils.random(maxAmount * 0.4, maxAmount);
+        const amount2 = Utils.random(maxAmount * 0.2, maxAmount * 0.6);
+        const amount3 = Utils.random(maxAmount * 0.1, maxAmount * 0.3);
 
-        return this;
-    }
+        this.questionText = scenario.template(amount1, amount2, amount3);
+        const result = Math.abs(scenario.calculate(amount1, amount2, amount3));
 
-    generateMultiStepProblem() {
-        const item1Price = Utils.random(100, 300) / 100;
-        const item2Price = Utils.random(100, 300) / 100;
-        const payment = Math.ceil((item1Price + item2Price) * 2) * 100 / 100;
-        const total = item1Price + item2Price;
-        const change = payment - total;
+        this.correctAnswer = result >= 100 ? 
+            `$${(result / 100).toFixed(2)}` : 
+            `${result}¢`;
 
-        this.questionText = `You buy two items at the store: one costs $${item1Price.toFixed(2)} and another costs $${item2Price.toFixed(2)}. If you pay with $${payment.toFixed(2)}, how much change should you get back?`;
-        this.correctAnswer = `$${change.toFixed(2)}`;
-        this.wrongAnswers = this.generateWrongAnswers(change);
-        this.feedback = "First add the prices, then subtract from the payment amount.";
+        this.wrongAnswers = this.generateWrongAnswers(result / 100);
 
-        return this;
-    }
-
-    generateBasicMoneyWord() {
-        const amount = Utils.random(25, 200);
-        const items = ['toy', 'book', 'game', 'lunch'];
-        const item = items[Utils.random(0, items.length - 1)];
-
-        this.questionText = `A ${item} costs ${amount}¢. How many dollars and cents is that?`;
-        this.correctAnswer = `$${(amount / 100).toFixed(2)}`;
-        this.wrongAnswers = [
-            `$${(amount / 10).toFixed(2)}`,
-            `$${(amount).toFixed(2)}`,
-            `${amount}¢`
-        ];
-        this.feedback = "Divide the cents by 100 to get dollars.";
+        // Feedback complexity scales with grade
+        if (this.grade <= 2.0) {
+            this.feedback = "Write out the numbers and solve step by step.";
+        } else {
+            this.feedback = "Break down the problem into smaller parts: list what you have and what you need, then solve.";
+        }
 
         return this;
-    }
-
-    generateCountingWrongAnswers(count, singular, plural) {
-        const wrongCounts = [
-            count + 1,
-            count - 1,
-            count + 2
-        ].filter(n => n > 0);
-
-        return wrongCounts.map(n => 
-            n === 1 ? `1 ${singular}` : `${n} ${plural}`
-        );
     }
 
     generateWrongAnswers(correctAmount) {
+        // Scale the variation in wrong answers with grade level
+        const variation = Math.max(0.1, Math.min(0.5, this.grade * 0.2));
+        
         const numericalWrongAnswers = generateWrongAnswersForNumerical(correctAmount, this.grade, {
             require_positive: true,
             min_wrong: 3,
-            max_difference: correctAmount * 0.5
+            max_difference: correctAmount * variation
         });
 
         return numericalWrongAnswers.map(amount => 
-            amount < 1 ? `${(amount * 100)}¢` : `$${amount.toFixed(2)}`
+            amount < 1 ? `${Math.round(amount * 100)}¢` : `$${amount.toFixed(2)}`
         );
     }
 }
