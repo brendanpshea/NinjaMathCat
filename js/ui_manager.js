@@ -30,56 +30,65 @@ export const SELECTORS = {
 export class UIManager {
     constructor(game) {
         this.game = game;
-        this.canvas = document.getElementById(SELECTORS.canvas);
-        this.ctx = this.canvas.getContext('2d');
-        
-        // Initialize canvas dimensions
         this.BASE_WIDTH = 600;
         this.BASE_HEIGHT = 300;
-        this.canvas.width = this.BASE_WIDTH;
-        this.canvas.height = this.BASE_HEIGHT;
+        this.canvas = this.getEl('canvas');
+        this.ctx = this.canvas.getContext('2d');
         this.scale = 1;
-        
+
         this.calculateScale();
         this.initializeCanvas();
         this.setupEventListeners();
     }
-    
+
+    getEl(selectorKey) {
+        return document.getElementById(SELECTORS[selectorKey]);
+    }
+
+    showElement(selectorKey) {
+        const el = this.getEl(selectorKey);
+        if (el) el.style.display = 'block';
+    }
+
+    hideElement(selectorKey) {
+        const el = this.getEl(selectorKey);
+        if (el) el.style.display = 'none';
+    }
+
     setupEventListeners() {
-        const startBattleBtn = document.getElementById(SELECTORS.startBattleButton);
-        const gradeSelect = document.getElementById(SELECTORS.gradeSelect);
-        const restartGameBtn = document.getElementById(SELECTORS.restartGameButton);
-    
+        const startBattleBtn = this.getEl('startBattleButton');
+        const gradeSelect = this.getEl('gradeSelect');
+        const restartGameBtn = this.getEl('restartGameButton');
+
         if (startBattleBtn) {
             startBattleBtn.addEventListener('click', () => {
-                // Get the current grade selection before starting battle
                 const selectedGrade = parseFloat(gradeSelect.value);
                 this.game.grade = selectedGrade;
-                console.log('Starting battle with grade:', selectedGrade); // Debug log
+                console.log('Starting battle with grade:', selectedGrade);
                 this.game.startBattle();
             });
         }
-    
+
         if (gradeSelect) {
             gradeSelect.addEventListener('change', (e) => {
                 const selectedGrade = parseFloat(e.target.value);
-                console.log('Grade changed to:', selectedGrade); // Debug log
+                console.log('Grade changed to:', selectedGrade);
                 this.game.grade = selectedGrade;
             });
         }
-    
+
         if (restartGameBtn) {
             restartGameBtn.addEventListener('click', () => {
                 console.log('Restart button clicked');
                 this.game.restartGame();
             });
         }
-    
+
         window.addEventListener('resize', () => this.handleResize());
     }
 
     calculateScale() {
-        const container = document.getElementById(SELECTORS.gameContainer);
+        const container = this.getEl('gameContainer');
         const containerWidth = container.clientWidth;
         this.scale = Math.min(1, (containerWidth - 40) / this.BASE_WIDTH);
     }
@@ -98,6 +107,7 @@ export class UIManager {
         this.canvas.width = Math.floor(this.BASE_WIDTH * this.scale);
         this.canvas.height = Math.floor(this.BASE_HEIGHT * this.scale);
         this.ctx.scale(this.scale, this.scale);
+
         if (this.game.battleActive) {
             this.game.drawSprites();
         }
@@ -108,90 +118,82 @@ export class UIManager {
     }
 
     updateHealthDisplays(player, monster) {
-        const playerHealth = document.getElementById(SELECTORS.playerHealth);
-        const monsterHealth = document.getElementById(SELECTORS.monsterHealth);
+        const playerHealth = this.getEl('playerHealth');
+        const monsterHealth = this.getEl('monsterHealth');
 
         playerHealth.style.width = `${player.getHealthPercentage()}%`;
         monsterHealth.style.width = `${monster.getHealthPercentage()}%`;
 
-        playerHealth.setAttribute('data-health', 
-            `${Math.ceil(player.currentHealth)}/${player.maxHealth}`);
-        monsterHealth.setAttribute('data-health',
-            `${Math.ceil(monster.currentHealth)}/${monster.maxHealth}`);
+        playerHealth.setAttribute('data-health', `${Math.ceil(player.currentHealth)}/${player.maxHealth}`);
+        monsterHealth.setAttribute('data-health', `${Math.ceil(monster.currentHealth)}/${monster.maxHealth}`);
     }
 
     updatePlayerLevel(level) {
-        const levelDiv = document.getElementById(SELECTORS.playerLevel);
+        const levelDiv = this.getEl('playerLevel');
         levelDiv.textContent = `Level: ${level}`;
         levelDiv.classList.add('level-up');
         setTimeout(() => levelDiv.classList.remove('level-up'), 1000);
     }
 
     updateDefeatedCounter(count) {
-        const counterElement = document.getElementById(SELECTORS.monstersDefeated);
+        const counterElement = this.getEl('monstersDefeated');
         if (counterElement) {
             counterElement.textContent = `Monsters Defeated: ${count}`;
         }
     }
 
     showRestartButton() {
-        document.getElementById(SELECTORS.restartButtonContainer).classList.add('visible');
+        const container = this.getEl('restartButtonContainer');
+        if (container) container.classList.add('visible');
     }
 
     hideRestartButton() {
-        document.getElementById(SELECTORS.restartButtonContainer).classList.remove('visible');
+        const container = this.getEl('restartButtonContainer');
+        if (container) container.classList.remove('visible');
     }
 
     displayQuestion(question, onAnswerCallback) {
-    console.log('Displaying question:', question); // Debug the question object
-    const questionText = document.getElementById(SELECTORS.questionText);
-    const answersDiv = document.getElementById(SELECTORS.answers);
-    const questionArea = document.getElementById(SELECTORS.questionArea);
+        console.log('Displaying question:', question);
+        const questionText = this.getEl('questionText');
+        const answersDiv = this.getEl('answers');
+        const questionArea = this.getEl('questionArea');
 
-    if (!question) {
-        console.error('Question is undefined in displayQuestion');
-        return;
+        if (!question || !questionText || !answersDiv || !questionArea) {
+            console.error('Missing question or UI elements');
+            return;
+        }
+
+        questionArea.style.display = 'block';
+        
+        try {
+            questionText.textContent = question.questionText;
+            answersDiv.innerHTML = '';
+
+            const answers = question.getAllAnswers();
+            console.log('Question answers:', answers);
+
+            answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.className = 'answer-button';
+                button.textContent = answer;
+                button.addEventListener('click', () => onAnswerCallback(answer));
+                answersDiv.appendChild(button);
+            });
+        } catch (error) {
+            console.error('Error displaying question:', error);
+        }
     }
 
-    if (!questionText || !answersDiv || !questionArea) {
-        console.error('Missing UI elements:', {
-            questionText: !!questionText,
-            answersDiv: !!answersDiv,
-            questionArea: !!questionArea
-        });
-        return;
-    }
-
-    // Make sure question area is visible
-    questionArea.style.display = 'block';
-    
-    try {
-        questionText.textContent = question.questionText;
-        answersDiv.innerHTML = '';
-
-        const answers = question.getAllAnswers();
-        console.log('Question answers:', answers); // Debug the answers
-
-        answers.forEach(answer => {
-            const button = document.createElement('button');
-            button.className = 'answer-button';
-            button.textContent = answer;
-            button.addEventListener('click', () => onAnswerCallback(answer));
-            answersDiv.appendChild(button);
-        });
-    } catch (error) {
-        console.error('Error displaying question:', error);
-    }
-}
     showFeedback(message, isCorrect) {
-        const feedbackText = document.getElementById(SELECTORS.feedbackText);
+        const feedbackText = this.getEl('feedbackText');
         feedbackText.textContent = message;
         feedbackText.classList.remove(isCorrect ? 'incorrect-feedback' : 'correct-feedback');
         feedbackText.classList.add(isCorrect ? 'correct-feedback' : 'incorrect-feedback');
     }
 
     clearFeedback() {
-        document.getElementById(SELECTORS.feedbackText).textContent = '';
+        const feedbackText = this.getEl('feedbackText');
+        feedbackText.textContent = '';
     }
 
     getCanvas() {
@@ -207,44 +209,42 @@ export class UIManager {
     }
 
     clearAnswers() {
-        document.getElementById(SELECTORS.answers).innerHTML = '';
+        const answersDiv = this.getEl('answers');
+        answersDiv.innerHTML = '';
     }
 
     updateStartButton(text) {
-        const startBattleBtn = document.getElementById(SELECTORS.startBattleButton);
-        if (startBattleBtn) {
-            startBattleBtn.textContent = text;
-        }
+        const startBattleBtn = this.getEl('startBattleButton');
+        if (startBattleBtn) startBattleBtn.textContent = text;
     }
 
     showBattleScene() {
-        document.getElementById(SELECTORS.battleScene).style.display = 'block';
-        document.getElementById(SELECTORS.questionArea).style.display = 'block';
-        document.getElementById(SELECTORS.welcomeHeader).style.display = 'none';
-        document.getElementById(SELECTORS.startSection).style.display = 'none';
-        document.getElementById(SELECTORS.ninjaCatImage).style.display = 'none';
+        this.showElement('battleScene');
+        this.showElement('questionArea');
+        this.hideElement('welcomeHeader');
+        this.hideElement('startSection');
+        this.hideElement('ninjaCatImage');
     }
 
     showWelcomeScreen() {
-        document.getElementById(SELECTORS.battleScene).style.display = 'none';
-        document.getElementById(SELECTORS.questionArea).style.display = 'none';
-        document.getElementById(SELECTORS.welcomeHeader).style.display = 'block';
-        document.getElementById(SELECTORS.startSection).style.display = 'block';
-        document.getElementById(SELECTORS.ninjaCatImage).style.display = 'block';
+        this.hideElement('battleScene');
+        this.hideElement('questionArea');
+        this.showElement('welcomeHeader');
+        this.showElement('startSection');
+        this.showElement('ninjaCatImage');
     }
 
     resetGameUI() {
         console.log('Resetting UI...');
-        
-        // Reset text elements
-        document.getElementById(SELECTORS.questionText).textContent = '';
-        document.getElementById(SELECTORS.answers).innerHTML = '';
+
+        const questionText = this.getEl('questionText');
+        const answersDiv = this.getEl('answers');
+
+        questionText.textContent = '';
+        answersDiv.innerHTML = '';
         this.updateStartButton('Start Adventure!');
-        
-        // Show welcome screen and hide battle elements
+
         this.showWelcomeScreen();
-        
-        // Clear any feedback
         this.clearFeedback();
     }
 }

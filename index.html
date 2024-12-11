@@ -4,22 +4,16 @@
     <meta charset="UTF-8">
     <title>Ninja Math Cat</title>
     <link rel="stylesheet" href="css/style.css">
-
 </head>
 
 <body>
     <button id="stress-test-button">Run Stress Test</button>
-    
-    <div id="game-container">
 
+    <div id="game-container">
         <!-- Welcome Screen -->
         <div id="welcome-header">
             <h1>Welcome to Ninja Math Cat!</h1>
             <h2>Help Ninja Cat defeat enemies with your math skills!</h2>
-        </div>
-
-        <div id="restart-button-container">
-            <button id="restart-game">Restart Game</button>
         </div>
 
         <div id="start-section">
@@ -36,50 +30,37 @@
         </div>
 
         <div id="ninja-cat-image">
-            <img src="assets\sprites\characters\ninja-cat.png" alt="Ninja Math Cat">
+            <img src="assets/sprites/characters/ninja-cat.png" alt="Ninja Math Cat">
         </div>
 
-        <!-- Core Game Elements -->
-        <div id="battle-scene">
-            <div class="stats-container">
-                <!-- Ninja Cat Stats -->
-                <div class="player-stats">
-                    <div id="ninja-cat-label">Ninja Cat</div>
-                    <div class="stat-label">Health</div>
-                    <div class="health-bar">
-                        <div id="player-health" class="health-fill" style="width: 100%;"></div>
-                    </div>
+        <!-- Battle Scene (initially hidden) -->
+        <div id="battle-scene" style="display:none;">
+            <div class="top-bar">
+                <span id="player-level">Level: 1</span>
+                <span class="bar-label">Player HP</span>
+                <div class="health-bar">
+                    <div id="player-health" class="health-fill" style="width: 100%;"></div>
                 </div>
-
-                <!-- Enemy Stats -->
-                <div class="enemy-stats">
-                    <div id="enemy-label">Enemy</div>
-                    <div class="stat-label">Health</div>
-                    <div class="health-bar">
-                        <div id="monster-health" class="health-fill" style="width: 100%;"></div>
-                    </div>
+                <span class="bar-label">Enemy HP</span>
+                <div class="health-bar">
+                    <div id="monster-health" class="health-fill" style="width: 100%;"></div>
                 </div>
-
-                <div id="monsters-defeated" class="monsters-counter">0</div>
-                <div id="player-level">Level: 1</div>
+                <span id="monsters-defeated">Monsters: 0</span>
+                <button id="restart-game">Restart</button>
             </div>
-            
             <canvas id="game-canvas"></canvas>
         </div>
 
-        <!-- Other Game Areas -->
-        <div id="question-area" style="display: none;">
+        <!-- Question Area (initially hidden) -->
+        <div id="question-area" style="display:none;">
             <div id="question-text"></div>
             <div id="answers"></div>
             <div id="feedback-text" style="margin-top: 10px; font-weight: bold;"></div> <!-- Feedback messages -->
         </div>
-        </div>
-
     </div>
 
     <!-- Load scripts -->
     <script src="js/utils.js"></script>
-
     <script src="js/sprites.js"></script>
     <script src="js/characters.js"></script>
     <script src="js/ImageLoader.js"></script>
@@ -88,7 +69,6 @@
         // Handle grade selection and game start
         const startButton = document.getElementById('start-battle');
         const gradeSelect = document.getElementById('grade-select');
-        const gameContainer = document.getElementById('game-container');
         const welcomeHeader = document.getElementById('welcome-header');
         const startSection = document.getElementById('start-section');
         const ninjaCatImage = document.getElementById('ninja-cat-image');
@@ -110,9 +90,7 @@
             battleScene.style.display = 'block';
             questionArea.style.display = 'block';
 
-            // Debug: Log the selected grade
             console.log("Selected Grade:", selectedGrade);
-
             // Initialize game logic with selectedGrade here
         });
     </script>
