@@ -1,6 +1,5 @@
 import { NumericalQuestion } from './base_question.js';
 
-// List of random names and nouns
 const names = [
     "Mario", "Luigi", "Peach", "Sonic", "Knuckles",
     "Pikachu", "Charmander", "Squirtle", "Dora", "Diego",
@@ -17,7 +16,6 @@ const nouns = [
     "bicycles", "balls", "boats", "hats", "sandwiches"
 ];
 
-// Utility functions for random names and nouns
 function randomName() {
     return names[Math.floor(Math.random() * names.length)];
 }
@@ -36,14 +34,11 @@ class WordProblem extends NumericalQuestion {
         const range = this.getNumberRange();
         const template = this.templates[Math.floor(Math.random() * this.templates.length)];
 
-        // Generate operands based on the operation type
         const [num1, num2] = this.generateOperands(range, template.operationType);
 
-        // Insert random names and nouns for personalization
         const name = randomName();
         const noun = randomNoun();
 
-        // Populate the template
         this.questionText = template.text(num1, num2, name, noun);
         this.correctAnswer = template.operation(num1, num2);
         this.difficulty = Math.ceil(this.correctAnswer / (range.max * 0.6));
@@ -57,31 +52,38 @@ class WordProblem extends NumericalQuestion {
     }
 
     generateOperands(range, operationType) {
+        // Scale down by an order of magnitude and ensure a minimum
+        const scaledMax = Math.max(3, Math.floor(range.max / 10));
+
         let num1, num2;
 
         switch (operationType) {
             case 'addition':
-            case 'subtraction':
-                // Use full range for addition and subtraction
-                num1 = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-                num2 = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+                // Slightly larger but still small, ensure >= 2
+                num1 = Math.floor(Math.random() * scaledMax) + 2;
+                num2 = Math.floor(Math.random() * scaledMax) + 2;
+                break;
 
-                if (operationType === 'subtraction' && num1 < num2) {
-                    // Ensure num1 >= num2 for subtraction
+            case 'subtraction':
+                num1 = Math.floor(Math.random() * scaledMax) + 2;
+                num2 = Math.floor(Math.random() * scaledMax) + 2;
+                if (num1 < num2) {
                     [num1, num2] = [num2, num1];
                 }
                 break;
 
             case 'multiplication':
-                // Use smaller ranges for multiplication
-                num1 = Math.floor(Math.random() * Math.min(range.max / 2, 10 - range.min)) + range.min;
-                num2 = Math.floor(Math.random() * Math.min(range.max / 10, 10 - range.min)) + range.min;
+                // Both > 1 and small
+                num1 = Math.floor(Math.random() * (scaledMax - 1)) + 2;
+                num2 = Math.floor(Math.random() * (scaledMax - 1)) + 2;
                 break;
 
             case 'division':
-                // Ensure the dividend is a multiple of the divisor
-                num2 = Math.floor(Math.random() * Math.min(range.max / 3, 5)) + 1; // Small divisors
-                num1 = num2 * (Math.floor(Math.random() * 5) + 1); // Dividend is a multiple of divisor
+                // Divisor > 1, scaled range
+                num2 = Math.floor(Math.random() * (scaledMax - 1)) + 2;
+                // Dividend is a multiple of divisor, also > divisor
+                const multiplier = Math.floor(Math.random() * (scaledMax - 1)) + 2;
+                num1 = num2 * multiplier;
                 break;
 
             default:
@@ -92,44 +94,66 @@ class WordProblem extends NumericalQuestion {
     }
 }
 
-// Define templates with placeholders for random names and nouns
 const addTemplates = [
     {
-        text: (n1, n2, name, noun) => `${name} has ${n1} ${noun} and finds ${n2} more. How many ${noun} does ${name} have in total?`,
+        text: (n1, n2, name, noun) => `${name} has ${n1} ${noun} and then finds ${n2} more ${noun}. How many ${noun} are there altogether?`,
         operation: (n1, n2) => n1 + n2,
         operationType: 'addition',
-        feedback: "Add the quantities together to find the total."
+        feedback: "Add the two numbers to find the total."
+    },
+    {
+        text: (n1, n2, name, noun) => `${name} collected ${n1} ${noun} in the morning and ${n2} ${noun} later in the day. How many ${noun} are there in total?`,
+        operation: (n1, n2) => n1 + n2,
+        operationType: 'addition',
+        feedback: "Add the quantities together to get the total."
     }
 ];
 
 const subTemplates = [
     {
-        text: (n1, n2, name, noun) => `${name} had ${n1} ${noun} and gave away ${n2}. How many ${noun} does ${name} have left?`,
+        text: (n1, n2, name, noun) => `${name} started with ${n1} ${noun} and gave away ${n2}. How many ${noun} remain?`,
         operation: (n1, n2) => n1 - n2,
         operationType: 'subtraction',
         feedback: "Subtract the given-away amount from the total."
+    },
+    {
+        text: (n1, n2, name, noun) => `${name} had ${n1} ${noun} and lost ${n2} along the way. How many ${noun} are left?`,
+        operation: (n1, n2) => n1 - n2,
+        operationType: 'subtraction',
+        feedback: "Subtract the lost amount to find what remains."
     }
 ];
 
 const divTemplates = [
     {
-        text: (d, q, name, noun) => `${name} has ${d} ${noun} to share equally among ${q} friends. How many ${noun} does each friend get?`,
+        text: (d, q, name, noun) => `${name} has ${d} ${noun} to be shared equally among ${q} friends. How many ${noun} does each friend get?`,
         operation: (d, q) => d / q,
         operationType: 'division',
         feedback: "Divide the total by the number of friends."
+    },
+    {
+        text: (d, q, name, noun) => `${name} arranges ${d} ${noun} into ${q} equal groups. How many ${noun} are in each group?`,
+        operation: (d, q) => d / q,
+        operationType: 'division',
+        feedback: "Divide the total by the number of groups."
     }
 ];
 
 const multTemplates = [
     {
-        text: (n1, n2, name, noun) => `${name} bought ${n1} packs of ${noun}, each containing ${n2}. How many ${noun} did ${name} buy?`,
+        text: (n1, n2, name, noun) => `${name} has ${n1} boxes with ${n2} ${noun} in each box. How many ${noun} are there in total?`,
         operation: (n1, n2) => n1 * n2,
         operationType: 'multiplication',
-        feedback: "Multiply the packs by the quantity per pack."
+        feedback: "Multiply the two numbers to find the total."
+    },
+    {
+        text: (n1, n2, name, noun) => `${name} sets up ${n1} rows of ${noun}, with ${n2} in each row. How many ${noun} are there altogether?`,
+        operation: (n1, n2) => n1 * n2,
+        operationType: 'multiplication',
+        feedback: "Multiply the number of rows by the amount in each row."
     }
 ];
 
-// Define specific classes for each word problem type
 class WordProbAdd extends WordProblem {
     constructor(grade) {
         super(grade, addTemplates);
@@ -154,5 +178,4 @@ class WordProbMult extends WordProblem {
     }
 }
 
-// Export all classes
 export { WordProbAdd, WordProbSub, WordProbDiv, WordProbMult };

@@ -135,6 +135,22 @@ export class UIManager {
         setTimeout(() => levelDiv.classList.remove('level-up'), 1000);
     }
 
+    showLevelUpNotification(level) {
+        const notificationEl = document.getElementById('level-up-notification');
+        if (!notificationEl) return;
+
+        notificationEl.textContent = `LEVEL UP! Now Level ${level}`;
+        notificationEl.style.display = 'block';
+        notificationEl.classList.add('show');
+
+        // Hide the notification after 2 seconds
+        setTimeout(() => {
+            notificationEl.classList.remove('show');
+            notificationEl.style.display = 'none';
+        }, 2000);
+    }
+
+
     updateDefeatedCounter(count) {
         const counterElement = this.getEl('monstersDefeated');
         if (counterElement) {

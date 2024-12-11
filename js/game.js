@@ -20,10 +20,18 @@ class Game {
         this.questionCount = 0;
         this.maxQuestions = 100;
         this.defeatedMonsters = 0;
+
         this.monsterSprites = [];
         this.currentMonsterIndex = 0;
+
         this.backgroundSprites = [];
         this.currentBackgroundIndex = 0;
+
+        this.monsterBlastSprites = [];
+        this.currentMonsterBlastIndex = 0;
+
+        // Store the currently assigned blast sprite for the active monster
+        this.monsterBlastSprite = null;
 
         this.imageLoader = new ImageLoader();
         this.imagePaths = IMAGE_PATHS;
@@ -38,9 +46,12 @@ class Game {
             await this.imageLoader.loadImages(this.imagePaths);
             this.monsterSprites = await this.imageLoader.discoverMonsterImages('assets/sprites/monsters');
             this.backgroundSprites = await this.imageLoader.discoverBackgroundImages('assets/sprites/backgrounds');
+            // Discover monster blast images
+            this.monsterBlastSprites = await this.imageLoader.discoverMonsterBlastImages('assets/sprites/effects');
 
             console.debug(`Loaded ${this.monsterSprites.length} monster sprites`);
             console.debug(`Loaded ${this.backgroundSprites.length} background sprites`);
+            console.debug(`Loaded ${this.monsterBlastSprites.length} monster blast sprites`);
         } catch (error) {
             console.error('Failed to load game assets:', error);
         }
@@ -52,15 +63,39 @@ class Game {
         return spriteArray[indexObject.value++].src;
     }
 
+    
     getNextMonsterSprite() {
-        return this.getNextSprite(this.monsterSprites, { value: this.currentMonsterIndex }, this.imagePaths.ninjaCat);
+        if (this.monsterSprites.length === 0) return this.imagePaths.ninjaCat;
+        if (this.currentMonsterIndex >= this.monsterSprites.length) {
+            this.currentMonsterIndex = 0;
+        }
+        const sprite = this.monsterSprites[this.currentMonsterIndex].src;
+        this.currentMonsterIndex++;
+        return sprite;
     }
 
     getNextBackgroundSprite() {
-        return this.getNextSprite(this.backgroundSprites, { value: this.currentBackgroundIndex }, this.imagePaths.background);
+        if (this.backgroundSprites.length === 0) return this.imagePaths.background;
+        if (this.currentBackgroundIndex >= this.backgroundSprites.length) {
+            this.currentBackgroundIndex = 0;
+        }
+        const sprite = this.backgroundSprites[this.currentBackgroundIndex].src;
+        this.currentBackgroundIndex++;
+        return sprite;
     }
 
-    startBattle() {
+    getNextMonsterBlastSprite() {
+        if (this.monsterBlastSprites.length === 0) return this.imagePaths.energyBlast;
+        if (this.currentMonsterBlastIndex >= this.monsterBlastSprites.length) {
+            this.currentMonsterBlastIndex = 0;
+        }
+        const sprite = this.monsterBlastSprites[this.currentMonsterBlastIndex].src;
+        this.currentMonsterBlastIndex++;
+        return sprite;
+    }
+
+
+     startBattle() {
         console.log('Starting battle with grade:', this.grade);
         this.battleActive = true;
         this.questionCount = 0;
@@ -73,6 +108,9 @@ class Game {
         this.background = new Background(this.canvas, this.getNextBackgroundSprite());
         this.playerSprite = new Sprite(this.canvas, 50, 100, 100, 100, this.imagePaths.ninjaCat);
         this.monsterSprite = new Sprite(this.canvas, 450, 100, 100, 100, this.getNextMonsterSprite());
+
+        // Assign a single monster blast sprite at start of battle
+        this.monsterBlastSprite = this.getNextMonsterBlastSprite();
 
         this.ui.updateStartButton('Restart Battle');
         this.ui.updateHealthDisplays(this.player, this.monster);
@@ -134,26 +172,6 @@ class Game {
         this.ui.displayQuestion(this.currentQuestion, (answer) => this.handleAnswer(answer));
     }
 
-    async playerAttack() {
-        return new Promise(resolve => {
-            this.playerSprite.attack();
-
-            const blast = new EnergyBlast(
-                this.canvas,
-                this.playerSprite.x + this.playerSprite.width,
-                this.playerSprite.y + this.playerSprite.height / 2,
-                this.monsterSprite.x,
-                this.monsterSprite.y + this.monsterSprite.height / 2,
-                this.imagePaths.energyBlast
-            );
-
-            blast.fire(() => {
-                this.monsterSprite.takeDamage();
-                resolve();
-            });
-        });
-    }
-
     async monsterAttack() {
         return new Promise(resolve => {
             this.monsterSprite.attack();
@@ -164,11 +182,34 @@ class Game {
                 this.monsterSprite.y + this.monsterSprite.height / 2,
                 this.playerSprite.x + this.playerSprite.width,
                 this.playerSprite.y + this.playerSprite.height / 2,
-                this.imagePaths.energyBlast
+                // Use the currently assigned monster blast sprite
+                this.monsterBlastSprite
             );
 
             blast.fire(() => {
                 this.playerSprite.takeDamage();
+                resolve();
+            });
+        });
+    }
+
+
+    // Player attack remains unchanged, always uses initial blast
+    async playerAttack() {
+        return new Promise(resolve => {
+            this.playerSprite.attack();
+
+            const blast = new EnergyBlast(
+                this.canvas,
+                this.playerSprite.x + this.playerSprite.width,
+                this.playerSprite.y + this.playerSprite.height / 2,
+                this.monsterSprite.x,
+                this.monsterSprite.y + this.monsterSprite.height / 2,
+                this.imagePaths.energyBlast // Player always uses initial blast
+            );
+
+            blast.fire(() => {
+                this.monsterSprite.takeDamage();
                 resolve();
             });
         });
@@ -191,10 +232,10 @@ class Game {
 
     handleLevelUp() {
         this.ui.updatePlayerLevel(this.player.level);
-        this.grade += 0.25;
         this.ui.updateHealthDisplays(this.player, this.monster);
+        this.ui.showLevelUpNotification(this.player.level); // Show the notification
     }
-
+    
     drawSprites() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         if (this.background) this.background.draw();
@@ -220,6 +261,9 @@ class Game {
                     100,
                     this.getNextMonsterSprite()
                 );
+                // Assign a new monster blast sprite for the new monster
+                this.monsterBlastSprite = this.getNextMonsterBlastSprite();
+
                 this.background = new Background(this.canvas, this.getNextBackgroundSprite());
 
                 this.ui.updateDefeatedCounter(this.defeatedMonsters);

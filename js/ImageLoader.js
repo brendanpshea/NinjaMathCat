@@ -108,6 +108,16 @@ class ImageLoader {
     discoverBackgroundImages(directory) {
         return this.discoverImages(directory, 'background_', '.png');
     }
+    
+    /**
+     * Discover and load monster blast images.
+     * Ensure your naming convention follows monster_blast_01.png, monster_blast_02.png, etc.
+     * @param {string} directory - Base directory path for monster blast images
+     * @returns {Promise<HTMLImageElement[]>}
+     */
+    discoverMonsterBlastImages(directory) {
+        return this.discoverImages(directory, 'monster_blast_', '.png');
+    }
 
     /**
      * Get a loaded image
