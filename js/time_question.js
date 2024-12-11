@@ -6,6 +6,7 @@ import { NumericalQuestion, QuestUtils as Utils } from "./base_question.js";
 class TimeQuestion extends NumericalQuestion {
     constructor(grade) {
         super(grade);
+
         // Hour clock emojis (1:00-12:00)
         this.hourClocks = [
             '🕐', '🕑', '🕒', '🕓', '🕔', '🕕',
@@ -34,6 +35,14 @@ class TimeQuestion extends NumericalQuestion {
 
         // Time intervals for schedule-based problems
         this.timeIntervals = [15, 30, 45, 60, 90, 120];
+
+        // Bind methods to ensure proper `this` context
+        this.getClockEmoji = this.getClockEmoji.bind(this);
+    }
+
+    getClockEmoji(hour, minutes) {
+        const index = hour - 1; // Convert 1-12 to 0-11
+        return minutes === 30 ? this.halfHourClocks[index] : this.hourClocks[index];
     }
 
     // Helper function to parse time string with AM/PM
@@ -214,35 +223,38 @@ class TimeQuestion extends NumericalQuestion {
             // K-1: Clock reading and simple AM/PM
             const type = Utils.random(0, 1);
             if (type === 0) {
-                return super.generateClockReading();
+                this.generateClockReading();  // Remove super.
             } else {
-                return this.generateAMPMQuestion();
+                this.generateAMPMQuestion();
             }
         } 
         else if (this.grade <= 2.0) {
             // Grade 2: Add schedule problems
             const type = Utils.random(0, 2);
             if (type === 0) {
-                return this.generateAMPMQuestion();
+                this.generateAMPMQuestion();
             } else if (type === 1) {
-                return this.generateScheduleQuestion();
+                this.generateScheduleQuestion();
             } else {
-                return super.generateDurationProblem();
+                this.generateClockReading();  // Replace with existing method
             }
         }
         else {
             // Grade 3+: All problem types
             const type = Utils.random(0, 3);
             if (type === 0) {
-                return this.generateScheduleQuestion();
+                this.generateScheduleQuestion();
             } else if (type === 1) {
-                return this.generateMultiStepProblem();
+                this.generateMultiStepProblem();
             } else if (type === 2) {
-                return this.generateTimeZoneProblem();
+                this.generateTimeZoneProblem();
             } else {
-                return super.generateElapsedTimeProblem();
+                this.generateScheduleQuestion(); // Replace with existing method
             }
         }
+    
+        // Return this for chaining
+        return this;
     }
 }
 
