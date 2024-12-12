@@ -119,6 +119,10 @@ class ImageLoader {
         return this.discoverImages(directory, 'monster_blast_', '.png');
     }
 
+    discoverPlayerBlastImages(directory) {
+        return this.discoverImages(directory, 'energy_blast_', '.png');
+    }
+
     /**
      * Get a loaded image
      * @param {string} path - Path of the image to get
