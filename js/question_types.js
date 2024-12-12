@@ -85,93 +85,304 @@ class NumberSequence extends NumericalQuestion {
     }
 }
 
-// SkipCounting Question
 class SkipCounting extends NumericalQuestion {
-    generate() {
-        const skipBy = this.grade <= 1.0 ? 2 : [2, 5, 10][QuestUtils.random(0, 2)];
-        const startNum = QuestUtils.random(0, 5) * skipBy;
-
-        this.questionText = `What comes next: ${startNum}, ${startNum + skipBy}, ${startNum + (skipBy * 2)}, ___?`;
-        this.correctAnswer = startNum + (skipBy * 3);
-        this.difficulty = Math.ceil(skipBy / 4);
-        this.wrongAnswers = this.generateWrongAnswers();
-        this.feedback = `Count by ${skipBy}s to find the pattern.`;
-
-        return this;
-    }
-}
-
-
-// ShapeIdentification Question (Non-Numerical)
-class ShapeIdentification extends Question {
-    generate() {
-        const shapes = ['circle', 'square', 'triangle', 'rectangle'];
-        const correctShape = shapes[QuestUtils.random(0, shapes.length - 1)];
-
-        this.questionText = `Which of these is a ${correctShape}?`;
-        this.correctAnswer = correctShape;
-        this.wrongAnswers = shapes.filter(shape => shape !== correctShape);
-        this.feedback = "Look at the shape carefully and compare its sides and corners.";
-
-        return this;
-    }
-}
-
-// ComparisonQuestion (Numerical)
-class ComparisonQuestion extends NumericalQuestion {
-    generate() {
-        const range = this.getNumberRange();
-        const num1 = QuestUtils.random(range.min, range.max);
-        const num2 = QuestUtils.random(range.min, range.max);
-
-        // Generate question text
-        this.questionText = `Which is correct? ${num1} __ ${num2}`;
-
-        // Map answers to integers
-        const possibleAnswers = [
-            `${num1} < ${num2}`, // Index 0
-            `${num1} > ${num2}`, // Index 1
-            `${num1} = ${num2}`, // Index 2
-            "?"                  // Index 3
-        ];
-
-        // Determine the correct answer index
-        let correctIndex;
-        if (num1 < num2) {
-            correctIndex = 0;
-        } else if (num1 > num2) {
-            correctIndex = 1;
+    getSkipPatterns() {
+        if (this.grade <= 0.5) {
+            return [2];  // Early K: Just counting by 2s forward from small numbers
+        } else if (this.grade <= 1.0) {
+            return [2, 5, 10];  // Late K to 1st: Forward by 2s, 5s, 10s
+        } else if (this.grade <= 1.5) {
+            return [2, 3, 4, 5, 10];  // Mid 1st: Add counting by 3s and 4s
+        } else if (this.grade <= 2.0) {
+            return [2, 3, 4, 5, 10, 100];  // 2nd: Add counting by 100s
+        } else if (this.grade <= 2.5) {
+            return [2, 3, 4, 5, 10, 25, 50, 100];  // Mid 2nd: Add 25s and 50s
         } else {
-            correctIndex = 2;
+            return [2, 3, 4, 5, 10, 25, 50, 100, -2, -5, -10];  // 3rd: Add negative numbers
+        }
+    }
+
+    getStartRange() {
+        if (this.grade <= 0.5) {
+            return { min: 0, max: 10 };  // Early K: Small numbers
+        } else if (this.grade <= 1.0) {
+            return { min: 0, max: 20 };  // Late K to 1st: Up to 20
+        } else if (this.grade <= 1.5) {
+            return { min: 0, max: 50 };  // Mid 1st: Up to 50
+        } else if (this.grade <= 2.0) {
+            return { min: 0, max: 100 };  // 2nd: Up to 100
+        } else if (this.grade <= 2.5) {
+            return { min: 0, max: 200 };  // Mid 2nd: Up to 200
+        } else {
+            return { min: -50, max: 500 };  // 3rd: Include negatives and larger numbers
+        }
+    }
+
+    generate() {
+        const patterns = this.getSkipPatterns();
+        const skipBy = patterns[QuestUtils.random(0, patterns.length - 1)];
+        const range = this.getStartRange();
+        
+        // Calculate valid starting points based on the skip pattern
+        let startNum;
+        if (skipBy < 0) {
+            // For negative counting, start with a multiple of the absolute value
+            const maxSteps = Math.floor(Math.abs(skipBy * 8) / Math.abs(skipBy));
+            const stepCount = QuestUtils.random(4, maxSteps);
+            startNum = Math.abs(skipBy) * stepCount;
+        } else {
+            // Find how many complete steps we can take within the range
+            const maxSteps = Math.floor((range.max - skipBy * 3) / skipBy);
+            if (maxSteps < 1) {
+                // Adjust range if needed
+                startNum = 0;
+            } else {
+                // Choose a random multiple of skipBy within valid range
+                const steps = QuestUtils.random(0, maxSteps);
+                startNum = skipBy * steps;
+            }
         }
 
-        this.correctAnswer = possibleAnswers[correctIndex];
+        // Ensure start number is within range
+        startNum = Math.max(range.min, Math.min(range.max - (skipBy * 3), startNum));
 
-        // Generate wrong answers
-        this.wrongAnswers = this.generateWrongAnswers({
-            requirePositive: false,
-            minWrong: 3
-        });
+        // Generate the sequence
+        const sequence = [
+            startNum,
+            startNum + skipBy,
+            startNum + (skipBy * 2)
+        ];
 
-        this.feedback = `Compare the two numbers carefully to find whether one is bigger, smaller, or equal.`;
+        // Format numbers for display
+        const formattedSequence = sequence.map(num => num.toString()).join(", ");
+        
+        this.questionText = `What comes next: ${formattedSequence}, ___?`;
+        this.correctAnswer = startNum + (skipBy * 3);
+
+        // Generate wrong answers based on common mistakes
+        this.wrongAnswers = [
+            startNum + (skipBy * 3) + skipBy,  // Added too much
+            startNum + (skipBy * 2),  // Repeated last number
+            startNum + (Math.round(skipBy * 3.5))  // Used wrong multiple
+        ];
+
+        // Grade-appropriate feedback
+        if (this.grade <= 1.0) {
+            this.feedback = `Count by ${Math.abs(skipBy)}s to find what comes next.`;
+        } else if (skipBy < 0) {
+            this.feedback = `Count backwards by ${Math.abs(skipBy)}s to find the pattern.`;
+        } else if (skipBy >= 100) {
+            this.feedback = `Count by hundreds to find the pattern.`;
+        } else if (skipBy >= 10) {
+            this.feedback = `Count by tens to find the pattern.`;
+        } else {
+            this.feedback = `Look for the pattern: each number goes up by ${skipBy}.`;
+        }
 
         return this;
     }
 
-    // Override to handle comparison operators
     generateWrongAnswers(options = {}) {
-        const possibleAnswers = [
-            `${this.correctAnswer.split(' ')[0]} < ${this.correctAnswer.split(' ')[2]}`, // Original correct
-            `${this.correctAnswer.split(' ')[0]} > ${this.correctAnswer.split(' ')[2]}`,
-            `${this.correctAnswer.split(' ')[0]} = ${this.correctAnswer.split(' ')[2]}`,
-            "?"
+        if (this.wrongAnswers && this.wrongAnswers.length) {
+            return this.wrongAnswers;
+        }
+
+        const skipBy = parseInt(this.questionText.split(", ")[1]) - 
+                      parseInt(this.questionText.split(", ")[0]);
+
+        return [
+            this.correctAnswer + skipBy,  // Added too much
+            this.correctAnswer - skipBy,  // Repeated last number
+            this.correctAnswer + Math.round(skipBy * 0.5)  // Used wrong multiple
         ];
+    }
+}
 
-        // Remove the correct answer
-        const wrongOptions = possibleAnswers.filter(ans => ans !== this.correctAnswer);
+class ShapeProperties extends Question {
+    constructor(grade) {
+        super(grade);
+        this.shapes = {
+            basic: [
+                { symbol: '▢', name: 'square', sides: 4, angles: 4, properties: ['equal sides', 'right angles'] },
+                { symbol: '△', name: 'triangle', sides: 3, angles: 3, properties: ['three equal sides'] },
+                { symbol: '○', name: 'circle', sides: 0, angles: 0, properties: ['round', 'no corners'] },
+                { symbol: '▣', name: 'rectangle', sides: 4, angles: 4, properties: ['four right angles', 'parallel sides'] },
+                { symbol: '◇', name: 'diamond', sides: 4, angles: 4, properties: ['four equal sides'] }
+            ],
+            advanced: [
+                { symbol: '⬟', name: 'pentagon', sides: 5, angles: 5, properties: ['five equal sides', 'five equal angles'] },
+                { symbol: '⬡', name: 'hexagon', sides: 6, angles: 6, properties: ['six equal sides', 'six equal angles'] },
+                { symbol: '⯃', name: 'octagon', sides: 8, angles: 8, properties: ['eight equal sides', 'eight equal angles'] },
+                { symbol: '⏜', name: 'semicircle', sides: 1, angles: 0, properties: ['one curved side', 'one straight side'] },
+                { symbol: '⏢', name: 'trapezoid', sides: 4, angles: 4, properties: ['two parallel sides', 'four angles'] }
+            ]
+        };
+    }
 
-        // Shuffle and select 3 wrong answers
-        return QuestUtils.shuffle(wrongOptions).slice(0, 3);
+    getAvailableShapes() {
+        if (this.grade <= 0.5) {
+            // Early K: Just triangle, square, circle
+            return this.shapes.basic.slice(0, 3);
+        } else if (this.grade <= 1.0) {
+            // Late K: Add rectangle and diamond
+            return this.shapes.basic;
+        } else if (this.grade <= 1.5) {
+            // Grade 1.5: Add pentagon
+            return [...this.shapes.basic, this.shapes.advanced[0]];
+        } else if (this.grade <= 2.0) {
+            // Grade 2: Add hexagon and trapezoid
+            return [...this.shapes.basic, ...this.shapes.advanced.slice(0, 2), this.shapes.advanced[4]];
+        } else {
+            // Grade 2.5-3: All shapes including octagon and semicircle
+            return [...this.shapes.basic, ...this.shapes.advanced];
+        }
+    }
+
+    generate() {
+        const shapes = this.getAvailableShapes();
+        const shape = shapes[QuestUtils.random(0, shapes.length - 1)];
+
+        if (this.grade <= 0.5) {
+            // Early K: Simple identification
+            this.questionText = `What shape is this? ${shape.symbol}`;
+            this.correctAnswer = shape.name;
+            this.wrongAnswers = this.generateWrongShapeNames(shapes, shape);
+            this.feedback = `Look at the shape carefully.`;
+
+        } else if (this.grade <= 1.0) {
+            // Late K: Counting sides or corners
+            const askSides = Math.random() < 0.5;
+            this.questionText = `How many ${askSides ? 'sides' : 'corners'} does this shape have? ${shape.symbol}`;
+            this.correctAnswer = askSides ? shape.sides : shape.angles;
+            this.wrongAnswers = this.generateWrongCounts(shape);
+            this.feedback = `Count the ${askSides ? 'sides' : 'corners'} one by one.`;
+
+        } else if (this.grade <= 2.0) {
+            // Grade 1-2: Properties and naming
+            if (Math.random() < 0.5 && shape.sides > 0) {  // Don't ask about equal sides for circle
+                this.questionText = `How many equal sides does this shape have? ${shape.symbol}`;
+                this.correctAnswer = shape.sides;
+                this.wrongAnswers = this.generateWrongCounts(shape);
+                this.feedback = `Count the sides - are they all the same length?`;
+            } else {
+                this.questionText = `What kind of shape is this? ${shape.symbol}`;
+                this.correctAnswer = shape.name;
+                this.wrongAnswers = this.generateWrongShapeNames(shapes, shape);
+                this.feedback = `Count the sides to identify the shape.`;
+            }
+
+        } else {
+            // Grade 2.5-3: Properties and relationships
+            if (Math.random() < 0.5) {
+                this.questionText = `Which is true about this shape? ${shape.symbol}`;
+                this.correctAnswer = shape.properties[0];
+                this.wrongAnswers = this.generateWrongProperties(shapes, shape);
+                this.feedback = `Think about the sides and angles of the shape.`;
+            } else {
+                this.questionText = `This is a ${shape.name}. What makes it special?`;
+                this.correctAnswer = shape.properties[0];
+                this.wrongAnswers = this.generateWrongProperties(shapes, shape);
+                this.feedback = `Look at the number and type of sides.`;
+            }
+        }
+
+        return this;
+    }
+
+    generateWrongShapeNames(shapes, correctShape) {
+        return shapes
+            .filter(s => s.name !== correctShape.name)
+            .map(s => s.name)
+            .slice(0, 3);
+    }
+
+    generateWrongCounts(shape) {
+        const count = shape.sides;
+        return [
+            count + 1,
+            Math.max(0, count - 1),
+            count === 0 ? 1 : count + 2  // Special case for circle
+        ];
+    }
+
+    generateWrongProperties(shapes, correctShape) {
+        const wrongProperties = [
+            `${correctShape.sides + 1} equal sides`,
+            `${correctShape.sides - 1} equal sides`,
+            `${correctShape.angles + 1} equal angles`,
+            'unequal sides',
+            'no parallel sides',
+            'only two equal sides'
+        ];
+        
+        return wrongProperties
+            .filter(p => !correctShape.properties.includes(p))
+            .slice(0, 3);
+    }
+}
+
+class ComparisonQuestion extends NumericalQuestion {
+    constructor(grade) {
+        super(grade);
+        this.grade = grade;
+    }
+
+    generate() {
+        const range = this.getNumberRange();
+        
+        // For grade > 1.0, ensure we compare with result of expression
+        if (this.grade > 1.0) {
+            const num1 = QuestUtils.random(range.min, range.max);
+            const num2 = QuestUtils.random(1, 5); // Smaller range for second number
+            const targetResult = QuestUtils.random(range.min, range.max);
+            
+            // Create expression and comparison
+            const expression = `(${num1} + ${num2})`;
+            const expressionValue = num1 + num2;
+            
+            // Ensure the comparison will have exactly one correct answer
+            const comparisonValue = expressionValue; // Use actual result for comparison
+            
+            this.questionText = `Which is correct?`;
+            this.correctAnswer = `${expression} = ${comparisonValue}`;
+            
+            // Generate wrong answers based on the expression and result
+            this.wrongAnswers = [
+                `${expression} > ${comparisonValue}`,
+                `${expression} < ${comparisonValue}`,
+                `${comparisonValue} > ${expression}`
+            ];
+        } else {
+            // Simple number comparison for early grades
+            let num1 = QuestUtils.random(range.min, range.max);
+            let num2 = QuestUtils.random(range.min, range.max);
+            
+            // Ensure numbers are different to avoid multiple correct answers
+            while (num1 === num2) {
+                num2 = QuestUtils.random(range.min, range.max);
+            }
+            
+            this.questionText = `Which is correct?`;
+            
+            if (num1 > num2) {
+                this.correctAnswer = `${num1} > ${num2}`;
+                this.wrongAnswers = [
+                    `${num1} < ${num2}`,
+                    `${num1} = ${num2}`,
+                    `${num2} > ${num1}`
+                ];
+            } else {
+                this.correctAnswer = `${num1} < ${num2}`;
+                this.wrongAnswers = [
+                    `${num1} > ${num2}`,
+                    `${num1} = ${num2}`,
+                    `${num2} < ${num1}`
+                ];
+            }
+        }
+
+        this.feedback = `Compare the values carefully to find whether one is bigger, smaller, or equal.`;
+        return this;
     }
 }
 
@@ -282,55 +493,6 @@ class PatternRecognition extends Question {
     }
 }
 
-// MoneyCounting Question
-class MoneyCounting extends NumericalQuestion {
-    generate() {
-        // Define coins and their corresponding visuals
-        const coins = [
-            { value: 1, visual: '🪙1¢' },   // Penny
-            { value: 5, visual: '🪙5¢' },   // Nickel
-            { value: 10, visual: '🪙10¢' }, // Dime
-            { value: 25, visual: '🪙25¢' }, // Quarter
-            { value: 50, visual: '🪙50¢' }, // Half Dollar (optional for higher grades)
-            { value: 100, visual: '💵$1' }  // Dollar Bill
-        ];
-
-        // Adjust difficulty based on grade level
-        const count = this.grade <= 1.0 ? 2 : Utils.random(3, 5); // Fewer coins for younger students
-        const selectedCoins = Array.from({ length: count }, () => coins[Utils.random(0, coins.length - 1)]);
-
-        // Calculate the total value
-        const totalCents = selectedCoins.reduce((sum, coin) => sum + coin.value, 0);
-        const totalDollars = totalCents / 100;
-
-        // Generate the visuals for the question
-        const visuals = selectedCoins.map(coin => coin.visual).join(' + ');
-
-        this.questionText = `How much money is this? ${visuals}`;
-        this.correctAnswer = `$${totalDollars.toFixed(2)}`; // Convert cents to dollars and format as currency
-        this.wrongAnswers = this.generateWrongAnswers(totalDollars); // Pass numerical value
-        this.feedback = "Carefully add the values of the coins and dollars.";
-
-        return this;
-    }
-
-    /**
-     * Generates wrong answers formatted as currency strings.
-     * @param {number} correctAmount - The correct monetary amount in dollars.
-     * @returns {Array} - An array of wrong answer strings formatted as currency.
-     */
-    generateWrongAnswers(correctAmount) {
-        const numericalWrongAnswers = generateWrongAnswersForNumerical(correctAmount, this.grade, {
-            require_positive: true,
-            min_wrong: 3
-        });
-
-        // Format wrong answers as currency
-        return numericalWrongAnswers.map(amount => `$${amount.toFixed(2)}`);
-    }
-}
-
-
 
 // export all questions types
 export {
@@ -339,9 +501,8 @@ export {
     CountingObjects,
     NumberSequence,
     SkipCounting,
-    ShapeIdentification,
     ComparisonQuestion,
     PatternRecognition,
-    MoneyCounting
+    ShapeProperties
 };
 

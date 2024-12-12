@@ -2,7 +2,7 @@
 console.log('Executing question_factory.js');
 
 
-import { CountingObjects, Addition, Subtraction, PatternRecognition, NumberSequence, ComparisonQuestion, SkipCounting } from "./question_types.js";
+import { CountingObjects, Addition, Subtraction, PatternRecognition, NumberSequence, ComparisonQuestion, SkipCounting, ShapeProperties } from "./question_types.js";
 import { WordProbAdd, WordProbMult, WordProbSub, WordProbDiv } from "./word_problem.js";
 import { MoneyCounting } from "./money_problem.js";
 import { TimeQuestion } from "./time_question.js";
@@ -13,7 +13,7 @@ class QuestionFactory {  // Changed to export class directly
             { type: CountingObjects, minGrade: 0, maxGrade: 0.5 },
             { type: Addition, minGrade: 0, maxGrade: 3.0 },
             { type: Subtraction, minGrade: 0, maxGrade: 3.0 },
-            { type: PatternRecognition, minGrade: 0, maxGrade: 3.0 },
+            { type: PatternRecognition, minGrade: 0, maxGrade: 1.5 },
             { type: MoneyCounting, minGrade: 1.0, maxGrade: 3.0 },
             { type: NumberSequence, minGrade: 0, maxGrade: 1.0 },
             { type: ComparisonQuestion, minGrade: 0.5, maxGrade: 3.0 },
@@ -22,7 +22,8 @@ class QuestionFactory {  // Changed to export class directly
             { type: WordProbDiv, minGrade: 0.5, maxGrade: 3.0 },
             { type: WordProbMult, minGrade: 0.5, maxGrade: 3.0 },
             { type: SkipCounting, minGrade: 0.5, maxGrade: 3.0 },
-            { type: TimeQuestion, minGrade: 0.5, maxGrade: 3.0 }
+            { type: TimeQuestion, minGrade: 0.5, maxGrade: 3.0 },
+            { type: ShapeProperties, minGrade: 0.5, maxGrade: 3.0 }
         ];
 
         return types

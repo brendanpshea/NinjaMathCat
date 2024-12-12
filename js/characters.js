@@ -27,7 +27,7 @@ class Player extends Character {
     constructor(name = 'Math Ninja', level = 1) {
         super(name, level);
         this.experience = 0;
-        this.experienceToLevel = 10;
+        this.experienceToLevel = 100;
     }
 
     gainExperience(amount) {
