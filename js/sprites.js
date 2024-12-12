@@ -1,4 +1,5 @@
 // sprites.js
+
 class Sprite {
     constructor(canvas, x, y, width, height, imagePath) {
         this.canvas = canvas;
@@ -16,6 +17,10 @@ class Sprite {
         this.image.src = imagePath;
     }
 
+    update(deltaTime) {
+        // Future animation or positional updates can be placed here.
+    }
+
     draw() {
         if (this.loaded) {
             this.ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
@@ -25,30 +30,23 @@ class Sprite {
     attack() {
         if (this.isAnimating) return;
         this.isAnimating = true;
-        
+
         const originalX = this.x;
-        const moveDistance = this.width / 3; // More dynamic movement distance
-        const moveTime = 500; // ms
-        
+        const moveDistance = this.width / 3;
+        const moveTime = 500;
         const startTime = performance.now();
+
         const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / moveTime, 1);
-            
-            // Clear sprite's previous position
-            this.ctx.clearRect(this.x - 1, this.y - 1, 
-                             this.width + 2, this.height + 2);
-            
+
+            // Remove any direct canvas clearing calls. We only adjust position here.
             if (progress < 0.5) {
-                // Moving forward
                 this.x = originalX + (moveDistance * (progress * 2));
             } else {
-                // Moving back
                 this.x = originalX + (moveDistance * ((1 - progress) * 2));
             }
-            
-            this.draw();
-            
+
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
@@ -56,27 +54,27 @@ class Sprite {
                 this.isAnimating = false;
             }
         };
-        
+
         requestAnimationFrame(animate);
     }
 
     takeDamage() {
         if (this.isAnimating) return;
         this.isAnimating = true;
-        
+
         const flashDuration = 300;
         const flashCount = 2;
         let flashes = 0;
-        
+
         const flash = () => {
             this.ctx.globalAlpha = 0.5;
             this.draw();
-            
+
             setTimeout(() => {
                 this.ctx.globalAlpha = 1;
                 this.draw();
                 flashes++;
-                
+
                 if (flashes < flashCount) {
                     setTimeout(flash, flashDuration / 2);
                 } else {
@@ -84,7 +82,7 @@ class Sprite {
                 }
             }, flashDuration / 2);
         };
-        
+
         flash();
     }
 }
@@ -99,6 +97,10 @@ class Background {
             this.loaded = true;
         };
         this.image.src = imagePath;
+    }
+
+    update(deltaTime) {
+        // If needed, implement scrolling or transitions here in the future.
     }
 
     draw() {
@@ -117,7 +119,7 @@ class EnergyBlast {
         this.targetX = targetX;
         this.targetY = targetY;
         this.size = 32;
-        this.speed = 300; // pixels per second
+        this.speed = 300;
         this.image = new Image();
         this.loaded = false;
         this.image.onload = () => {
@@ -126,46 +128,41 @@ class EnergyBlast {
         this.image.src = imagePath;
     }
 
+    update(deltaTime) {
+        // You can incorporate deltaTime for smoother animations later if needed.
+    }
+
     fire(onComplete) {
         const distance = Math.sqrt(
-            Math.pow(this.targetX - this.startX, 2) + 
-            Math.pow(this.targetY - this.startY, 2)
+            Math.pow(this.targetX - this.startX, 2) + Math.pow(this.targetY - this.startY, 2)
         );
         const duration = (distance / this.speed) * 1000;
         const startTime = performance.now();
-        
+
         const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            
-            // Calculate current position
             const currentX = this.startX + (this.targetX - this.startX) * progress;
             const currentY = this.startY + (this.targetY - this.startY) * progress;
-            
+
             if (this.loaded) {
-                // Draw energy blast
                 this.ctx.save();
-                
-                // Rotate in the direction of movement
                 const angle = Math.atan2(this.targetY - this.startY, this.targetX - this.startX);
                 this.ctx.translate(currentX, currentY);
                 this.ctx.rotate(angle);
-                
-                this.ctx.drawImage(this.image, 
-                    -this.size/2, -this.size/2, 
-                    this.size, this.size
-                );
-                
+                this.ctx.drawImage(this.image, -this.size / 2, -this.size / 2, this.size, this.size);
                 this.ctx.restore();
             }
-            
+
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
                 if (onComplete) onComplete();
             }
         };
-        
+
         requestAnimationFrame(animate);
     }
 }
+
+export { Sprite, Background, EnergyBlast };
