@@ -151,8 +151,18 @@ class Game {
         if (!correct) {
             // Show incorrect feedback without the correct answer
             this.ui.showFeedback(`❌ Incorrect! Try again.`, false);
+            
+               
+            // Proceed with the monster attack animation
             await this.monsterAttack(); // Monster attacks after the wrong answer
-            this.handlePlayerDamage(); // Player receives damage from the monster
+
+            // Calculate and apply damage 
+            this.handlePlayerDamage();
+            this.ui.updateHealthDisplays(this.player, this.monster); // Update UI 
+            
+
+            // Allow the browser to repaint
+            await new Promise(resolve => setTimeout(resolve, 0));
     
             // Wait for feedback and damage animations to complete before allowing another attempt
             setTimeout(() => {
@@ -183,6 +193,7 @@ class Game {
             }, 1500);
         }
     }
+    
     
 
     generateQuestion() {
@@ -324,11 +335,6 @@ class Game {
         this.ui.updateStartButton('Start New Battle!');
     }
 
-    animate() {
-        if (this.battleActive) this.drawSprites();
-        requestAnimationFrame(() => this.animate());
-    }
-
     restartGame() {
         this.log('Restarting game...', 'info');
         this.battleActive = false;
@@ -352,9 +358,9 @@ class Game {
 document.addEventListener('DOMContentLoaded', () => {
     const game = new Game();
     window.game = game;
-    game.animate();
+    game.animate(performance.now()); // Pass the initial timestamp
 
-    const stressTestButton = document.getElementById('stress-test-button');
+  /*   const stressTestButton = document.getElementById('stress-test-button');
     if (stressTestButton) {
         stressTestButton.addEventListener('click', async () => {
             console.log('Starting stress test...');
@@ -364,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Stress test failed:', error);
             }
         });
-    }
+    } */
 });
 
 export default Game;
