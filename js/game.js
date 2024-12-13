@@ -132,37 +132,47 @@ class Game {
             this.log('No current question available', 'error');
             return;
         }
-
+    
         const buttons = document.querySelectorAll('.answer-button');
-        buttons.forEach(btn => (btn.disabled = true));
-
+        buttons.forEach(btn => (btn.disabled = true)); // Disable buttons temporarily during feedback
+    
         const correct = this.currentQuestion.isCorrect(answer);
         if (!correct) {
-            const correctAnswer = this.currentQuestion.getCorrectAnswer();
-            this.ui.showFeedback(`❌ Incorrect! The correct answer is ${correctAnswer}.`, false);
-            await this.monsterAttack();
-            this.handlePlayerDamage();
+            // Show incorrect feedback without the correct answer
+            this.ui.showFeedback(`❌ Incorrect! Try again.`, false);
+            await this.monsterAttack(); // Monster attacks after the wrong answer
+            this.handlePlayerDamage(); // Player receives damage from the monster
+    
+            // Wait for feedback and damage animations to complete before allowing another attempt
+            setTimeout(() => {
+                buttons.forEach(btn => (btn.disabled = false)); // Re-enable answer buttons
+                this.ui.clearFeedback(); // Clear the feedback message
+            }, 1500); // Adjust this duration to fit the timing of animations
         } else {
+            // Correct answer: Proceed with the normal attack
             await this.playerAttack();
             this.handleMonsterDamage();
+            this.ui.updateHealthDisplays(this.player, this.monster);
         }
-
-        this.ui.updateHealthDisplays(this.player, this.monster);
-
-        if (this.checkBattleEnd()) return;
-
+    
+        if (this.checkBattleEnd()) return; // Check if battle ends after the attack
+    
         if (this.questionCount >= this.maxQuestions) {
             this.endBattle('Battle Complete!');
             return;
         }
-
-        setTimeout(() => {
-            if (!this.battleActive) return;
-            this.ui.clearFeedback();
-            buttons.forEach(btn => (btn.disabled = false));
-            this.generateQuestion();
-        }, 1500);
+    
+        // If the answer was correct, proceed to the next question
+        if (correct) {
+            setTimeout(() => {
+                if (!this.battleActive) return;
+                this.ui.clearFeedback();
+                buttons.forEach(btn => (btn.disabled = false)); // Re-enable answer buttons
+                this.generateQuestion(); // Generate the next question
+            }, 1500);
+        }
     }
+    
 
     generateQuestion() {
         if (!this.battleActive) return;
