@@ -40,6 +40,8 @@ class Game {
 
         this.lastTimestamp = performance.now(); // used for calculating delta time
 
+        this.treasures = []; // Initialize treasures array
+
         this.initializeGame();
     }
 
@@ -80,10 +82,19 @@ class Game {
             this.monsterBlastSprites = await this.imageLoader.discoverMonsterBlastImages('assets/sprites/effects');
             this.playerBlastSprites = await this.imageLoader.discoverPlayerBlastImages('assets/sprites/effects');
 
+            // Load treasures.json
+            const treasuresResponse = await fetch('assets/treasures.json');
+            if (!treasuresResponse.ok) {
+                throw new Error(`Failed to load treasures.json: ${treasuresResponse.statusText}`);
+            }
+            this.treasures = await treasuresResponse.json();
+
             this.log(`Loaded ${this.monsterSprites.length} monster sprites`, 'debug');
             this.log(`Loaded ${this.backgroundSprites.length} background sprites`, 'debug');
             this.log(`Loaded ${this.monsterBlastSprites.length} monster blast sprites`, 'debug');
             this.log(`Loaded ${this.playerBlastSprites.length} player blast sprites`, 'debug');
+            this.log(`Loaded ${this.treasures.length} treasures`, 'debug');
+
         } catch (error) {
             this.log('Failed to load game assets: ' + error, 'error');
         }
@@ -260,7 +271,21 @@ class Game {
     checkBattleEnd() {
         if (this.monster.currentHealth <= 0) {
             this.defeatedMonsters++;
+
+
             this.ui.showFeedback('🎉 Victory! Monster defeated! Get ready for the next battle...', true);
+
+            // Award a treasure
+            if (this.treasures.length > 0) {
+                const randomIndex = Math.floor(Math.random() * this.treasures.length);
+                const awardedTreasure = this.treasures[randomIndex];
+                // this.player.addTreasure(awardedTreasure);
+                this.ui.showTreasure(awardedTreasure); // Assuming UIManager has this method
+                this.log(`Awarded treasure: ${awardedTreasure.name}`, 'info');
+            } else {
+                this.log('No treasures available to award.', 'warn');
+            }
+
 
             const level = Math.floor(this.defeatedMonsters / 3) + 1;
 

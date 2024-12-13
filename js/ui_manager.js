@@ -132,7 +132,7 @@ export class UIManager {
         const levelDiv = this.getEl('playerLevel');
         levelDiv.textContent = `Level: ${level}`;
         levelDiv.classList.add('level-up');
-        setTimeout(() => levelDiv.classList.remove('level-up'), 1000);
+        setTimeout(() => levelDiv.classList.remove('level-up'), 3000);
     }
 
     showLevelUpNotification(level) {
@@ -143,11 +143,11 @@ export class UIManager {
         notificationEl.style.display = 'block';
         notificationEl.classList.add('show');
 
-        // Hide the notification after 2 seconds
+        // Hide the notification after 4 seconds
         setTimeout(() => {
             notificationEl.classList.remove('show');
             notificationEl.style.display = 'none';
-        }, 2000);
+        }, 4000);
     }
 
 
@@ -263,4 +263,45 @@ export class UIManager {
         this.showWelcomeScreen();
         this.clearFeedback();
     }
-}
+
+    showTreasure(treasure) {
+        // Create a treasure display element
+        const treasureDiv = document.createElement('div');
+        treasureDiv.classList.add('treasure');
+        treasureDiv.innerHTML = `
+            <span class="treasure-emoji">${treasure.emoji}</span>
+            <div class="treasure-info">
+                <h3>You found a ${treasure.name}!</h3>
+                <p>${treasure.description}</p>
+            </div>
+        `;
+
+        // Style the treasure display (you can adjust styles as needed)
+        treasureDiv.style.position = 'fixed';
+        treasureDiv.style.bottom = '20px';
+        treasureDiv.style.right = '20px';
+        treasureDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        treasureDiv.style.color = '#fff';
+        treasureDiv.style.padding = '10px';
+        treasureDiv.style.borderRadius = '8px';
+        treasureDiv.style.display = 'flex';
+        treasureDiv.style.alignItems = 'center';
+        treasureDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        treasureDiv.style.zIndex = '1000';
+        treasureDiv.style.animation = 'fadeIn 0.5s';
+
+        // Append to the body or a specific container
+        document.body.appendChild(treasureDiv);
+
+        // Automatically remove the treasure display after a few seconds
+        setTimeout(() => {
+            treasureDiv.style.transition = 'opacity 0.5s';
+            treasureDiv.style.opacity = '0';
+            setTimeout(() => {
+                treasureDiv.remove();
+            }, 500);
+        }, 10000);
+    }
+    
+}   
+
