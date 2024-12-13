@@ -56,7 +56,7 @@ class MoneyCounting extends NumericalQuestion {
     generateCoinCounting() {
         const availableCoins = this.getAvailableCoins();
         const coin = availableCoins[Utils.random(0, availableCoins.length - 1)];
-        const count = Utils.random(1, Math.min(5 + Math.floor(this.grade * 2), 10));
+        const count = Utils.random(1, Math.min(2 + Math.floor(this.grade * 2), 10));
         
         const visuals = Array(count).fill(coin.visual).join(' ');
         const totalCents = count * coin.value;

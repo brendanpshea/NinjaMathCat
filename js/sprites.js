@@ -118,7 +118,7 @@ class EnergyBlast {
         this.startY = startY;
         this.targetX = targetX;
         this.targetY = targetY;
-        this.size = 32;
+        this.size = 64;
         this.speed = 300;
         this.image = new Image();
         this.loaded = false;

@@ -115,8 +115,8 @@ class Game {
 
         this.playerBlastSprite = this.getPlayerBlastSpriteForLevel(this.player.level);
         this.background = new Background(this.canvas, this.getNextSprite(this.backgroundSprites, 'currentBackgroundIndex', this.imagePaths.background));
-        this.playerSprite = new Sprite(this.canvas, 50, 100, 100, 100, this.imagePaths.ninjaCat);
-        this.monsterSprite = new Sprite(this.canvas, 450, 100, 100, 100, this.getNextSprite(this.monsterSprites, 'currentMonsterIndex', this.imagePaths.ninjaCat));
+        this.playerSprite = new Sprite(this.canvas, 50, 100, 150, 150, this.imagePaths.ninjaCat);
+        this.monsterSprite = new Sprite(this.canvas, 450, 100, 150, 150, this.getNextSprite(this.monsterSprites, 'currentMonsterIndex', this.imagePaths.ninjaCat));
 
         this.monsterBlastSprite = this.getNextSprite(this.monsterBlastSprites, 'currentMonsterBlastIndex', this.imagePaths.energyBlast);
 
@@ -261,8 +261,8 @@ class Game {
                     this.canvas,
                     450,
                     100,
-                    100,
-                    100,
+                    150,
+                    150,
                     this.getNextSprite(this.monsterSprites, 'currentMonsterIndex', this.imagePaths.ninjaCat)
                 );
                 this.monsterBlastSprite = this.getNextSprite(this.monsterBlastSprites, 'currentMonsterBlastIndex', this.imagePaths.energyBlast);
