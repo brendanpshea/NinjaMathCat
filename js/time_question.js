@@ -1,180 +1,129 @@
-// time_question.js
-// Description: Simplified version that drops AM/PM and time zone problems
-
 import { NumericalQuestion, QuestUtils as Utils } from "./base_question.js";
 
 class TimeQuestion extends NumericalQuestion {
     constructor(grade) {
         super(grade);
-
-        this.hourClocks = [
-            '🕐', '🕑', '🕒', '🕓', '🕔', '🕕',
-            '🕖', '🕗', '🕘', '🕙', '🕚', '🕛'
-        ];
         
-        this.halfHourClocks = [
-            '🕜', '🕝', '🕞', '🕟', '🕠', '🕡',
-            '🕢', '🕣', '🕤', '🕥', '🕦', '🕧'
+        this.activities = [
+            "The movie",
+            "Soccer practice",
+            "The birthday party",
+            "The school assembly",
+            "Dance class",
+            "Swimming lessons",
+            "Band practice",
+            "Art class",
+            "The nature hike",
+            "Basketball training",
+            "Piano lessons",
+            "The science experiment"
         ];
 
-        this.dailySchedule = [
-            { event: 'wake up', time: '7:00 AM', period: 'morning' },
-            { event: 'eat breakfast', time: '7:30 AM', duration: 20, period: 'morning' },
-            { event: 'start school', time: '8:15 AM', period: 'morning' },
-            { event: 'morning recess', time: '10:30 AM', duration: 15, period: 'morning' },
-            { event: 'lunch', time: '12:00 PM', duration: 45, period: 'afternoon' },
-            { event: 'end school', time: '3:00 PM', period: 'afternoon' },
-            { event: 'sports practice', time: '4:00 PM', duration: 90, period: 'afternoon' },
-            { event: 'dinner', time: '6:30 PM', duration: 30, period: 'evening' },
-            { event: 'homework', time: '7:15 PM', duration: 45, period: 'evening' },
-            { event: 'bedtime', time: '8:30 PM', period: 'evening' }
-        ];
-
-        this.timeIntervals = [15, 30, 45, 60, 90, 120];
+        // Minutes for fixed duration activities
+        this.durations = [30, 45, 60, 90, 120];
     }
 
-    getClockEmoji(hour, minutes) {
-        const index = hour - 1; // Convert 1-12 to 0-11
-        return minutes === 30 ? this.halfHourClocks[index] : this.hourClocks[index];
+    getRandomItem(array) {
+        return array[Utils.random(0, array.length - 1)];
     }
 
-    parseTime(timeStr) {
-        const [time, period] = timeStr.split(' ');
-        const [hours, minutes] = time.split(':').map(Number);
-        return {
-            hours: period === 'PM' && hours !== 12 ? hours + 12 : (period === 'AM' && hours === 12 ? 0 : hours),
-            minutes
-        };
+    roundToGradeLevel(minutes) {
+        if (this.grade <= 1.0) {
+            return Math.round(minutes / 60) * 60;  // Round to hours
+        } else if (this.grade <= 1.5) {
+            return Math.round(minutes / 30) * 30;  // Round to half hours
+        } else if (this.grade <= 2.0) {
+            return Math.round(minutes / 15) * 15;  // Round to quarter hours
+        } else if (this.grade <= 2.5) {
+            return Math.round(minutes / 5) * 5;    // Round to 5 minutes
+        }
+        return minutes;  // Grade 3.0: any minute value
     }
 
-    formatTime(hours, minutes) {
+    formatTime(totalMinutes) {
+        let hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
         const period = hours >= 12 ? 'PM' : 'AM';
-        const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
-        return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+        
+        // Convert to 12-hour format
+        hours = hours % 12;
+        if (hours === 0) hours = 12;
+        
+        return `${hours}:${minutes.toString().padStart(2, '0')} ${period}`;
     }
 
-    calculateElapsedTime(startTime, endTime) {
-        let startMinutes = startTime.hours * 60 + startTime.minutes;
-        let endMinutes = endTime.hours * 60 + endTime.minutes;
+    formatDuration(minutes) {
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
         
-        if (endMinutes < startMinutes) {
-            endMinutes += 24 * 60; // Add 24 hours if crossing midnight
-        }
-        
-        const elapsedMinutes = endMinutes - startMinutes;
-        const hours = Math.floor(elapsedMinutes / 60);
-        const mins = elapsedMinutes % 60;
-        
-        return { hours, minutes: mins };
-    }
-
-    // Format elapsed time into a natural language string
-    formatElapsed(hours, minutes) {
-        if (hours > 0 && minutes > 0) {
-            return `${hours} hours and ${minutes} minutes`;
-        } else if (hours > 0 && minutes === 0) {
-            return `${hours} hours`;
-        } else if (hours === 0 && minutes > 0) {
-            return `${minutes} minutes`;
+        if (hours === 0) {
+            return `${remainingMinutes} minutes`;
+        } else if (remainingMinutes === 0) {
+            return hours === 1 ? "1 hour" : `${hours} hours`;
         } else {
-            return `0 minutes`;
+            return `${hours} hour${hours > 1 ? 's' : ''} and ${remainingMinutes} minutes`;
         }
     }
 
-    generateClockReading() {
-        const hour = Utils.random(1, 12);
-        const isHalfHour = this.grade > 0.5 && Utils.random(0, 1) === 1;
-        const clockEmoji = this.getClockEmoji(hour, isHalfHour ? 30 : 0);
+    generateStartEndQuestion() {
+        const activity = this.getRandomItem(this.activities);
         
-        this.questionText = `${clockEmoji} What time is shown on this clock?`;
-        this.correctAnswer = `${hour}:${isHalfHour ? '30' : '00'}`;
+        // Generate start time (in minutes since midnight)
+        const startHour = Utils.random(8, 19);  // Between 8 AM and 7 PM
+        const baseStartMinutes = startHour * 60 + Utils.random(0, 59);
+        const startMinutes = this.roundToGradeLevel(baseStartMinutes);
+        
+        // Generate duration (30min - 3hrs)
+        const baseDuration = Utils.random(30, 180);
+        const duration = this.roundToGradeLevel(baseDuration);
+        
+        const endMinutes = startMinutes + duration;
+        
+        this.questionText = `${activity} starts at ${this.formatTime(startMinutes)} and ends at ${this.formatTime(endMinutes)}. How long did it take?`;
+        
+        this.correctAnswer = this.formatDuration(duration);
+        
+        // Generate wrong answers with reasonable variations
         this.wrongAnswers = [
-            `${hour}:${isHalfHour ? '00' : '30'}`,
-            `${(hour % 12) + 1}:${isHalfHour ? '30' : '00'}`,
-            `${((hour + 2) % 12) || 12}:${isHalfHour ? '30' : '00'}`
+            this.formatDuration(duration + 30),
+            this.formatDuration(Math.max(30, duration - 30)),
+            this.formatDuration(duration + 15)
         ];
-        this.feedback = isHalfHour ? 
-            "Look carefully at where the minute hand points." :
-            "Look at the hour hand's position closely.";
+        
+        this.feedback = "To find the duration, subtract the start time from the end time.";
     }
 
-    generateScheduleQuestion() {
-        const firstIndex = Utils.random(0, this.dailySchedule.length - 2);
-        const firstEvent = this.dailySchedule[firstIndex];
-        const secondEvent = this.dailySchedule[firstIndex + 1];
-
-        const startTime = this.parseTime(firstEvent.time);
-        const endTime = this.parseTime(secondEvent.time);
-        const elapsed = this.calculateElapsedTime(startTime, endTime);
-
-        const elapsedStr = this.formatElapsed(elapsed.hours, elapsed.minutes);
+    generateDurationQuestion() {
+        const activity = this.getRandomItem(this.activities);
+        const startHour = Utils.random(8, 19);
+        const baseStartMinutes = startHour * 60 + Utils.random(0, 59);
+        const startMinutes = this.roundToGradeLevel(baseStartMinutes);
         
-        this.questionText = `If ${firstEvent.event} is at ${firstEvent.time} and ${secondEvent.event} is at ${secondEvent.time}, how much time passes in between?`;
+        const duration = this.roundToGradeLevel(this.getRandomItem(this.durations));
         
-        this.correctAnswer = elapsedStr;
+        this.questionText = `${activity} starts at ${this.formatTime(startMinutes)} and goes for ${this.formatDuration(duration)}. When does it end?`;
+        
+        const endMinutes = startMinutes + duration;
+        this.correctAnswer = this.formatTime(endMinutes);
+        
+        // Generate wrong answers with common mistakes
         this.wrongAnswers = [
-            this.formatElapsed(elapsed.hours + 1, elapsed.minutes),
-            this.formatElapsed(elapsed.hours, (elapsed.minutes + 15) % 60),
-            this.formatElapsed(Math.max(0, elapsed.hours - 1), elapsed.minutes + 30)
+            this.formatTime(endMinutes + 30),
+            this.formatTime(endMinutes - 30),
+            this.formatTime(endMinutes + 15)
         ];
-        this.feedback = "Calculate the time difference between the two events.";
-    }
-
-    generateMultiStepProblem() {
-        const startIndex = Utils.random(0, this.dailySchedule.length - 3);
-        const events = this.dailySchedule.slice(startIndex, startIndex + 3);
-        const waitTime = this.timeIntervals[Utils.random(0, this.timeIntervals.length - 1)];
-
-        const arrivalTime = this.parseTime(events[0].time);
-        let adjustedArrivalMinutes = arrivalTime.hours * 60 + arrivalTime.minutes - waitTime;
-        if (adjustedArrivalMinutes < 0) {
-            adjustedArrivalMinutes += 24 * 60;
-        }
-        const arrivalHours = Math.floor(adjustedArrivalMinutes / 60) % 24;
-        const arrivalMins = adjustedArrivalMinutes % 60;
-        const arrivalParsed = { hours: arrivalHours, minutes: arrivalMins };
-
-        const finalTime = this.parseTime(events[2].time);
-        const totalTime = this.calculateElapsedTime(arrivalParsed, finalTime);
-        const totalStr = this.formatElapsed(totalTime.hours, totalTime.minutes);
-
-        const scenario = `You arrive ${waitTime} minutes before ${events[0].event} (at ${events[0].time}), then go to ${events[1].event} (at ${events[1].time}), and finally to ${events[2].event} (at ${events[2].time}).`;
         
-        this.questionText = `${scenario}\nHow long is your entire schedule, from arrival to the end?`;
-        
-        this.correctAnswer = totalStr;
-        this.wrongAnswers = [
-            this.formatElapsed(totalTime.hours + 1, totalTime.minutes),
-            this.formatElapsed(Math.max(0, totalTime.hours - 1), (totalTime.minutes + 30) % 60),
-            this.formatElapsed(totalTime.hours, (totalTime.minutes + 15) % 60)
-        ];
-        this.feedback = "Calculate your arrival time and then find the total time until the last event.";
+        this.feedback = "Add the duration to the start time to find the end time.";
     }
 
     generate() {
-        // Simplified: No AM/PM or time zone questions.
-        // For grade <= 1.0: clock reading only.
-        // For grade <= 2.0: alternate between clock reading and schedule question.
-        // For grade > 2.0: alternate between schedule question and multi-step problem.
-
-        if (this.grade <= 1.0) {
-            this.generateClockReading();
-        } else if (this.grade <= 2.0) {
-            const type = Utils.random(0, 1);
-            if (type === 0) {
-                this.generateClockReading();
-            } else {
-                this.generateScheduleQuestion();
-            }
+        // Randomly choose between the two question types
+        if (Utils.random(0, 1) === 0) {
+            this.generateStartEndQuestion();
         } else {
-            const type = Utils.random(0, 1);
-            if (type === 0) {
-                this.generateScheduleQuestion();
-            } else {
-                this.generateMultiStepProblem();
-            }
+            this.generateDurationQuestion();
         }
-
+        
         return this;
     }
 }

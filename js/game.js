@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.game = game;
     game.animate(performance.now()); // Pass the initial timestamp
 
-  /*   const stressTestButton = document.getElementById('stress-test-button');
+ const stressTestButton = document.getElementById('stress-test-button');
     if (stressTestButton) {
         stressTestButton.addEventListener('click', async () => {
             console.log('Starting stress test...');
@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Stress test failed:', error);
             }
         });
-    } */
+    } 
 });
 
 export default Game;

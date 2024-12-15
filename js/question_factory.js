@@ -6,6 +6,7 @@ import { CountingObjects, Addition, Subtraction, PatternRecognition, NumberSeque
 import { WordProbAdd, WordProbMult, WordProbSub, WordProbDiv } from "./word_problem.js";
 import { MoneyCounting } from "./money_problem.js";
 import { TimeQuestion } from "./time_question.js";
+import { ShapeProperties } from "./shape_question.js";
 
 class QuestionFactory {  // Changed to export class directly
     static getQuestionTypes(grade) {
