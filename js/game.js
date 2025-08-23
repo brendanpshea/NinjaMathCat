@@ -287,7 +287,7 @@ class Game {
             this.ui.showFeedback('🎉 Victory! Monster defeated! Get ready for the next battle...', true);
 
             // Award a treasure
-            if (this.treasures.length > 0) {
+            /* if (this.treasures.length > 0) {
                 const randomIndex = Math.floor(Math.random() * this.treasures.length);
                 const awardedTreasure = this.treasures[randomIndex];
                 // this.player.addTreasure(awardedTreasure);
@@ -295,7 +295,7 @@ class Game {
                 this.log(`Awarded treasure: ${awardedTreasure.name}`, 'info');
             } else {
                 this.log('No treasures available to award.', 'warn');
-            }
+            } */
 
 
             const level = Math.floor(this.defeatedMonsters / 3) + 1;

@@ -2,7 +2,7 @@
 console.log('Executing question_factory.js');
 
 
-import { CountingObjects, Addition, Subtraction, PatternRecognition, NumberSequence, ComparisonQuestion, SkipCounting, ShapeProperties } from "./question_types.js";
+import { CountingObjects, Addition, Subtraction, PatternRecognition, NumberSequence, ComparisonQuestion, SkipCounting} from "./question_types.js";
 import { WordProbAdd, WordProbMult, WordProbSub, WordProbDiv } from "./word_problem.js";
 import { MoneyCounting } from "./money_problem.js";
 import { TimeQuestion } from "./time_question.js";

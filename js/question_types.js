@@ -198,71 +198,108 @@ class SkipCounting extends NumericalQuestion {
     }
 }
 
+// Your ComparisonQuestion class
+        class ComparisonQuestion extends NumericalQuestion {
+            constructor(grade) {
+                super(grade);
+                this.grade = grade;
+            }
 
-class ComparisonQuestion extends NumericalQuestion {
-    constructor(grade) {
-        super(grade);
-        this.grade = grade;
-    }
+            generate() {
+                const range = this.getNumberRange();
+                
+                // For grade > 1.0, ensure we compare with result of expression
+                if (this.grade > 1.0) {
+                    const num1 = QuestUtils.random(range.min, range.max);
+                    const num2 = QuestUtils.random(1, 5); // Smaller range for second number
+                    
+                    // Create expression and comparison
+                    const expression = `(${num1} + ${num2})`;
+                    const expressionValue = num1 + num2;
+                    
+                    // Randomly choose comparison type
+                    const comparisonType = QuestUtils.random(0, 2); // 0 = less than, 1 = equal, 2 = greater than
+                    let comparisonValue;
+                    let operator;
+                    
+                    if (comparisonType === 0) {
+                        // Expression < comparisonValue
+                        comparisonValue = expressionValue + QuestUtils.random(1, 5);
+                        operator = '<';
+                    } else if (comparisonType === 1) {
+                        // Expression = comparisonValue
+                        comparisonValue = expressionValue;
+                        operator = '=';
+                    } else {
+                        // Expression > comparisonValue
+                        comparisonValue = Math.max(range.min, expressionValue - QuestUtils.random(1, 5));
+                        operator = '>';
+                    }
+                    
+                    this.questionText = `Which is correct?`;
+                    this.correctAnswer = `${expression} ${operator} ${comparisonValue}`;
+                    
+                    // Generate wrong answers - 2 with wrong operators, 1 with different strategy
+                    const wrongOperators = ['<', '=', '>'].filter(op => op !== operator);
+                    this.wrongAnswers = [
+                        `${expression} ${wrongOperators[0]} ${comparisonValue}`, // Wrong operator 1
+                        `${expression} ${wrongOperators[1]} ${comparisonValue}`, // Wrong operator 2
+                    ];
+                    
+                    // For the third wrong answer, use different strategy based on operator
+                    if (operator === '=') {
+                        // For equals, create a comparison with a different number
+                        const wrongValue = comparisonValue + QuestUtils.random(1, 3);
+                        this.wrongAnswers.push(`${expression} = ${wrongValue}`);
+                    } else {
+                        // For < and >, flipped operands will be wrong
+                        this.wrongAnswers.push(`${comparisonValue} ${operator} ${expression}`);
+                    }
+                } else {
+                    // Simple number comparison for early grades
+                    let num1 = QuestUtils.random(range.min, range.max);
+                    let num2 = QuestUtils.random(range.min, range.max);
+                    
+                    // Ensure numbers are different to avoid multiple correct answers
+                    while (num1 === num2) {
+                        num2 = QuestUtils.random(range.min, range.max);
+                    }
+                    
+                    this.questionText = `Which is correct?`;
+                    
+                    // Determine the correct relationship
+                    let operator;
+                    if (num1 > num2) {
+                        operator = '>';
+                    } else {
+                        operator = '<';
+                    }
+                    
+                    this.correctAnswer = `${num1} ${operator} ${num2}`;
+                    
+                    // Generate wrong answers: 2 with wrong operators, 1 with flipped operands
+                    const wrongOperators = ['<', '=', '>'].filter(op => op !== operator);
+                    this.wrongAnswers = [
+                        `${num1} ${wrongOperators[0]} ${num2}`, // Wrong operator 1
+                        `${num1} ${wrongOperators[1]} ${num2}`, // Wrong operator 2  
+                        `${num2} ${operator} ${num1}` // Flipped operands (this will be wrong)
+                    ];
+                }
 
-    generate() {
-        const range = this.getNumberRange();
-        
-        // For grade > 1.0, ensure we compare with result of expression
-        if (this.grade > 1.0) {
-            const num1 = QuestUtils.random(range.min, range.max);
-            const num2 = QuestUtils.random(1, 5); // Smaller range for second number
-            const targetResult = QuestUtils.random(range.min, range.max);
-            
-            // Create expression and comparison
-            const expression = `(${num1} + ${num2})`;
-            const expressionValue = num1 + num2;
-            
-            // Ensure the comparison will have exactly one correct answer
-            const comparisonValue = expressionValue; // Use actual result for comparison
-            
-            this.questionText = `Which is correct?`;
-            this.correctAnswer = `${expression} = ${comparisonValue}`;
-            
-            // Generate wrong answers based on the expression and result
-            this.wrongAnswers = [
-                `${expression} > ${comparisonValue}`,
-                `${expression} < ${comparisonValue}`,
-                `${comparisonValue} > ${expression}`
-            ];
-        } else {
-            // Simple number comparison for early grades
-            let num1 = QuestUtils.random(range.min, range.max);
-            let num2 = QuestUtils.random(range.min, range.max);
-            
-            // Ensure numbers are different to avoid multiple correct answers
-            while (num1 === num2) {
-                num2 = QuestUtils.random(range.min, range.max);
+                this.feedback = `Compare the values carefully to find whether one is bigger, smaller, or equal.`;
+                return this;
             }
             
-            this.questionText = `Which is correct?`;
-            
-            if (num1 > num2) {
-                this.correctAnswer = `${num1} > ${num2}`;
-                this.wrongAnswers = [
-                    `${num1} < ${num2}`,
-                    `${num1} = ${num2}`,
-                    `${num2} > ${num1}`
-                ];
-            } else {
-                this.correctAnswer = `${num1} < ${num2}`;
-                this.wrongAnswers = [
-                    `${num1} > ${num2}`,
-                    `${num1} = ${num2}`,
-                    `${num2} < ${num1}`
-                ];
+            // Helper method to flip operators for creating wrong answers
+            flipOperator(operator) {
+                switch(operator) {
+                    case '<': return '>';
+                    case '>': return '<';
+                    case '=': return '=';
+                    default: return operator;
+                }
             }
         }
-
-        this.feedback = `Compare the values carefully to find whether one is bigger, smaller, or equal.`;
-        return this;
-    }
-}
 
 class PatternRecognition extends Question {
     constructor(grade) {
