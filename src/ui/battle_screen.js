@@ -54,11 +54,12 @@ export function feedbackFor(round) {
  * @param {Hero} options.hero
  * @param {Rng} options.rng
  * @param {SoundSystem} options.sound
+ * @param {string} [options.title]  what the battle is, such as "Level 7: Practice"; by default, which monster of how many
  * @param {(battle: Battle) => void} options.onProgress  after every answer, to save what was earned
  * @param {(battle: Battle) => void} options.onWin
  * @param {() => void} options.onLeave
  */
-export function createBattleScreen(root, { battle: start, hero, rng, sound, onProgress, onWin, onLeave }) {
+export function createBattleScreen(root, { battle: start, hero, rng, sound, title, onProgress, onWin, onLeave }) {
   let battle = start;
   let busy = false;
   let arrivedAt = -1; // which monster the arrival line is about
@@ -91,7 +92,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, onPr
 
   function showJourney() {
     const { adventure, beaten } = battle;
-    ref("title").textContent = `Monster ${Math.min(beaten + 1, adventure.length)} of ${adventure.length}`;
+    ref("title").textContent = title ?? `Monster ${Math.min(beaten + 1, adventure.length)} of ${adventure.length}`;
     ref("journey").innerHTML = adventure.map((_, i) =>
       `<li class="${i < beaten ? "beaten" : i === beaten ? "current" : "later"}"></li>`).join("");
     ref("streak").textContent = battle.streak >= 2 ? `🔥 ${battle.streak} in a row` : "";
@@ -175,7 +176,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, onPr
     if (!act) return;
     sound.play("click");
     if (act === "ask") {
-      ref("leave").innerHTML = `<span class="leave-ask">Leave this adventure? Your level and treasures are saved.</span>
+      ref("leave").innerHTML = `<span class="leave-ask">${title ? "Leave this level? You keep your treasures and experience, and can play it again." : "Leave this battle? Your level and treasures are saved."}</span>
         <button type="button" class="quiet" data-act="stay">Keep playing</button>
         <button type="button" class="quiet danger" data-act="go">Leave</button>`;
       /** @type {HTMLElement} */ (ref("leave").querySelector("[data-act=stay]")).focus();

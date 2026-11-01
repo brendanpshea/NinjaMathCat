@@ -1,6 +1,7 @@
 // tests/browser.test.js — the game itself, in a real browser: the screens, the
-// stage, the pictures, the keyboard, and the save surviving a reload. The rest
-// of the suite tests the parts in Node; this checks they work together on a page.
+// stage, the keyboard, players, the adventure map, and the save surviving a
+// reload. The rest of the suite tests the parts in Node; this checks they work
+// together on a page.
 //
 // Needs Chrome or Edge. Without one these tests are SKIPPED, loudly; set
 // NINJA_BROWSER to point at a browser. CI sets NINJA_REQUIRE_BROWSER so that a
@@ -9,7 +10,7 @@ import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { startServer, findBrowser, runScenario } from "./helpers/browser.js";
 import { TREASURES } from "../src/treasures.js";
-import { GRADES } from "../src/curriculum.js";
+import { ADVENTURE_GRADES, chaptersFor, levelsFor } from "../src/adventures.js";
 
 const browser = findBrowser();
 if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
@@ -35,20 +36,39 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(still.errors, []);
   });
 
-  it("opens on a title with every hero and grade, and no record for a new player", () => {
+  it("opens on a title that asks who is playing, with nobody yet", () => {
     assert.equal(played.title.heading, "Ninja Math Cat");
-    assert.equal(played.title.heroes, 6);
-    assert.equal(played.title.grades, GRADES.length);
-    assert.match(played.title.practice, /^New in 2nd grade .*Bar graphs.* Plus \d+ kinds of question from earlier grades\.$/);
-    assert.equal(played.title.returningRecord, false);
+    assert.equal(played.title.players, 0);
+    assert.equal(played.title.newPlayer, true);
   });
 
-  it("starts a battle of eight monsters with the chosen hero, both on stage", () => {
-    assert.equal(played.battle.journey, 8);
-    assert.equal(played.battle.title, "Monster 1 of 8");
+  it("makes a player with a name, a hero and a grade, showing the grade's chapters", () => {
+    assert.equal(played.form.heading, "New player");
+    assert.equal(played.form.heroes, 6);
+    assert.equal(played.form.grades, ADVENTURE_GRADES.length);
+    assert.deepEqual(played.form.chapters, chaptersFor(2).map(c => c.title));
+  });
+
+  it("shows the player's map, with only the first level to play", () => {
+    assert.equal(played.map.heading, "Sam's 2nd grade adventure");
+    assert.equal(played.map.levels, levelsFor(2).length);
+    assert.equal(played.map.open, 1);
+    assert.equal(played.map.continue, `Start Level 1: New topic, ${chaptersFor(2)[0].title}`);
+  });
+
+  it("starts a chapter with its note and a worked example", () => {
+    assert.equal(played.note.heading, chaptersFor(2)[0].title);
+    assert.equal(played.note.text, chaptersFor(2)[0].note);
+    assert.ok(played.note.example);
+  });
+
+  it("plays a level as a short battle with the chosen hero, both on stage", () => {
+    assert.match(played.battle.title, /^Level 1: New topic · /);
+    assert.equal(played.battle.journey, 2);
     assert.match(played.battle.arrival, /^Here comes /);
     assert.equal(played.battle.heroName, "Owl Wizard");
     assert.equal(played.battle.choices, 4);
+    assert.ok(played.battle.answered < 25, `the level took ${played.battle.answered} answers`);
   });
 
   it("gives a hint after a wrong answer, rules that choice out, then shows the answer", () => {
@@ -57,50 +77,70 @@ describe("in a real browser", { skip }, () => {
     assert.match(played.battle.reveal, /^The answer is /);
     assert.equal(played.battle.revealShowsRight, true);
     assert.equal(played.battle.nextFocused, true);
-  });
-
-  it("draws the question's picture, and the monster's health falls with each blow", () => {
-    assert.ok(played.battle.visualQuestions > 0, "no question with a picture came up");
-    assert.equal(played.battle.picturesDrawn, played.battle.visualQuestions);
     assert.equal(played.battle.monsterHurt, true);
   });
 
-  it("ends in a victory that sums up the adventure and shows the treasures found", () => {
-    assert.equal(played.victory.heading, "You won!");
-    assert.match(played.victory.facts[0], /right the first time/);
-    assert.match(played.victory.facts[1], /^Level \d+/);
-    assert.ok(played.victory.treasuresShown >= 1);
+  it("ends a level with stars and what was earned, and saves it", () => {
+    assert.equal(played.done.heading, "Level 1 done!");
+    assert.match(played.done.stars, /^[123] of 3 stars$/);
+    assert.match(played.done.facts[0], /right the first time/);
+    assert.match(played.done.next, /^Next: Level 2: Practice/);
+    const sam = played.done.saved.players[0];
+    assert.equal(sam.name, "Sam");
+    assert.equal(sam.heroId, "owl_wizard");
+    assert.equal(sam.grade, 2);
+    assert.ok(sam.xp > 0);
+    assert.ok(sam.adventures[2].done[levelsFor(2)[0].id]);
   });
 
-  it("saves the hero, grade, experience and treasures as it goes", () => {
-    const { saved } = played.victory;
-    assert.equal(saved.heroId, "owl_wizard");
-    assert.equal(saved.grade, 2);
-    assert.ok(saved.xp > 0);
-    assert.equal(saved.treasures.length, played.victory.treasuresShown);
+  it("goes on to the next level, answers with the number keys, and asks before leaving", () => {
+    assert.match(played.after.title, /^Level 2: Practice/);
+    assert.equal(played.after.keys, true);
+    assert.match(played.after.leaveAsks, /^Leave this level\?/);
+    assert.equal(played.after.keysWaitWhileAsking, true, "a number key answered while Leave was being asked");
+    assert.equal(played.after.escapeKeepsPlaying, true);
   });
 
-  it("shows the record and the treasure collection, and remembers them after a reload", () => {
-    const found = played.victory.saved.treasures.length;
-    assert.match(played.home.record, new RegExp(`^Level \\d+ · ${found} of ${TREASURES.length} treasures found`));
-    assert.equal(played.treasures.found, found);
-    assert.equal(played.treasures.missing, TREASURES.length - found);
-    assert.equal(played.reload.record, played.home.record);
-    assert.equal(played.reload.hero, "owl_wizard");
-    assert.equal(played.reload.grade, "2");
+  it("marks the level done on the map, and the next one ready", () => {
+    assert.match(played.after.firstLevel, /^Level 1, New topic, [123] of 3 stars$/);
+    assert.equal(played.after.secondLevel, "Level 2, Practice, ready to play");
+    assert.match(played.after.count, /^1 of 40 levels done/);
   });
 
-  it("answers with the number keys, and asks before resting", () => {
-    assert.equal(played.keys, true);
-    assert.equal(played.restAsks, true);
-    assert.equal(played.keysWaitWhileAsking, true, "a number key answered while Leave was being asked");
-    assert.equal(played.escapeKeepsPlaying, true);
-    assert.equal(played.rested, true);
+  it("lets a grown-up open a chapter early, with every chapter before it", () => {
+    assert.match(played.open.asks, /^Open Chapter 5, .*, early\?/);
+    assert.equal(played.open.continue, `Play Level 21: New topic, ${chaptersFor(2)[4].title}`);
+    assert.equal(played.open.earlierOpen, true);
+    assert.equal(played.open.laterLocked, true);
+  });
+
+  it("shows the treasures found so far", () => {
+    const found = played.done.saved.players[0].treasures.length;
+    assert.equal(played.treasures.heading, "Sam's treasures");
+    assert.ok(played.treasures.found >= found);
+    assert.equal(played.treasures.found + played.treasures.missing, TREASURES.length);
+  });
+
+  it("still offers a quick battle of eight monsters", () => {
+    assert.equal(played.quick.title, "Monster 1 of 8");
+    assert.equal(played.quick.journey, 8);
+  });
+
+  it("keeps several players, and comes back to the last one after a reload", () => {
+    assert.equal(played.second.editHeading, "Sam's choices");
+    assert.equal(played.second.cards.length, 1);
+    assert.match(played.second.cards[0], /^Sam 2nd grade · 1 of 40 levels$/);
+    assert.equal(played.second.heading, "Player 2's kindergarten adventure");
+    assert.equal(played.reload.screen, "map");
+    assert.equal(played.reload.heading, "Player 2's kindergarten adventure");
+    assert.equal(played.reload.cards, 2);
+    assert.equal(played.reload.saved.players.length, 2);
+    assert.equal(played.reload.saved.players[0].adventures[2].opened, 4);
   });
 
   it("plays on with reduced motion", () => {
     assert.equal(still.reducedMotion, true);
     assert.equal(still.answered, 12);
-    assert.ok(still.xp > 0);
+    assert.ok(still.xp > 2600);
   });
 });

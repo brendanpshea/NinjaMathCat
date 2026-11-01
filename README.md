@@ -3,12 +3,20 @@
 A math battle game for kindergarten through 6th grade. Each right answer powers
 your hero's attack; each wrong one lets the monster strike back.
 
-Pick a hero and a grade, then fight your way through eight monsters. Questions
-follow the Common Core math standards from kindergarten to 6th grade, with
+Each grade, from kindergarten to 6th, is an adventure of eight chapters in
+the order a school year usually takes them, with forty short levels in all:
+a few hours of play, meant to be spread over many class sessions. A chapter
+opens with a note on its topic and a worked example, brings the topic in with
+its easiest questions, practises it, reviews it with what came before, and
+ends with a boss. Questions follow the Common Core math standards, with
 pictures to read where the standards call for them: clocks, graphs, number
 lines, fraction models, areas, boxes of cubes, protractors and coordinate
-grids. Your level and the treasures you find are saved in your browser, and
-nothing leaves it.
+grids.
+
+Several children can share a device, each with their own name, hero, grade
+and progress, all saved in the browser after every level; nothing leaves it.
+A grown-up can open a later chapter to match what a class is studying, and a
+quick battle of eight monsters is always there for a few spare minutes.
 
 **Play it:** open `index.html` through any web server (see below), or on the
 project's GitHub Pages site. The original version of the game is kept in
@@ -49,7 +57,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | --- | --- |
 | `index.html`, `src/main.js` | The page, and what starts the game on it. |
 | `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasure collection. |
-| `src/save.js`, `src/progress.js` | What the browser remembers, and a suggestion of an easier or harder grade after an adventure. |
+| `src/save.js` | What the browser remembers: each player, with their hero, grade, experience, treasures and progress in every grade's adventure. A save from before there were players becomes the first player. |
+| `src/adventures.js` | Each grade's adventure: its chapters, with their notes and the question types each brings in; the levels in each chapter, what each asks and which monsters it fights; and progress, stars and which levels are open. |
 | `src/sound.js`, `src/zzfx.js` | Sound effects, made by ZzFX as the game runs. |
 | `src/rng.js` | Seeded random numbers. Pass the same seed and you get the same question, which is how the tests replay a failure. |
 | `src/curriculum.js` | The grade ladder, and the table of which question types each grade asks and which Common Core standards each covers. |
@@ -85,7 +94,10 @@ how many parts are shaded, and every shape's sides and angles).
    `src/questions/`. Use `atGrade` to scale it by grade, and `wrongNumbers`
    for numeric distractors.
 2. Add a row to `CURRICULUM` in `src/curriculum.js` saying which grades ask it
-   and which Common Core standards it covers.
+   and which Common Core standards it covers. Then put it in a chapter of
+   each of those grades' adventures in `src/adventures.js`, in `learn` where
+   the chapter is about it or `warmup` where it is review; a test checks that
+   every type a grade asks comes up in its adventure.
 3. If it needs a new kind of picture, add the kind to `Visual` in
    `src/questions/common.js`, a renderer in `src/visuals/`, and a description
    in `src/visuals/describe.js` that doesn't give the answer away.

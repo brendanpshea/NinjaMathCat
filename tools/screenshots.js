@@ -12,11 +12,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { startServer, findBrowser } from "../tests/helpers/browser.js";
 
 const SHOTS = [
-  ["title", 1000, 1100], ["returning", 1000, 1100], ["battle", 1000, 1150], ["hint", 1000, 1150],
-  ["reveal", 1000, 1150], ["victory", 1000, 1300], ["treasures", 1000, 1300],
-  ["title", 390, 1500, "phone-"], ["battle", 390, 1400, "phone-"],
+  ["title", 1000, 1100], ["players", 1000, 1100], ["player", 1000, 1300], ["map", 1000, 1600], ["note", 1000, 1100],
+  ["battle", 1000, 1150], ["hint", 1000, 1150], ["reveal", 1000, 1150], ["level-done", 1000, 1100],
+  ["victory", 1000, 1300], ["treasures", 1000, 1300],
+  ["players", 390, 1200, "phone-"], ["map", 390, 2200, "phone-"], ["note", 390, 1300, "phone-"],
+  ["battle", 390, 1400, "phone-"], ["level-done", 390, 1300, "phone-"],
   // A school laptop's window: is everything needed to play in sight without scrolling?
-  ["title", 1366, 650, "laptop-"], ["battle", 1366, 650, "laptop-"],
+  ["map", 1366, 650, "laptop-"], ["battle", 1366, 650, "laptop-"],
 ];
 
 const browser = findBrowser();

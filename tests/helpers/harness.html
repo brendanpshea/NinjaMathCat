@@ -45,6 +45,9 @@
   const $$ = selector => [...doc().querySelectorAll(selector)];
   const game = () => frame.contentWindow.ninjaMathCat.state();
   const click = selector => { const el = $(selector); if (!el) throw new Error(`nothing matches ${selector}`); el.click(); };
+  const text = selector => $(selector)?.textContent.replace(/\s+/g, " ").trim();
+  const saved = () => JSON.parse(localStorage.getItem("ninja-math-cat"));
+  const on = async (screen, what = screen) => until(() => game().screen === screen, what);
 
   /** On the battle screen, wait until a question can be answered, or the battle is over. */
   async function readyToAnswer() {
@@ -61,36 +64,76 @@
     $$(".choice")[q.choices.indexOf(choice)].click();
   }
 
+  /** Answer rightly until the battle is over. */
+  async function winBattle() {
+    while (game().screen === "battle") {
+      await readyToAnswer();
+      if (game().screen !== "battle") break;
+      await answer(true);
+      await wait(20);
+    }
+  }
+
+  /**
+   * A save with one player, Maya, partway through the 3rd grade adventure:
+   * the first `levels` levels done, some with fewer stars.
+   */
+  async function maya(levels = 21) {
+    const { levelsFor } = await import("/src/adventures.js");
+    const { TREASURES } = await import("/src/treasures.js");
+    const done = Object.fromEntries(levelsFor(3).slice(0, levels).map((l, i) => [l.id, { stars: i % 4 === 1 ? 2 : 3, firstTry: 7, asked: 8 }]));
+    return {
+      players: [{ id: "p1", name: "Maya", heroId: "cat_ninja", grade: 3, xp: 2600, treasures: TREASURES.filter((_, i) => i % 3 === 0).map(t => t.id), adventures: { 3: { done, opened: 0 } } }],
+      current: "p1",
+      muted: false,
+    };
+  }
+
   const scenarios = {
-    /** A whole adventure, start to finish, then the screens around it, then a reload. */
+    /** A new player, from the title through a level and around the map, then a second player and a reload. */
     async adventure() {
       localStorage.clear();
       await load();
-      const report = { title: {}, battle: {}, victory: {}, home: {}, treasures: {}, reload: {} };
+      const report = { title: {}, form: {}, map: {}, note: {}, battle: {}, done: {}, after: {}, open: {}, treasures: {}, quick: {}, second: {}, reload: {} };
 
       report.title.heading = $("h1").textContent;
-      report.title.heroes = $$("input[name=hero]").length;
-      // A button for each year, and each year has a start and a middle.
-      report.title.grades = $$("input[name=grade]").length * $$("input[name=term]").length;
-      report.title.returningRecord = Boolean($(".record"));
+      report.title.players = $$("[data-player]").length;
+      report.title.newPlayer = Boolean($("[data-ref=new-player]"));
+      click("[data-ref=new-player]");
+
+      await on("player", "the new player form");
+      report.form.heading = $("h1").textContent;
+      report.form.heroes = $$("input[name=hero]").length;
+      report.form.grades = $$("input[name=grade]").length;
+      $("[data-ref=name]").value = "  Sam  ";
       click(".hero-choice[data-hero=owl_wizard]");
       click("input[name=grade][value='2']");
-      click("input[name=term][value='0']");
-      report.title.practice = $("[data-ref=practice]").textContent.replace(/\s+/g, " ").trim();
+      report.form.chapters = $$("[data-ref=practice] li").map(li => li.textContent);
+      click("[data-ref=save]");
+
+      await on("map");
+      report.map.heading = $("h1").textContent;
+      report.map.levels = $$(".level-button").length;
+      report.map.open = $$(".level-button.is-open").length;
+      report.map.continue = text("[data-ref=continue]");
+      click("[data-ref=continue]");
+
+      await on("note", "the chapter note");
+      report.note.heading = $("h1").textContent;
+      report.note.text = text(".note-text");
+      report.note.example = text(".example-answer strong");
       click("[data-ref=start]");
 
-      await until(() => game().screen === "battle", "the battle");
+      await on("battle");
       await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load");
-      report.battle.journey = $$(".journey li").length;
       report.battle.title = $(".journey-title").textContent;
+      report.battle.journey = $$(".journey li").length;
       report.battle.arrival = $(".arrival").textContent;
       report.battle.heroName = $("[data-ref=heroName]").textContent;
       await readyToAnswer();
       report.battle.choices = $$(".choice").length;
-
       // Wrong twice: a hint, then the answer shown and a button to go on.
       await answer(false);
-      // The hint shows at once; the choices come back when the stage is done.
       await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint, and the choices back");
       report.battle.hint = $(".feedback").textContent;
       report.battle.ruledOutDisabled = $$(".choice.wrong").every(b => b.disabled) && $$(".choice:not(:disabled)").length === 3;
@@ -100,19 +143,12 @@
       report.battle.revealShowsRight = $$(".choice.right").length === 1;
       report.battle.nextFocused = doc().activeElement === $("[data-ref=next]");
       click("[data-ref=next]");
-
-      // Then right until the adventure is won, watching the pictures and the monster's health.
-      let answered = 2;
-      let pictures = 0;
-      let visualQuestions = 0;
+      // Then right until the level is done, watching the monster's health.
       let monsterHurt = false;
-      while (game().screen === "battle" && answered < 300) {
+      let answered = 2;
+      while (game().screen === "battle" && answered < 100) {
         await readyToAnswer();
         if (game().screen !== "battle") break;
-        if (game().battle.question.visual) {
-          visualQuestions++;
-          if ($(".picture svg")) pictures++;
-        }
         const before = Number($("[data-ref=monsterHp]").getAttribute("aria-valuenow"));
         await answer(true);
         answered++;
@@ -121,54 +157,93 @@
         if (game().screen === "battle" && Number($("[data-ref=monsterHp]").getAttribute("aria-valuenow")) < before) monsterHurt = true;
       }
       report.battle.answered = answered;
-      report.battle.visualQuestions = visualQuestions;
-      report.battle.picturesDrawn = pictures;
       report.battle.monsterHurt = monsterHurt;
 
-      await until(() => game().screen === "victory", "the victory screen");
-      report.victory.heading = $("h1").textContent;
-      report.victory.facts = $$(".facts li").map(li => li.textContent.replace(/\s+/g, " ").trim());
-      report.victory.treasuresShown = $$(".victory-screen .treasure").length;
-      const saved = JSON.parse(localStorage.getItem("ninja-math-cat"));
-      report.victory.saved = saved;
+      await on("level-done", "the level's end");
+      report.done.heading = $("h1").textContent;
+      report.done.stars = $(".stars-big .stars").getAttribute("aria-label");
+      report.done.facts = $$(".facts li").map(li => li.textContent.replace(/\s+/g, " ").trim());
+      report.done.next = text("[data-ref=next]");
+      report.done.saved = saved();
 
-      click("[data-ref=home]");
-      await until(() => game().screen === "title", "the title");
-      report.home.record = $(".record")?.textContent.replace(/\s+/g, " ").trim();
-      click("[data-ref=treasures]");
-      await until(() => game().screen === "treasures", "the treasures");
-      report.treasures.found = $$(".treasure").length;
-      report.treasures.missing = $$(".hidden-grid li").length;
-      click("[data-ref=back]");
-
-      // A new visit remembers everything.
-      await load();
-      report.reload.record = $(".record")?.textContent.replace(/\s+/g, " ").trim();
-      report.reload.hero = $("input[name=hero]:checked")?.value;
-      report.reload.grade = String(Number($("input[name=grade]:checked").value) + Number($("input[name=term]:checked").value));
-
-      // The number keys answer, and Rest leaves after asking.
-      click("[data-ref=start]");
-      await until(() => game().screen === "battle", "another battle");
+      // The next level is practice: straight into battle, with no note.
+      click("[data-ref=next]");
+      await on("battle", "the next level");
+      report.after.title = $(".journey-title").textContent;
+      // The number keys answer, and leaving asks first.
       await readyToAnswer();
       const asked = game().battle.question;
       doc().dispatchEvent(new KeyboardEvent("keydown", { key: String(asked.choices.indexOf(asked.answer) + 1), bubbles: true }));
       await until(() => game().battle.question !== asked, "the number key to answer");
-      report.keys = true;
+      report.after.keys = true;
       await readyToAnswer();
       click("[data-act=ask]");
-      report.restAsks = /Leave this adventure/.test($(".leave").textContent);
+      report.after.leaveAsks = text(".leave-ask");
       // While it asks, a number key answers nothing, and Escape keeps playing.
       const before = game().battle;
       doc().dispatchEvent(new KeyboardEvent("keydown", { key: "1", bubbles: true }));
       await wait(300);
-      report.keysWaitWhileAsking = game().battle === before && Boolean($("[data-act=go]"));
+      report.after.keysWaitWhileAsking = game().battle === before && Boolean($("[data-act=go]"));
       doc().dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-      report.escapeKeepsPlaying = Boolean($("[data-act=ask]")) && !$("[data-act=go]");
+      report.after.escapeKeepsPlaying = Boolean($("[data-act=ask]")) && !$("[data-act=go]");
       click("[data-act=ask]");
       click("[data-act=go]");
-      await until(() => game().screen === "title", "the title after resting");
-      report.rested = true;
+
+      await on("map", "the map after leaving");
+      report.after.firstLevel = $(".level-button").getAttribute("aria-label");
+      report.after.secondLevel = $$(".level-button")[1].getAttribute("aria-label");
+      report.after.count = text(".map-count");
+
+      // A grown-up opens chapter 5 early.
+      click(".chapter[data-chapter='4'] [data-act=open-ask]");
+      report.open.asks = text(".chapter[data-chapter='4'] .open-ask");
+      click(".chapter[data-chapter='4'] [data-act=open]");
+      await until(() => !$(".chapter[data-chapter='4']").classList.contains("is-locked"), "chapter 5 to open");
+      report.open.continue = text("[data-ref=continue]");
+      report.open.earlierOpen = $$(".chapter[data-chapter='3'] .level-button").every(b => !b.disabled);
+      report.open.laterLocked = $$(".chapter[data-chapter='5'] .level-button").every(b => b.disabled);
+
+      click("[data-ref=treasures]");
+      await on("treasures");
+      report.treasures.heading = $("h1").textContent;
+      report.treasures.found = $$(".treasure").length;
+      report.treasures.missing = $$(".hidden-grid li").length;
+      click("[data-ref=back]");
+      await on("map", "the map again");
+
+      click("[data-ref=quick]");
+      await on("battle", "a quick battle");
+      report.quick.title = $(".journey-title").textContent;
+      report.quick.journey = $$(".journey li").length;
+      await readyToAnswer();
+      click("[data-act=ask]");
+      click("[data-act=go]");
+      await on("map", "the map after a quick battle");
+
+      click("[data-ref=edit]");
+      await on("player", "Sam's choices");
+      report.second.editHeading = $("h1").textContent;
+      click("[data-ref=back]");
+      await on("map", "the map after the choices");
+
+      // A second player, who starts in kindergarten.
+      click("[data-ref=switch]");
+      await on("title", "the title again");
+      report.second.cards = $$("[data-player]").map(b => b.textContent.replace(/\s+/g, " ").trim());
+      click("[data-ref=new-player]");
+      await on("player", "the second new player");
+      click("[data-ref=save]");
+      await on("map", "the second player's map");
+      report.second.heading = $("h1").textContent;
+
+      // A new visit goes back to the last player's map, and remembers everyone.
+      await load();
+      report.reload.screen = game().screen;
+      report.reload.heading = $("h1").textContent;
+      click("[data-ref=switch]");
+      await on("title", "the title after a reload");
+      report.reload.cards = $$("[data-player]").length;
+      report.reload.saved = saved();
 
       report.errors = errors;
       return report;
@@ -176,8 +251,9 @@
 
     /**
      * Bring the game to one screen and stop there, for a screenshot
-     * (tools/screenshots.js): ?screen= title, returning, battle, hint,
-     * reveal, victory or treasures, and ?width= and ?height= for the frame.
+     * (tools/screenshots.js): ?screen= title, players, player, map, note,
+     * battle, hint, reveal, level-done, victory or treasures, and ?width= and
+     * ?height= for the frame.
      */
     async pose() {
       const params = new URLSearchParams(location.search);
@@ -187,46 +263,48 @@
       frame.style.width = `${params.get("width") ?? 1000}px`;
       frame.style.height = `${params.get("height") ?? 900}px`;
       localStorage.clear();
-      if (screen === "returning" || screen === "treasures") {
-        const { TREASURES } = await import("/src/treasures.js");
-        localStorage.setItem("ninja-math-cat", JSON.stringify({
-          heroId: "cat_ninja", grade: 1, xp: 760, treasures: TREASURES.filter((_, i) => i % 7 === 0).map(t => t.id), muted: false,
-        }));
-      }
+      if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify(await maya()));
       await load("?test&seed=11");
-      if (screen === "title" || screen === "returning") return {};
-      if (screen === "treasures") {
-        click("[data-ref=treasures]");
-        return {};
-      }
-      click("[data-ref=start]");
-      await until(() => game().screen === "battle", "the battle");
-      await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load");
-      // On to a question with a picture, landing a few blows on the way.
-      for (let i = 0; i < 12; i++) {
-        await readyToAnswer();
-        if (i >= 2 && game().battle.question.visual) break;
-        await answer(true);
-        await wait(1500);
-      }
-      if (screen === "hint" || screen === "reveal") {
-        await answer(false);
-        await until(() => /Not quite/.test($(".feedback").textContent), "the hint");
-        if (screen === "reveal") {
-          await wait(1500);
-          await answer(false);
-          await until(() => !$("[data-ref=next]").hidden, "the Next button");
+      await wait(300);
+      switch (screen) {
+        case "title": return {};
+        case "players": click("[data-ref=switch]"); break;
+        case "player": click("[data-ref=edit]"); break;
+        case "map": break;
+        case "note": click(".chapter[data-chapter='4'] [data-act=note]"); break;
+        case "treasures": click("[data-ref=treasures]"); break;
+        case "victory":
+          click("[data-ref=quick]");
+          await on("battle");
+          await winBattle();
+          await on("victory");
+          break;
+        default: {
+          // A level of the Area chapter, which has pictures.
+          click("[data-ref=continue]");
+          await on("battle");
+          await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load");
+          if (screen === "level-done") {
+            await winBattle();
+            await on("level-done");
+            break;
+          }
+          for (let i = 0; i < 6; i++) {
+            await readyToAnswer();
+            if (i >= 1 && game().battle.question.visual) break;
+            await answer(true);
+            await wait(1500);
+          }
+          if (screen === "hint" || screen === "reveal") {
+            await answer(false);
+            await until(() => /Not quite/.test($(".feedback").textContent), "the hint");
+            if (screen === "reveal") {
+              await wait(1500);
+              await answer(false);
+              await until(() => !$("[data-ref=next]").hidden, "the Next button");
+            }
+          }
         }
-        await wait(1500);
-      }
-      if (screen === "victory") {
-        while (game().screen === "battle") {
-          await readyToAnswer();
-          if (game().screen !== "battle") break;
-          await answer(true);
-          await wait(50);
-        }
-        await until(() => game().screen === "victory", "the victory screen");
       }
       await wait(1500);
       return {};
@@ -235,19 +313,24 @@
     /** With reduced motion: nothing animates, and the game still plays. */
     async still() {
       localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify(await maya(1)));
       await load();
-      click("[data-ref=start]");
-      await until(() => game().screen === "battle", "the battle");
+      click("[data-ref=continue]");
+      await on("battle");
       const report = { answered: 0 };
-      for (let i = 0; i < 12 && game().screen === "battle"; i++) {
+      while (report.answered < 12) {
+        if (game().screen === "level-done") click("[data-ref=next]");
+        if (game().screen === "note") click("[data-ref=start]");
+        if (game().screen !== "battle") await on("battle", "the next level");
         await readyToAnswer();
-        await answer(i % 4 !== 0);
+        if (game().screen !== "battle") continue;
+        await answer(report.answered % 4 !== 0);
         report.answered++;
         await wait(20);
         if (!$("[data-ref=next]").hidden) click("[data-ref=next]");
       }
       report.reducedMotion = frame.contentWindow.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      report.xp = game().save.xp;
+      report.xp = game().player.xp;
       report.errors = errors;
       return report;
     },

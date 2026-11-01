@@ -1,11 +1,10 @@
-// tests/save.test.js — what the game remembers (src/save.js) and its grade
-// suggestions (src/progress.js).
+// tests/save.test.js — what the game remembers (src/save.js): its players and
+// their progress.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { loadSave, writeSave, newSave } from "../src/save.js";
-import { suggestGrade, firstTryShare } from "../src/progress.js";
+import { loadSave, writeSave, newSave, addPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME } from "../src/save.js";
+import { levelsFor, recordLevel, newProgress } from "../src/adventures.js";
 import { TREASURES } from "../src/treasures.js";
-import { GRADES } from "../src/curriculum.js";
 
 /** A stand-in for localStorage. */
 function memoryStorage(initial = {}) {
@@ -16,23 +15,81 @@ function memoryStorage(initial = {}) {
 const throwing = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("full"); } };
 
 describe("the save", () => {
-  it("starts fresh: Ninja Cat, kindergarten, no experience or treasures, sound on", () => {
+  const owl = { name: "Maya", heroId: "owl_wizard", grade: 3 };
+
+  it("starts with nobody playing yet, and the sound on", () => {
     assert.deepEqual(loadSave(memoryStorage()), newSave());
-    assert.deepEqual(newSave(), { heroId: "cat_ninja", grade: 0, xp: 0, treasures: [], muted: false });
+    assert.deepEqual(newSave(), { players: [], current: null, muted: false });
   });
 
-  it("comes back as it was written", () => {
+  it("adds players, each new one the current one, and names a blank one by number", () => {
+    let { save, player } = addPlayer(newSave(), owl);
+    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, xp: 0, treasures: [], adventures: {} });
+    ({ save, player } = addPlayer(save, { name: "   ", heroId: "dragon_king", grade: 9 }));
+    assert.deepEqual([player.name, player.heroId, player.grade], ["Player 2", "cat_ninja", 0]);
+    assert.equal(currentPlayer(save), player);
+    assert.equal(addPlayer(save, { name: "A name much too long to fit on a card", heroId: "owl_wizard", grade: 1 }).player.name.length, LONGEST_NAME);
+  });
+
+  it("changes and removes players", () => {
+    let { save } = addPlayer(newSave(), owl);
+    save = updatePlayer(save, "p1", { xp: 300, grade: 4 });
+    assert.deepEqual([currentPlayer(save).xp, currentPlayer(save).grade], [300, 4]);
+    save = removePlayer(save, "p1");
+    assert.deepEqual([save.players, save.current], [[], null]);
+  });
+
+  it("keeps no more than a dozen players", () => {
+    let save = newSave();
+    for (let i = 0; i < MOST_PLAYERS; i++) save = addPlayer(save, owl).save;
+    assert.throws(() => addPlayer(save, owl), RangeError);
+  });
+
+  it("comes back as it was written, progress and all", () => {
     const storage = memoryStorage();
-    const save = { heroId: "owl_wizard", grade: 2.5, xp: 730, treasures: [TREASURES[3].id, TREASURES[0].id], muted: true };
+    let { save, player } = addPlayer(newSave(), owl);
+    const level = levelsFor(3)[0];
+    const progress = recordLevel(progressIn(player, 3), level, { firstTry: 7, secondTry: 1, missed: 0, knockouts: 0, byType: {} });
+    save = updatePlayer({ ...save, muted: true }, player.id, { xp: 730, treasures: [TREASURES[3].id, TREASURES[0].id], adventures: { 3: progress } });
     assert.equal(writeSave(storage, save), true);
     assert.deepEqual(loadSave(storage), save);
+    assert.deepEqual(progressIn(currentPlayer(loadSave(storage)), 3).done[level.id], { stars: 2, firstTry: 7, asked: 8 });
+    assert.deepEqual(progressIn(player, 5), newProgress());
   });
 
   it("puts right anything that no longer makes sense", () => {
+    const level = levelsFor(2)[0].id;
     const storage = memoryStorage({
-      "ninja-math-cat": JSON.stringify({ heroId: "dragon_king", grade: 9, xp: -5, treasures: ["nope", TREASURES[1].id, TREASURES[1].id, 7], muted: "yes" }),
+      "ninja-math-cat": JSON.stringify({
+        players: [
+          { id: "p1", name: 42, heroId: "dragon_king", grade: 2.5, xp: -5, treasures: ["nope", TREASURES[1].id, TREASURES[1].id, 7],
+            adventures: { 2: { done: { [level]: { stars: 2, firstTry: 6, asked: 8 }, "2-gone.1": { stars: 3, firstTry: 8, asked: 8 }, [levelsFor(2)[1].id]: { stars: 9, firstTry: 1, asked: 1 } }, opened: 99 }, 12: { done: {} } } },
+          { id: "p1", name: "A copy" },
+          { id: "nobody" },
+        ],
+        current: "p7",
+        muted: "yes",
+      }),
     });
-    assert.deepEqual(loadSave(storage), { ...newSave(), treasures: [TREASURES[1].id] });
+    const save = loadSave(storage);
+    assert.equal(save.players.length, 1);
+    assert.deepEqual(save.players[0], {
+      id: "p1", name: "Player 1", heroId: "cat_ninja", grade: 0, xp: 0, treasures: [TREASURES[1].id],
+      adventures: { 2: { done: { [level]: { stars: 2, firstTry: 6, asked: 8 } }, opened: 7 } },
+    });
+    assert.deepEqual([save.current, save.muted], [null, false]);
+  });
+
+  it("turns a save from before there were players into the first player", () => {
+    const storage = memoryStorage({
+      "ninja-math-cat": JSON.stringify({ heroId: "owl_wizard", grade: 2.5, xp: 730, treasures: [TREASURES[3].id], muted: true }),
+    });
+    const save = loadSave(storage);
+    assert.deepEqual(save, {
+      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, xp: 730, treasures: [TREASURES[3].id], adventures: {} }],
+      current: "p1",
+      muted: true,
+    });
   });
 
   it("forgives broken or blocked storage, and plays on without it", () => {
@@ -42,29 +99,5 @@ describe("the save", () => {
     assert.deepEqual(loadSave(null), newSave());
     assert.equal(writeSave(throwing, newSave()), false);
     assert.equal(writeSave(null, newSave()), false);
-  });
-});
-
-describe("suggesting a grade", () => {
-  const tally = (firstTry, secondTry, missed) => ({ firstTry, secondTry, missed, knockouts: 0, byType: {} });
-
-  it("counts questions right the first time", () => {
-    assert.equal(firstTryShare(tally(6, 2, 2)), 0.6);
-    assert.equal(firstTryShare(tally(0, 0, 0)), 0);
-  });
-
-  it("offers an easier grade when most questions needed help", () => {
-    assert.deepEqual(suggestGrade(tally(8, 6, 6), 2), { grade: 1.5, label: "1st grade (mid-year)", easier: true });
-  });
-
-  it("offers a harder grade when nearly everything was right straight away", () => {
-    assert.deepEqual(suggestGrade(tally(28, 2, 0), 2), { grade: 2.5, label: "2nd grade (mid-year)", easier: false });
-  });
-
-  it("suggests nothing when the grade suits, too few were asked, or there is nowhere to go", () => {
-    assert.equal(suggestGrade(tally(14, 4, 2), 2), null);
-    assert.equal(suggestGrade(tally(1, 3, 3), 2), null);
-    assert.equal(suggestGrade(tally(3, 10, 10), 0), null);
-    assert.equal(suggestGrade(tally(30, 0, 0), GRADES[GRADES.length - 1].grade), null);
   });
 });
