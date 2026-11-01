@@ -15,6 +15,8 @@ const SHOTS = [
   ["title", 1000, 1100], ["returning", 1000, 1100], ["battle", 1000, 1150], ["hint", 1000, 1150],
   ["reveal", 1000, 1150], ["victory", 1000, 1300], ["treasures", 1000, 1300],
   ["title", 390, 1500, "phone-"], ["battle", 390, 1400, "phone-"],
+  // A school laptop's window: is everything needed to play in sight without scrolling?
+  ["title", 1366, 650, "laptop-"], ["battle", 1366, 650, "laptop-"],
 ];
 
 const browser = findBrowser();
