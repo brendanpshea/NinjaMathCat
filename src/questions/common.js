@@ -52,6 +52,50 @@
  */
 
 /**
+ * A flat figure to measure: a rectangle, perhaps on a grid of unit squares,
+ * or a triangle or parallelogram with its height dashed in. It is drawn to
+ * scale, `width` (the base) by `height`; `labels` are what is written beside
+ * the base and the height, such as "8 cm" or "?".
+ * @typedef {object} AreaFigure
+ * @property {"area"} kind
+ * @property {"rectangle" | "triangle" | "parallelogram"} shape
+ * @property {number} width
+ * @property {number} height
+ * @property {boolean} grid
+ * @property {{ base: string, height: string }} [labels]
+ */
+
+/**
+ * A box, drawn to scale: built of unit cubes, or with its edges labelled.
+ * @typedef {object} CubeBox
+ * @property {"cubes"} kind
+ * @property {number} length
+ * @property {number} width
+ * @property {number} height
+ * @property {boolean} cubes
+ * @property {{ length: string, width: string, height: string }} [labels]
+ */
+
+/**
+ * An angle `degrees` wide, between a base ray pointing left or right and a
+ * ray turned up from it, perhaps laid on a protractor.
+ * @typedef {object} AngleFigure
+ * @property {"angle"} kind
+ * @property {number} degrees
+ * @property {"right" | "left"} base
+ * @property {boolean} protractor
+ */
+
+/**
+ * Labelled points on a coordinate grid running from min to max both ways.
+ * @typedef {object} CoordinateGrid
+ * @property {"coordinates"} kind
+ * @property {number} min
+ * @property {number} max
+ * @property {{ x: number, y: number, label: string }[]} points
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -59,7 +103,8 @@
  *   | { kind: "money", items: string[] }
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
- *   | NumberLine | PictureGraph | BarGraph | FractionModel} Visual
+ *   | NumberLine | PictureGraph | BarGraph | FractionModel
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid} Visual
  */
 
 /**

@@ -157,10 +157,12 @@ function evaluate(rng) {
  */
 function equivalent(rng) {
   const [a, b, c] = [rng.int(2, 9), rng.int(2, 9), rng.int(2, 9)];
+  // The last wrong answer of each is a spare, for when 2 + 2 and 2 × 2 make
+  // two of the others the same as the answer.
   const forms = [
-    { given: `${a}(x + ${b})`, answer: `${a}x + ${a * b}`, wrong: [`${a}x + ${b}`, `x + ${a * b}`, `${a}x + ${a + b}`] },
-    { given: `${a}x + ${b}x`, answer: `${a + b}x`, wrong: [`${a + b}x²`, `${a * b}x`, `${a + b}`] },
-    { given: `${a}(${b}x + ${c})`, answer: `${a * b}x + ${a * c}`, wrong: [`${a * b}x + ${c}`, `${a + b}x + ${a * c}`, `${b}x + ${a * c}`] },
+    { given: `${a}(x + ${b})`, answer: `${a}x + ${a * b}`, wrong: [`${a}x + ${b}`, `x + ${a * b}`, `${a}x + ${a + b}`, `${a * b}x`] },
+    { given: `${a}x + ${b}x`, answer: `${a + b}x`, wrong: [`${a + b}x²`, `${a * b}x`, `${a + b}`, `${a}x + ${b}`] },
+    { given: `${a}(${b}x + ${c})`, answer: `${a * b}x + ${a * c}`, wrong: [`${a * b}x + ${c}`, `${a + b}x + ${a * c}`, `${b}x + ${a * c}`, `${a * b * c}x`] },
     { given: `${a}x + ${a * b}`, answer: `${a}(x + ${b})`, wrong: [`${a}(x + ${a * b})`, `x + ${b}`, `${a}x(${b})`] },
   ];
   const form = rng.pick(forms);

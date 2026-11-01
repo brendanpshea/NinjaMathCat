@@ -4,9 +4,11 @@ A math battle game for kindergarten through 6th grade. Each right answer powers
 your hero's attack; each wrong one lets the monster strike back.
 
 Pick a hero and a grade, then fight your way through eight monsters. Questions
-follow the Common Core standards for kindergarten through 3rd grade so far, and
-grades 4 to 6 will follow. Your level and the treasures you find are saved in
-your browser, and nothing leaves it.
+follow the Common Core math standards from kindergarten to 6th grade, with
+pictures to read where the standards call for them: clocks, graphs, number
+lines, fraction models, areas, boxes of cubes, protractors and coordinate
+grids. Your level and the treasures you find are saved in your browser, and
+nothing leaves it.
 
 **Play it:** open `index.html` through any web server (see below), or on the
 project's GitHub Pages site. The original version of the game is kept in
@@ -21,6 +23,7 @@ npm install                   # installs TypeScript, used only to check types
 npm run check                 # type-check src/, then run the tests
 npm run sample -- 2.5         # print ten sample questions for mid-second grade
 npm run sample -- 1 5 money   # five money questions for first grade
+npm run coverage -- 5         # which 5th grade standards the questions cover, and which they don't yet
 npm run simulate -- 2         # how adventures go for children of different accuracy
 npm run gallery               # out/gallery.html: sample questions with their pictures
 npm run stage                 # out/stage-preview/: try the battle stage with any hero and monster

@@ -22,6 +22,8 @@ import { expressions, equations } from "./questions/algebra.js";
 import { ratios } from "./questions/ratios.js";
 import { integers } from "./questions/integers.js";
 import { statistics } from "./questions/statistics.js";
+import { area, volume, conversions } from "./questions/measurement.js";
+import { angles, coordinates } from "./questions/geometry.js";
 
 /** @import { Rng } from "./rng.js" */
 /** @import { Question, QuestionType } from "./questions/common.js" */
@@ -76,10 +78,15 @@ export const CURRICULUM = [
   { type: fractionLine, from: 3, to: 3.5, standards: ["3.NF.2"] },
   { type: rounding, from: 3, to: 5.5, standards: ["3.NBT.1", "4.NBT.3", "5.NBT.4"] },
   { type: fractionCompare, from: 3, to: 4.5, standards: ["3.NF.3", "4.NF.1", "4.NF.2"] },
+  { type: area, from: 3, to: 6.5, standards: ["3.MD.5", "3.MD.6", "3.MD.7", "3.MD.8", "4.MD.3", "6.G.1"] },
+  { type: conversions, from: 3, to: 5.5, standards: ["3.MD.2", "4.MD.1", "5.MD.1"] },
   { type: placeValue, from: 4, to: 5.5, standards: ["4.NBT.1", "4.NBT.2", "5.NBT.1", "5.NBT.3"] },
   { type: decimals, from: 4, to: 6.5, standards: ["4.NF.5", "4.NF.6", "4.NF.7", "5.NBT.2", "5.NBT.3", "5.NBT.7", "6.NS.3"] },
   { type: fractionArithmetic, from: 4, to: 6.5, standards: ["4.NF.3", "4.NF.4", "5.NF.1", "5.NF.4", "5.NF.7", "6.NS.1"] },
   { type: factors, from: 4, to: 4.5, standards: ["4.OA.4"] },
+  { type: angles, from: 4, to: 4.5, standards: ["4.MD.5", "4.MD.6", "4.MD.7", "4.G.1"] },
+  { type: volume, from: 5, to: 6.5, standards: ["5.MD.3", "5.MD.4", "5.MD.5", "6.G.2"] },
+  { type: coordinates, from: 5, to: 6.5, standards: ["5.G.1", "5.G.2", "6.NS.6", "6.NS.8"] },
   { type: expressions, from: 5, to: 6.5, standards: ["5.OA.1", "5.OA.2", "6.EE.1", "6.EE.2", "6.EE.3", "6.EE.4"] },
   { type: commonFactors, from: 6, to: 6.5, standards: ["6.NS.4"] },
   { type: equations, from: 6, to: 6.5, standards: ["6.EE.5", "6.EE.7", "6.EE.8"] },

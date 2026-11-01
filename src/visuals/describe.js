@@ -53,5 +53,17 @@ export function describeVisual(v) {
       return `A bar graph, "${v.title}", with bars for ${list(v.bars.map(b => b.label))}`;
     case "fraction":
       return `A ${v.model} cut into equal parts, some of them shaded`;
+    case "area":
+      if (v.grid) return `A ${v.shape} on a grid of squares`;
+      if (!v.labels) return `A ${v.shape}`;
+      return v.shape === "rectangle"
+        ? `A rectangle with sides labelled ${v.labels.base} and ${v.labels.height}`
+        : `A ${v.shape} with its base labelled ${v.labels.base} and its height labelled ${v.labels.height}`;
+    case "cubes":
+      return v.labels ? `A box with edges labelled ${list([v.labels.length, v.labels.width, v.labels.height])}` : "A box built of small cubes";
+    case "angle":
+      return v.protractor ? "An angle on a protractor" : "An angle";
+    case "coordinates":
+      return `A coordinate grid with points ${list(v.points.map(p => p.label))}`;
   }
 }
