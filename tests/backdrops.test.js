@@ -55,13 +55,13 @@ describe("painted backdrops", () => {
     }
   });
 
-  it("are 1920 by 800, light enough to load quickly, and all in use", () => {
-    const used = new Set(BACKDROPS.map(b => b.file));
+  it("are 1920 by 800, light enough to load quickly, and all planned in scenes.json", () => {
+    const planned = new Set(sheets.flatMap(s => s.scenes.map(c => `assets/backdrops/${c.id}.webp`)));
     for (const name of readdirSync("assets/backdrops").filter(n => n.endsWith(".webp"))) {
       const file = `assets/backdrops/${name}`;
       assert.deepEqual(webpSize(readFileSync(file)), { width: 1920, height: 800 }, file);
       assert.ok(statSync(file).size <= 300 * 1024, `${file} is over 300 KB`);
-      assert.ok(used.has(file), `${file} is not used by src/backdrops.js`);
+      assert.ok(planned.has(file), `${file} is not planned in scenes.json`);
     }
   });
 });
