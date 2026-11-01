@@ -11,6 +11,7 @@ import { planRound, narrate, BEAT } from "../stage.js";
 import { heroStats, monsterStats } from "../combat.js";
 import { heroSprite } from "../heroes.js";
 import { monsterSprite } from "../monsters.js";
+import { setStrip } from "./sprites.js";
 
 /** @import { Battle, Round } from "../battle.js" */
 /** @import { Hero } from "../heroes.js" */
@@ -25,30 +26,6 @@ const BACKDROPS = 10;
  */
 export function monsterSize(tier) {
   return 0.85 + 0.1 * (tier - 1);
-}
-
-/** @type {Map<string, Promise<number>>} */
-const aspects = new Map();
-
-/**
- * The width-to-height shape of one frame of a strip of three, once the strip has loaded.
- * @param {string} url
- * @returns {Promise<number>}
- */
-function frameAspect(url) {
-  let loading = aspects.get(url);
-  if (!loading) {
-    loading = new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img.naturalWidth / 3 / img.naturalHeight);
-      img.onerror = reject;
-      img.src = url;
-    });
-    // A failed load must not be remembered as the answer.
-    loading.catch(() => aspects.delete(url));
-    aspects.set(url, loading);
-  }
-  return loading;
 }
 
 /** @param {"hero" | "monster"} side */
@@ -76,24 +53,6 @@ export function createStage(root) {
   let timers = [];
   /** Which monster is on stage, so a new one can step in. */
   let shownFoe = "";
-
-  /**
-   * @param {HTMLElement} el
-   * @param {string} url
-   * @param {string} label
-   */
-  function setSprite(el, url, label) {
-    el.setAttribute("aria-label", label);
-    if (el.dataset.src === url) return;
-    el.dataset.src = url;
-    el.style.backgroundImage = `url("${url}")`;
-    el.classList.remove("is-ready");
-    frameAspect(url).then(aspect => {
-      if (el.dataset.src !== url) return;
-      el.style.setProperty("--frame-aspect", aspect.toFixed(4));
-      el.classList.add("is-ready");
-    }).catch(() => {}); // a missing file leaves an empty spot; the name and health still say who is there
-  }
 
   /**
    * @param {"hero" | "monster"} side
@@ -174,7 +133,7 @@ export function createStage(root) {
     ref("heroSprite").dataset.pose = "stand";
     ref("heroName").textContent = hero.name;
     ref("heroLevel").textContent = `Level ${battle.hero.level}`;
-    setSprite(ref("heroSprite"), heroSprite(hero), `You, ${hero.name}`);
+    setStrip(ref("heroSprite"), heroSprite(hero), `You, ${hero.name}`);
     setHp("hero", battle.hero.hp, heroStats(battle.hero.level).maxHp);
 
     const { foe } = battle;
@@ -184,7 +143,7 @@ export function createStage(root) {
     const sprite = ref("monsterSprite");
     ref("monsterName").textContent = foe.monster.name;
     ref("monsterLevel").textContent = `Level ${foe.level}`;
-    setSprite(sprite, monsterSprite(foe.monster), foe.monster.name);
+    setStrip(sprite, monsterSprite(foe.monster), foe.monster.name);
     setHp("monster", foe.hp, monsterStats(foe.level).maxHp);
     actor.style.setProperty("--size", monsterSize(foe.monster.tier).toFixed(2));
 
@@ -254,24 +213,33 @@ export function createStage(root) {
   /**
    * Act out a round, from the battle before it to the battle after. Resolves
    * when it is over; at once if there is nothing to show, or the reader has
-   * asked for less motion.
+   * asked for less motion. `onBeat` hears each beat as it plays, for sound;
+   * with less motion it still hears them, at their times, since sound is not
+   * motion.
    * @param {Round} round
    * @param {Battle} before
    * @param {Battle} after
    * @param {Hero} hero
+   * @param {{ onBeat?: (beat: Beat) => void }} [options]
    * @returns {Promise<void>}
    */
-  function play(round, before, after, hero) {
+  function play(round, before, after, hero, { onBeat } = {}) {
     timers.forEach(clearTimeout);
     timers = [];
     if (before.foe) ref("news").textContent = narrate(round, { hero: hero.name, monster: before.foe.monster.name });
     const plan = planRound(round);
     if (plan.end === 0 || reducedMotion()) {
+      if (onBeat) for (const beat of plan.beats) timers.push(setTimeout(() => onBeat(beat), beat.at));
       show(after, hero);
       return Promise.resolve();
     }
     return new Promise(resolve => {
-      for (const beat of plan.beats) timers.push(setTimeout(() => playBeat(beat, round, before, after), beat.at));
+      for (const beat of plan.beats) {
+        timers.push(setTimeout(() => {
+          playBeat(beat, round, before, after);
+          onBeat?.(beat);
+        }, beat.at));
+      }
       timers.push(setTimeout(() => {
         show(after, hero);
         resolve();

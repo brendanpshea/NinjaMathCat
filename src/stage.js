@@ -85,6 +85,22 @@ export function planRound(round) {
 }
 
 /**
+ * The sound a beat makes: a name in SFX (src/sound.js).
+ * @param {Beat} beat
+ * @returns {string}
+ */
+export function sfxFor(beat) {
+  const hero = beat.who === "hero";
+  switch (beat.act) {
+    case "attack": return hero ? (beat.charged ? "charged" : "swing") : "claw";
+    case "hit": return hero ? "hurt" : "hit";
+    case "vanish": return "defeat";
+    case "glow": return beat.tone === "gold" ? "levelUp" : "heal";
+    case "down": case "revive": case "drop": return beat.act;
+  }
+}
+
+/**
  * The round in a sentence or two, for screen readers and for anyone who
  * looked away: "Ninja Cat hits Sneaky Duck for 25. Sneaky Duck is beaten!"
  * @param {Round} round

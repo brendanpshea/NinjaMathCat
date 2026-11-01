@@ -11,7 +11,8 @@
     "sample": "node tools/sample_questions.js",
     "simulate": "node tools/simulate_battle.js",
     "gallery": "node tools/build_gallery.js",
-    "stage": "node tools/build_stage_preview.js"
+    "stage": "node tools/build_stage_preview.js",
+    "screens": "node tools/screenshots.js"
   },
   "engines": {
     "node": ">=22"

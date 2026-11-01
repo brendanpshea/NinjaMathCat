@@ -17,4 +17,8 @@ jobs:
       - name: Type-check
         run: npm run typecheck
       - name: Run the test suite
+        env:
+          # The runner ships with Chrome. If it ever does not, fail rather than
+          # quietly skipping the real-browser tests.
+          NINJA_REQUIRE_BROWSER: "1"
         run: npm test

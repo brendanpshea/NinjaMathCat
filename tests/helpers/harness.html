@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ninja Math Cat test harness</title>
+<!--
+  Served by tests/helpers/browser.js. Loads the game in a frame, plays the
+  scenario named in ?scenario=, and writes what it saw as JSON into #out for
+  the test to read. Same origin as the game, so it can reach into the frame.
+-->
+</head>
+<body>
+<pre id="out">pending</pre>
+<iframe id="game" style="width: 1000px; height: 900px; border: 0"></iframe>
+<script type="module">
+  const out = document.getElementById("out");
+  const frame = document.getElementById("game");
+  const errors = [];
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  async function until(test, what, ms = 60000) {
+    const started = performance.now();
+    while (!test()) {
+      if (performance.now() - started > ms) throw new Error(`timed out waiting for ${what}`);
+      await wait(25);
+    }
+  }
+
+  /** Load the game in the frame, listening for errors in it. */
+  async function load(query = "?test&seed=7") {
+    const loaded = new Promise(resolve => { frame.onload = resolve; });
+    frame.src = `/index.html${query}`;
+    await loaded;
+    const win = frame.contentWindow;
+    win.addEventListener("error", e => errors.push(`error: ${e.message}`));
+    win.addEventListener("unhandledrejection", e => errors.push(`rejection: ${e.reason}`));
+    const consoleError = win.console.error.bind(win.console);
+    win.console.error = (...args) => { errors.push(`console: ${args.join(" ")}`); consoleError(...args); };
+    await until(() => win.ninjaMathCat, "the game to start");
+    return win;
+  }
+
+  const doc = () => frame.contentDocument;
+  const $ = selector => doc().querySelector(selector);
+  const $$ = selector => [...doc().querySelectorAll(selector)];
+  const game = () => frame.contentWindow.ninjaMathCat.state();
+  const click = selector => { const el = $(selector); if (!el) throw new Error(`nothing matches ${selector}`); el.click(); };
+
+  /** On the battle screen, wait until a question can be answered, or the battle is over. */
+  async function readyToAnswer() {
+    await until(() => game().screen !== "battle"
+      || ($(".choice:not(:disabled)") && $("[data-ref=next]").hidden && $(".prompt")?.textContent === game().battle?.question?.prompt),
+    "a question to answer");
+  }
+
+  /** Answer the current question: rightly, or with the first wrong choice not tried. */
+  async function answer(right) {
+    const { battle } = game();
+    const q = battle.question;
+    const choice = right ? q.answer : q.choices.find(c => c !== q.answer && !battle.ruledOut.includes(c));
+    $$(".choice")[q.choices.indexOf(choice)].click();
+  }
+
+  const scenarios = {
+    /** A whole adventure, start to finish, then the screens around it, then a reload. */
+    async adventure() {
+      localStorage.clear();
+      await load();
+      const report = { title: {}, battle: {}, victory: {}, home: {}, treasures: {}, reload: {} };
+
+      report.title.heading = $("h1").textContent;
+      report.title.heroes = $$("input[name=hero]").length;
+      report.title.grades = $$("#grade option").length;
+      report.title.returningRecord = Boolean($(".record"));
+      click(".hero-choice[data-hero=owl_wizard]");
+      const grade = $("#grade");
+      grade.value = "2";
+      grade.dispatchEvent(new Event("change", { bubbles: true }));
+      click("[data-ref=start]");
+
+      await until(() => game().screen === "battle", "the battle");
+      await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load");
+      report.battle.journey = $$(".journey li").length;
+      report.battle.title = $(".journey-title").textContent;
+      report.battle.arrival = $(".arrival").textContent;
+      report.battle.heroName = $("[data-ref=heroName]").textContent;
+      await readyToAnswer();
+      report.battle.choices = $$(".choice").length;
+
+      // Wrong twice: a hint, then the answer shown and a button to go on.
+      await answer(false);
+      // The hint shows at once; the choices come back when the stage is done.
+      await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint, and the choices back");
+      report.battle.hint = $(".feedback").textContent;
+      report.battle.ruledOutDisabled = $$(".choice.wrong").every(b => b.disabled) && $$(".choice:not(:disabled)").length === 3;
+      await answer(false);
+      await until(() => !$("[data-ref=next]").hidden, "the Next button");
+      report.battle.reveal = $(".feedback").textContent;
+      report.battle.revealShowsRight = $$(".choice.right").length === 1;
+      report.battle.nextFocused = doc().activeElement === $("[data-ref=next]");
+      click("[data-ref=next]");
+
+      // Then right until the adventure is won, watching the pictures and the monster's health.
+      let answered = 2;
+      let pictures = 0;
+      let visualQuestions = 0;
+      let monsterHurt = false;
+      while (game().screen === "battle" && answered < 300) {
+        await readyToAnswer();
+        if (game().screen !== "battle") break;
+        if (game().battle.question.visual) {
+          visualQuestions++;
+          if ($(".picture svg")) pictures++;
+        }
+        const before = Number($("[data-ref=monsterHp]").getAttribute("aria-valuenow"));
+        await answer(true);
+        answered++;
+        await until(() => game().screen !== "battle" || Number($("[data-ref=monsterHp]").getAttribute("aria-valuenow")) < before
+          || $("[data-ref=monsterName]").textContent !== game().battle?.foe?.monster.name, "the blow to land", 10000).catch(() => {});
+        if (game().screen === "battle" && Number($("[data-ref=monsterHp]").getAttribute("aria-valuenow")) < before) monsterHurt = true;
+      }
+      report.battle.answered = answered;
+      report.battle.visualQuestions = visualQuestions;
+      report.battle.picturesDrawn = pictures;
+      report.battle.monsterHurt = monsterHurt;
+
+      await until(() => game().screen === "victory", "the victory screen");
+      report.victory.heading = $("h1").textContent;
+      report.victory.facts = $$(".facts li").map(li => li.textContent.replace(/\s+/g, " ").trim());
+      report.victory.treasuresShown = $$(".victory-screen .treasure").length;
+      const saved = JSON.parse(localStorage.getItem("ninja-math-cat"));
+      report.victory.saved = saved;
+
+      click("[data-ref=home]");
+      await until(() => game().screen === "title", "the title");
+      report.home.record = $(".record")?.textContent.replace(/\s+/g, " ").trim();
+      click("[data-ref=treasures]");
+      await until(() => game().screen === "treasures", "the treasures");
+      report.treasures.found = $$(".treasure").length;
+      report.treasures.missing = $$(".hidden-grid li").length;
+      click("[data-ref=back]");
+
+      // A new visit remembers everything.
+      await load();
+      report.reload.record = $(".record")?.textContent.replace(/\s+/g, " ").trim();
+      report.reload.hero = $("input[name=hero]:checked")?.value;
+      report.reload.grade = $("#grade").value;
+
+      // The number keys answer, and Rest leaves after asking.
+      click("[data-ref=start]");
+      await until(() => game().screen === "battle", "another battle");
+      await readyToAnswer();
+      const asked = game().battle.question;
+      doc().dispatchEvent(new KeyboardEvent("keydown", { key: String(asked.choices.indexOf(asked.answer) + 1), bubbles: true }));
+      await until(() => game().battle.question !== asked, "the number key to answer");
+      report.keys = true;
+      click("[data-act=ask]");
+      report.restAsks = /Leave this adventure/.test($(".leave").textContent);
+      click("[data-act=go]");
+      await until(() => game().screen === "title", "the title after resting");
+      report.rested = true;
+
+      report.errors = errors;
+      return report;
+    },
+
+    /**
+     * Bring the game to one screen and stop there, for a screenshot
+     * (tools/screenshots.js): ?screen= title, returning, battle, hint,
+     * reveal, victory or treasures, and ?width= and ?height= for the frame.
+     */
+    async pose() {
+      const params = new URLSearchParams(location.search);
+      const screen = params.get("screen");
+      out.hidden = true;
+      document.body.style.margin = "0";
+      frame.style.width = `${params.get("width") ?? 1000}px`;
+      frame.style.height = `${params.get("height") ?? 900}px`;
+      localStorage.clear();
+      if (screen === "returning" || screen === "treasures") {
+        const { TREASURES } = await import("/src/treasures.js");
+        localStorage.setItem("ninja-math-cat", JSON.stringify({
+          heroId: "cat_ninja", grade: 1, xp: 760, treasures: TREASURES.filter((_, i) => i % 7 === 0).map(t => t.id), muted: false,
+        }));
+      }
+      await load("?test&seed=11");
+      if (screen === "title" || screen === "returning") return {};
+      if (screen === "treasures") {
+        click("[data-ref=treasures]");
+        return {};
+      }
+      click("[data-ref=start]");
+      await until(() => game().screen === "battle", "the battle");
+      await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load");
+      // On to a question with a picture, landing a few blows on the way.
+      for (let i = 0; i < 12; i++) {
+        await readyToAnswer();
+        if (i >= 2 && game().battle.question.visual) break;
+        await answer(true);
+        await wait(1500);
+      }
+      if (screen === "hint" || screen === "reveal") {
+        await answer(false);
+        await until(() => /Not quite/.test($(".feedback").textContent), "the hint");
+        if (screen === "reveal") {
+          await wait(1500);
+          await answer(false);
+          await until(() => !$("[data-ref=next]").hidden, "the Next button");
+        }
+        await wait(1500);
+      }
+      if (screen === "victory") {
+        while (game().screen === "battle") {
+          await readyToAnswer();
+          if (game().screen !== "battle") break;
+          await answer(true);
+          await wait(50);
+        }
+        await until(() => game().screen === "victory", "the victory screen");
+      }
+      await wait(1500);
+      return {};
+    },
+
+    /** With reduced motion: nothing animates, and the game still plays. */
+    async still() {
+      localStorage.clear();
+      await load();
+      click("[data-ref=start]");
+      await until(() => game().screen === "battle", "the battle");
+      const report = { answered: 0 };
+      for (let i = 0; i < 12 && game().screen === "battle"; i++) {
+        await readyToAnswer();
+        await answer(i % 4 !== 0);
+        report.answered++;
+        await wait(20);
+        if (!$("[data-ref=next]").hidden) click("[data-ref=next]");
+      }
+      report.reducedMotion = frame.contentWindow.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      report.xp = game().save.xp;
+      report.errors = errors;
+      return report;
+    },
+  };
+
+  try {
+    const name = new URLSearchParams(location.search).get("scenario");
+    out.textContent = JSON.stringify(await scenarios[name]());
+  } catch (error) {
+    out.textContent = JSON.stringify({ error: `${error.message} (errors seen: ${errors.join(" | ") || "none"})` });
+  }
+</script>
+</body>
+</html>

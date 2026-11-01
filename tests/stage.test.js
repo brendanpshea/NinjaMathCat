@@ -2,7 +2,7 @@
 // round looks like as a sequence of beats, and what it says in words.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { planRound, narrate, BEAT } from "../src/stage.js";
+import { planRound, narrate, sfxFor, BEAT } from "../src/stage.js";
 import { startBattle, answer } from "../src/battle.js";
 import { MONSTERS } from "../src/monsters.js";
 import { TREASURES } from "../src/treasures.js";
@@ -93,5 +93,29 @@ describe("narrating", () => {
     assert.equal(won, `Ninja Cat hits Sneaky Duck for 30. A streak makes it extra strong! Sneaky Duck is beaten! It leaves behind a treasure: ${TREASURES[0].name}. Ninja Cat gets 25 health back.`);
     assert.match(narrate(round({ heroDamage: 25, leveledUp: true, healed: 60 }), names), /levels up!$/);
     assert.match(narrate(round({ correct: false, foeDamage: 15, knockedOut: true }), names), /knocked out, but gets right back up!$/);
+  });
+});
+
+describe("sound", () => {
+  it("gives every beat of every kind of round a sound that exists", async () => {
+    const { SFX } = await import("../src/sound.js");
+    const rounds = [
+      round({ heroDamage: 30, streakMultiplier: 1.5, defeatedFoe: true, drop: TREASURES[0], healed: 25 }),
+      round({ heroDamage: 25, leveledUp: true, healed: 60 }),
+      round({ correct: false, foeDamage: 15, knockedOut: true }),
+    ];
+    const heard = rounds.flatMap(r => planRound(r).beats.map(sfxFor));
+    for (const name of heard) assert.ok(SFX[name], `no sound called ${name}`);
+    assert.deepEqual(new Set(heard), new Set(["charged", "defeat", "drop", "heal", "swing", "hit", "levelUp", "claw", "hurt", "down", "revive"]));
+  });
+
+  it("builds ZzFX samples for every sound", async () => {
+    const { SFX } = await import("../src/sound.js");
+    const { buildSamples, ZZFX_SAMPLE_RATE } = await import("../src/zzfx.js");
+    for (const [name, params] of Object.entries(SFX)) {
+      const samples = buildSamples(...params);
+      assert.ok(samples.length > 0 && samples.length < 3 * ZZFX_SAMPLE_RATE, name);
+      assert.ok(samples.every(Number.isFinite), name);
+    }
   });
 });

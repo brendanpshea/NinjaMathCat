@@ -3,10 +3,14 @@
 A math battle game for kindergarten through 6th grade. Each right answer powers
 your hero's attack; each wrong one lets the monster strike back.
 
-> **Being rebuilt.** The original game is in [`legacy/`](legacy/) and still
-> runs from there. This version has its question engine, battle rules,
-> question pictures and battle stage so far, with tests. The screens come
-> next. Grades K–3 are written, and 4–6 will follow.
+Pick a hero and a grade, then fight your way through eight monsters. Questions
+follow the Common Core standards for kindergarten through 3rd grade so far, and
+grades 4 to 6 will follow. Your level and the treasures you find are saved in
+your browser, and nothing leaves it.
+
+**Play it:** open `index.html` through any web server (see below), or on the
+project's GitHub Pages site. The original version of the game is kept in
+[`legacy/`](legacy/).
 
 ## Working on it
 
@@ -20,11 +24,17 @@ npm run sample -- 1 5 money   # five money questions for first grade
 npm run simulate -- 2         # how adventures go for children of different accuracy
 npm run gallery               # out/gallery.html: sample questions with their pictures
 npm run stage                 # out/stage-preview/: try the battle stage with any hero and monster
+npm run screens               # out/screens/: screenshots of every screen, desktop and phone
 ```
 
-The stage preview loads the game's files, so open it through a local web
-server: from the repository root run `python -m http.server 8080`, then go to
+The game loads its files as ES modules, so it needs a web server rather than
+opening the file directly: from the repository root run
+`python -m http.server 8080` and go to http://localhost:8080/. Add `?seed=7`
+to get the same questions every time. The stage preview is at
 http://localhost:8080/out/stage-preview/local.html.
+
+`npm test` includes `tests/browser.test.js`, which plays a whole adventure in
+headless Chrome or Edge. Without either browser it is skipped, with a warning.
 
 There is no build step. The browser runs `src/` exactly as written. Types come
 from JSDoc comments, and `tsc` checks them without compiling anything.
@@ -33,6 +43,10 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 
 | Path | What it holds |
 | --- | --- |
+| `index.html`, `src/main.js` | The page, and what starts the game on it. |
+| `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasure collection. |
+| `src/save.js`, `src/progress.js` | What the browser remembers, and a suggestion of an easier or harder grade after an adventure. |
+| `src/sound.js`, `src/zzfx.js` | Sound effects, made by ZzFX as the game runs. |
 | `src/rng.js` | Seeded random numbers. Pass the same seed and you get the same question, which is how the tests replay a failure. |
 | `src/curriculum.js` | The grade ladder, and the table of which question types each grade asks and which Common Core standards each covers. |
 | `src/questions/` | One file per family of question types. Each type turns `(rng, grade)` into a prompt, an answer, likely wrong answers and a hint. |
@@ -43,8 +57,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/stage.js` | A round as a sequence of timed beats (the hero lunges, the monster reels…) and as a sentence for screen readers. |
 | `src/ui/stage_view.js`, `css/stage.css` | The battle stage on the page: plays a round's beats with CSS animations, and does nothing at all under reduced motion. |
 | `assets/` | Sprite strips for the heroes and monsters, and the backdrops. |
-| `tests/` | `node --test`, with no test framework to install. `balance.test.js` plays whole adventures to check the game still feels right. |
-| `tools/` | `sample_questions.js` prints questions as a child would see them. `simulate_battle.js` shows how the balance plays out. `build_gallery.js` makes a page of sample questions with their pictures, and `build_stage_preview.js` a page for trying the stage. |
+| `tests/` | `node --test`, with no test framework to install. `balance.test.js` plays whole adventures to check the game still feels right, and `browser.test.js` plays one in a real browser. |
+| `tools/` | `sample_questions.js` prints questions as a child would see them. `simulate_battle.js` shows how the balance plays out. `build_gallery.js` makes a page of sample questions with their pictures, `build_stage_preview.js` a page for trying the stage, and `screenshots.js` pictures of every screen. |
 
 ### How a battle works
 
@@ -84,7 +98,9 @@ same author's quiz game, along with the stage's choreography and animations.
 Each sprite is a strip of three poses (stand, attack, recoil), all facing
 right; the stage mirrors the monster. LotRD's `images/sprites/roster.json`
 and `tools/sprite_prompts.py` and `tools/sprite_sheets.py` make new ones.
-The backdrops are this game's own, from the original version.
+The backdrops are this game's own, from the original version. Sound effects
+are made with [ZzFX](https://github.com/KilledByAPixel/ZzFX) by Frank Force
+(MIT license).
 
 ## License
 
