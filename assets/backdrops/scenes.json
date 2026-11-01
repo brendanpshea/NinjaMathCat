@@ -90,6 +90,96 @@
           "avoid": "statues, sphinxes, dragons or bright glowing crystals"
         }
       ]
+    },
+    {
+      "id": "c",
+      "scenes": [
+        {
+          "id": "seaside",
+          "name": "Seaside Cove",
+          "scene": "a sandy cove by the sea on a bright summer day",
+          "ground": "smooth, firm golden sand",
+          "behind": "gentle turquoise waves, a rocky arch out in the water, a white lighthouse on a far headland, a few puffy clouds",
+          "left": "a tall leaning palm tree",
+          "right": "a stack of weathered rocks with seaweed",
+          "avoid": "crabs, coral, shells, boats or umbrellas"
+        },
+        {
+          "id": "mushrooms",
+          "name": "Mushroom Forest",
+          "scene": "a shady forest glade full of giant mushrooms",
+          "ground": "soft mossy earth with a few fallen leaves",
+          "behind": "huge spotted mushrooms of different heights, tall mossy tree trunks, ferns, soft beams of sunlight through the leaves",
+          "left": "a giant red-and-white spotted mushroom",
+          "right": "a thick mossy tree trunk with shelf fungus",
+          "avoid": "fairies, helmets, houses in the mushrooms or glowing mushrooms"
+        },
+        {
+          "id": "frozen",
+          "name": "Frozen Lake",
+          "scene": "a frozen lake in a snowy pine forest on a clear winter day",
+          "ground": "flat, snow-dusted ice",
+          "behind": "snowy pine trees, distant white mountains, a small wooden cabin with a snowy roof far away, a pale blue sky",
+          "left": "a tall snow-covered pine tree",
+          "right": "a snowdrift over rocks hung with icicles",
+          "avoid": "snowmen, ice crystals, armor or footprints"
+        },
+        {
+          "id": "candy",
+          "name": "Candy Hills",
+          "scene": "a land made of sweets on a bright, cheerful day",
+          "ground": "a flat, wide path of pale pink frosting",
+          "behind": "rolling hills of chocolate and whipped cream, lollipop trees, a gingerbread cottage far away, pastel cotton-candy clouds",
+          "left": "a giant striped candy cane",
+          "right": "a tall stack of colorful macarons",
+          "avoid": "gingerbread people, witches, or faces on the sweets"
+        }
+      ]
+    },
+    {
+      "id": "d",
+      "scenes": [
+        {
+          "id": "library",
+          "name": "Grand Library",
+          "scene": "a grand old library with towering bookshelves",
+          "ground": "a polished wooden floor with a long patterned rug",
+          "behind": "tall shelves of books with rolling ladders, a balcony with a carved railing, tall arched windows letting in soft daylight, a big globe on a stand",
+          "left": "a tall bookshelf with a wooden ladder",
+          "right": "a wooden reading desk with a stack of closed books",
+          "avoid": "open or flying books, ink, lamps, lanterns or whales"
+        },
+        {
+          "id": "clocktower",
+          "name": "Clock Tower",
+          "scene": "high inside an old clock tower full of giant gears",
+          "ground": "a flat floor of thick wooden planks",
+          "behind": "huge interlocking brass and copper gears, the back of a big round clock face seen from inside with daylight through it, wooden beams, ropes and pulleys",
+          "left": "a tall iron pendulum hanging still",
+          "right": "a stack of wooden crates beside a workbench",
+          "avoid": "birds, robots, buttons, rust, or numbers on the clock"
+        },
+        {
+          "id": "observatory",
+          "name": "Starry Observatory",
+          "scene": "the stone terrace of a mountaintop observatory at dusk",
+          "ground": "smooth stone tiles of the terrace",
+          "behind": "a deep blue evening sky with the first stars and a thin crescent moon, the observatory's dome with a long telescope, a sea of clouds and far peaks in the last pink light",
+          "left": "a brass telescope on a tall tripod",
+          "right": "a stone balustrade post with a potted plant",
+          "avoid": "shooting stars, star patterns shaped like figures, dragons, or jellyfish"
+        },
+        {
+          "id": "peak",
+          "name": "Stormy Peak",
+          "scene": "a rocky mountain summit under a dramatic stormy sky",
+          "ground": "flat, dark gray rock",
+          "behind": "jagged peaks, a distant smoking volcano, swirling gray and purple storm clouds with gaps of warm sunlight breaking through",
+          "left": "a tall jagged rock spire",
+          "right": "an old broken stone archway",
+          "avoid": "lightning, lava, fire, glowing cracks or dragons"
+        }
+      ]
     }
   ]
 }

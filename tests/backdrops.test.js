@@ -33,8 +33,10 @@ describe("settings", () => {
 });
 
 describe("painted backdrops", () => {
-  it("are planned for every setting, four to a sheet", () => {
-    assert.deepEqual(sheets.flatMap(s => s.scenes.map(c => c.id)).sort(), BACKDROPS.map(b => b.id).sort());
+  it("are planned for every setting, four to a sheet, with room for ones still to paint", () => {
+    const planned = sheets.flatMap(s => s.scenes.map(c => c.id));
+    for (const b of BACKDROPS) assert.ok(planned.includes(b.id), `${b.id} is in scenes.json`);
+    assert.equal(new Set(planned).size, planned.length, "each scene is planned once");
     for (const sheet of sheets) assert.equal(sheet.scenes.length, 4, `sheet ${sheet.id}`);
   });
 
