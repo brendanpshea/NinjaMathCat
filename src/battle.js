@@ -1,0 +1,263 @@
+// A battle as a state machine. The state is plain data, and answering a
+// question turns one state into the next, reporting what happened on the way.
+// Nothing here waits, animates or touches the page: the UI acts out each
+// round and asks for the next answer when it is ready. (The old game ran its
+// rules on timers, which is where its races came from.)
+
+import { generateQuestion } from "./curriculum.js";
+import { isCorrect } from "./questions/common.js";
+import { heroStats, monsterStats, monsterLevel, hitDamage, streakMultiplier, XP, levelForXp, victoryHeal } from "./combat.js";
+import { pickTreasure } from "./treasures.js";
+
+/** @import { Rng } from "./rng.js" */
+/** @import { Answer, Question } from "./questions/common.js" */
+/** @import { Monster } from "./monsters.js" */
+/** @import { Treasure } from "./treasures.js" */
+
+/** Tries at each question before the answer is shown. */
+export const TRIES = 2;
+
+/**
+ * @typedef {object} Hero
+ * @property {number} level
+ * @property {number} xp  all the experience ever earned
+ * @property {number} hp
+ */
+
+/**
+ * @typedef {object} Foe
+ * @property {Monster} monster
+ * @property {number} level  set by its tier and the level the hero started the adventure at
+ * @property {number} hp
+ * @property {boolean} dropsTreasure  whether beating it still earns a treasure; knocking the hero out costs that
+ */
+
+/**
+ * How a child has done so far.
+ * @typedef {object} Tally
+ * @property {number} firstTry  questions right the first time
+ * @property {number} secondTry  right after a hint
+ * @property {number} missed  shown the answer
+ * @property {number} knockouts
+ * @property {Record<string, { asked: number, firstTry: number }>} byType  by question type
+ */
+
+/**
+ * @typedef {object} Battle
+ * @property {number} grade
+ * @property {Hero} hero
+ * @property {number} startLevel  the hero's level when the battle began, which the monsters are pitched at
+ * @property {readonly Monster[]} adventure  the monsters to beat, in order
+ * @property {number} beaten  how many of them are beaten
+ * @property {Foe | null} foe  the one being fought; null once all are beaten
+ * @property {Question | null} question  null once all are beaten
+ * @property {Answer[]} ruledOut  wrong choices already tried on this question
+ * @property {number} streak  questions right the first time in a row
+ * @property {string[]} treasures  ids of every treasure collected, in earlier battles too
+ * @property {Tally} tally
+ */
+
+/**
+ * What one answer did, for the stage to act out and the screen to report.
+ * @typedef {object} Round
+ * @property {boolean} correct
+ * @property {number} heroDamage  dealt to the monster
+ * @property {number} foeDamage  dealt to the hero
+ * @property {number} streakMultiplier  how much the streak added to heroDamage
+ * @property {boolean} defeatedFoe
+ * @property {boolean} knockedOut  the hero fell, and got back up
+ * @property {number} healed  health given back, for beating the monster or levelling up
+ * @property {number} xpGained
+ * @property {boolean} leveledUp
+ * @property {Treasure | null} drop
+ * @property {"again" | "reveal" | "next" | "won"} then  what comes next:
+ *   "again" is the same question, with the wrong choice ruled out and a hint;
+ *   "reveal" shows the right answer before the next question; "next" moves
+ *   straight on; "won" means every monster is beaten
+ * @property {string | null} hint  when then is "again"
+ * @property {Answer | null} answer  the right answer, when then is "reveal"
+ */
+
+/**
+ * Start a battle.
+ * @param {Rng} rng
+ * @param {object} setup
+ * @param {number} setup.grade
+ * @param {readonly Monster[]} setup.adventure
+ * @param {{ level: number, xp: number }} [setup.hero]  carried over from earlier battles; a new player starts at level 1
+ * @param {string[]} [setup.treasures]  collected in earlier battles
+ * @returns {Battle}
+ */
+export function startBattle(rng, { grade, adventure, hero = { level: 1, xp: 0 }, treasures = [] }) {
+  if (adventure.length === 0) throw new RangeError("An adventure needs at least one monster");
+  return {
+    grade,
+    hero: { ...hero, hp: heroStats(hero.level).maxHp },
+    startLevel: hero.level,
+    adventure,
+    beaten: 0,
+    foe: meet(adventure[0], hero.level),
+    question: generateQuestion(rng, grade),
+    ruledOut: [],
+    streak: 0,
+    treasures: [...treasures],
+    tally: { firstTry: 0, secondTry: 0, missed: 0, knockouts: 0, byType: {} },
+  };
+}
+
+/**
+ * Answer the current question.
+ * @param {Battle} battle
+ * @param {Answer} choice  one of the question's choices, and not one already ruled out
+ * @param {Rng} rng
+ * @returns {{ battle: Battle, round: Round }}
+ */
+export function answer(battle, choice, rng) {
+  const { question, foe } = battle;
+  if (!question || !foe) throw new Error("The battle is over");
+  if (!question.choices.includes(choice) || battle.ruledOut.includes(choice)) {
+    throw new RangeError(`"${choice}" cannot be picked now`);
+  }
+  return isCorrect(question, choice)
+    ? strike(battle, question, foe, rng)
+    : takeHit(battle, question, foe, choice, rng);
+}
+
+/**
+ * @param {Monster} monster
+ * @param {number} startLevel
+ * @returns {Foe}
+ */
+function meet(monster, startLevel) {
+  const level = monsterLevel(monster.tier, startLevel);
+  return { monster, level, hp: monsterStats(level).maxHp, dropsTreasure: true };
+}
+
+/**
+ * A right answer: the hero strikes.
+ * @param {Battle} battle
+ * @param {Question} question
+ * @param {Foe} foe
+ * @param {Rng} rng
+ * @returns {{ battle: Battle, round: Round }}
+ */
+function strike(battle, question, foe, rng) {
+  const { hero } = battle;
+  const secondTry = battle.ruledOut.length > 0;
+  const streak = secondTry ? 0 : battle.streak + 1;
+  const heroDamage = hitDamage({ attack: heroStats(hero.level).attack, difficulty: question.difficulty, streak, secondTry });
+  const foeHp = Math.max(0, foe.hp - heroDamage);
+  const defeatedFoe = foeHp === 0;
+
+  const xpGained = (secondTry ? XP.secondTry : XP.firstTry) + (defeatedFoe ? XP.perTier * foe.monster.tier : 0);
+  const xp = hero.xp + xpGained;
+  const level = levelForXp(xp);
+  const leveledUp = level > hero.level;
+  // Levelling up restores all health; beating a monster restores some.
+  const oldMax = heroStats(hero.level).maxHp;
+  const hp = leveledUp ? heroStats(level).maxHp
+    : defeatedFoe ? Math.min(oldMax, hero.hp + victoryHeal(oldMax))
+    : hero.hp;
+
+  const beaten = battle.beaten + Number(defeatedFoe);
+  const won = beaten === battle.adventure.length;
+  const drop = defeatedFoe && foe.dropsTreasure ? pickTreasure(rng, battle.treasures) : null;
+  const nextFoe = !defeatedFoe ? { ...foe, hp: foeHp } : won ? null : meet(battle.adventure[beaten], battle.startLevel);
+
+  return {
+    battle: {
+      ...battle,
+      hero: { level, xp, hp },
+      beaten,
+      foe: nextFoe,
+      question: won ? null : generateQuestion(rng, battle.grade, question.type),
+      ruledOut: [],
+      streak,
+      treasures: drop && !battle.treasures.includes(drop.id) ? [...battle.treasures, drop.id] : battle.treasures,
+      tally: record(battle.tally, question, secondTry ? "secondTry" : "firstTry"),
+    },
+    round: {
+      correct: true,
+      heroDamage,
+      foeDamage: 0,
+      streakMultiplier: secondTry ? 1 : streakMultiplier(streak),
+      defeatedFoe,
+      knockedOut: false,
+      healed: hp - hero.hp,
+      xpGained,
+      leveledUp,
+      drop,
+      then: won ? "won" : "next",
+      hint: null,
+      answer: null,
+    },
+  };
+}
+
+/**
+ * A wrong answer: the monster strikes. A knocked-out hero gets straight back
+ * up, so there is no game over; the monster keeps the damage it has taken,
+ * but no longer drops a treasure.
+ * @param {Battle} battle
+ * @param {Question} question
+ * @param {Foe} foe
+ * @param {Answer} choice
+ * @param {Rng} rng
+ * @returns {{ battle: Battle, round: Round }}
+ */
+function takeHit(battle, question, foe, choice, rng) {
+  const foeDamage = monsterStats(foe.level).attack;
+  const knockedOut = battle.hero.hp <= foeDamage;
+  const hp = knockedOut ? heroStats(battle.hero.level).maxHp : battle.hero.hp - foeDamage;
+  const ruledOut = [...battle.ruledOut, choice];
+  const again = ruledOut.length < TRIES;
+  const tally = { ...battle.tally, knockouts: battle.tally.knockouts + Number(knockedOut) };
+
+  return {
+    battle: {
+      ...battle,
+      hero: { ...battle.hero, hp },
+      foe: knockedOut ? { ...foe, dropsTreasure: false } : foe,
+      question: again ? question : generateQuestion(rng, battle.grade, question.type),
+      ruledOut: again ? ruledOut : [],
+      streak: 0,
+      tally: again ? tally : record(tally, question, "missed"),
+    },
+    round: {
+      correct: false,
+      heroDamage: 0,
+      foeDamage,
+      streakMultiplier: 1,
+      defeatedFoe: false,
+      knockedOut,
+      healed: 0,
+      xpGained: 0,
+      leveledUp: false,
+      drop: null,
+      then: again ? "again" : "reveal",
+      hint: again ? question.hint : null,
+      answer: again ? null : question.answer,
+    },
+  };
+}
+
+/**
+ * The tally with one more finished question in it.
+ * @param {Tally} tally
+ * @param {Question} question
+ * @param {"firstTry" | "secondTry" | "missed"} outcome
+ * @returns {Tally}
+ */
+function record(tally, question, outcome) {
+  const sofar = tally.byType[question.type] ?? { asked: 0, firstTry: 0 };
+  return {
+    ...tally,
+    firstTry: tally.firstTry + Number(outcome === "firstTry"),
+    secondTry: tally.secondTry + Number(outcome === "secondTry"),
+    missed: tally.missed + Number(outcome === "missed"),
+    byType: {
+      ...tally.byType,
+      [question.type]: { asked: sofar.asked + 1, firstTry: sofar.firstTry + Number(outcome === "firstTry") },
+    },
+  };
+}

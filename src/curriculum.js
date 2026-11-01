@@ -65,10 +65,12 @@ export function typesForGrade(grade) {
  * A question for a grade, of one of its types chosen at random.
  * @param {Rng} rng
  * @param {number} grade
+ * @param {string} [avoid]  a type not to ask, usually the last one, so the same kind of question doesn't come twice running
  * @returns {Question}
  */
-export function generateQuestion(rng, grade) {
+export function generateQuestion(rng, grade, avoid) {
   const types = typesForGrade(grade);
   if (types.length === 0) throw new RangeError(`No question types for grade ${grade}`);
-  return makeQuestion(rng, rng.pick(types), grade);
+  const others = types.filter(t => t.id !== avoid);
+  return makeQuestion(rng, rng.pick(others.length > 0 ? others : types), grade);
 }

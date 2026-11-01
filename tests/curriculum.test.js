@@ -46,6 +46,15 @@ describe("the curriculum", () => {
     }
   });
 
+  it("can be told not to repeat the last kind of question", () => {
+    for (const { grade, label } of GRADES) {
+      const rng = createRng(grade * 1000 + 2);
+      for (const type of typesForGrade(grade)) {
+        for (let i = 0; i < 50; i++) assert.notEqual(generateQuestion(rng, grade, type.id).type, type.id, label);
+      }
+    }
+  });
+
   it("places kindergarten in counting and shapes, not money or times tables", () => {
     const k = typesForGrade(0).map(t => t.id);
     assert.ok(k.includes("counting") && k.includes("shapes"));
