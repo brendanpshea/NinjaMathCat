@@ -6,7 +6,8 @@ import {
   addition, subtraction, missingNumber, multiplication, division, smallerFromLarger, addingWithoutCarrying,
   multiplyingWithoutCarrying, withRemainder, WITHIN, FACTORS,
 } from "../src/questions/arithmetic.js";
-import { atGrade } from "../src/questions/common.js";
+import { atGrade, makeQuestion } from "../src/questions/common.js";
+import { createRng } from "../src/rng.js";
 import { questionsOf, numbersIn } from "./helpers.js";
 
 describe("addition", () => {
@@ -124,5 +125,36 @@ describe("division", () => {
   it("writes remainders with R", () => {
     assert.equal(withRemainder(23, 2), "23 R 2");
     assert.equal(withRemainder(23, 0), "23");
+  });
+});
+
+describe("fact families, for chapters that focus on them", () => {
+  const families = { easy: [2, 5, 10], harder: [3, 4, 6, 7, 8, 9] };
+
+  it("multiply with 2, 5 or 10 first, then with the rest", () => {
+    for (const [focus, family] of Object.entries(families)) {
+      const rng = createRng(17);
+      const positions = new Set();
+      for (let i = 0; i < 300; i++) {
+        const q = makeQuestion(rng, multiplication, 3, focus);
+        const [a, b] = numbersIn(q.prompt);
+        assert.equal(q.answer, a * b, q.prompt);
+        assert.ok(focus === "easy" ? family.includes(a) || family.includes(b) : family.includes(a) && family.includes(b), `${focus}: ${q.prompt}`);
+        positions.add(q.choices.indexOf(q.answer));
+      }
+      assert.equal(positions.size, 4, `${focus}: the answer in every position`);
+    }
+  });
+
+  it("divide by 2, 5 or 10 first, then by the rest", () => {
+    for (const [focus, family] of Object.entries(families)) {
+      const rng = createRng(18);
+      for (let i = 0; i < 300; i++) {
+        const q = makeQuestion(rng, division, 3, focus);
+        const [dividend, divisor] = numbersIn(q.prompt);
+        assert.equal(q.answer * divisor, dividend, q.prompt);
+        assert.ok(family.includes(divisor), `${focus}: ${q.prompt}`);
+      }
+    }
   });
 });

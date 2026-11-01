@@ -150,7 +150,11 @@
  * @typedef {object} QuestionType
  * @property {string} id
  * @property {string} name
- * @property {(rng: Rng, grade: number) => Draft} generate
+ * @property {(rng: Rng, grade: number, focus?: string) => Draft} generate
+ * @property {Record<string, string>} [focuses]  narrower things a chapter of an
+ *   adventure can ask for, by name, each with what it means: "easy" for
+ *   multiplication is the facts with 2, 5 or 10. A type without them ignores
+ *   a focus.
  */
 
 /**
@@ -238,10 +242,11 @@ function pickSide(rng, answer, likely, count, side, spread, min, step) {
  * @param {Rng} rng
  * @param {QuestionType} type
  * @param {number} grade
+ * @param {string} [focus]  one of the type's focuses, to ask something narrower
  * @returns {Question}
  */
-export function makeQuestion(rng, type, grade) {
-  const { wrong, ...draft } = type.generate(rng, grade);
+export function makeQuestion(rng, type, grade, focus) {
+  const { wrong, ...draft } = type.generate(rng, grade, focus);
   const seen = new Set([String(draft.answer)]);
   /** @type {Answer[]} */
   const kept = [];

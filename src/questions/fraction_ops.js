@@ -171,12 +171,25 @@ const WORKING = [
 
 const DENS = [2, 3, 4, 5, 6, 8, 10, 12];
 
+/**
+ * The kinds a chapter can focus on, at a grade: adding and subtracting, with
+ * like denominators in fourth grade and unlike ones from fifth; multiplying;
+ * or dividing.
+ * @type {Record<string, (grade: number) => ArithmeticKind[]>}
+ */
+const FOCUSED = {
+  adding: grade => (grade < 5 ? ["likeAdd", "likeSubtract", ...(grade >= 4.5 ? /** @type {ArithmeticKind[]} */ (["mixedAdd"]) : [])] : ["unlikeAdd", "unlikeSubtract"]),
+  multiplying: grade => (grade < 5 ? ["timesWhole"] : ["multiply"]),
+  dividing: grade => (grade < 6 ? ["unitDivide"] : ["divide", "unitDivide"]),
+};
+
 /** @type {QuestionType} */
 export const fractionArithmetic = {
   id: "fraction_arithmetic",
   name: "Fraction arithmetic",
-  generate(rng, grade) {
-    const kind = rng.pick(atGrade(grade, WORKING));
+  focuses: { adding: "Adding and subtracting", multiplying: "Multiplying", dividing: "Dividing" },
+  generate(rng, grade, focus) {
+    const kind = rng.pick(focus && FOCUSED[focus] ? FOCUSED[focus](grade) : atGrade(grade, WORKING));
     // Fourth grade keeps the denominator as it is (4/8, 6/5); from the middle
     // of the year, mixed numbers; from fifth, simplest form.
     /** @param {Fraction} f */

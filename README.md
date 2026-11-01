@@ -114,7 +114,10 @@ how many parts are shaded, and every shape's sides and angles).
    and which Common Core standards it covers. Then put it in a chapter of
    each of those grades' adventures in `src/adventures.js`, in `learn` where
    the chapter is about it or `warmup` where it is review; a test checks that
-   every type a grade asks comes up in its adventure.
+   every type a grade asks comes up in its adventure. A type can also offer
+   `focuses`, narrower things a chapter can ask for (multiplication offers
+   the facts with 2, 5 and 10, then the rest), named in the chapter's
+   `focus`.
 3. If it needs a new kind of picture, add the kind to `Visual` in
    `src/questions/common.js`, a renderer in `src/visuals/`, and a description
    in `src/visuals/describe.js` that doesn't give the answer away.

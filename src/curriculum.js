@@ -124,8 +124,9 @@ export function generateQuestion(rng, grade, avoid) {
  * Which questions to ask, and how often: each part is a question type, the
  * grade to pitch it at, how much of the time to ask it, and the range of
  * difficulty (1 to 3) to try for: no harder than `most`, and no easier than
- * `least` if given.
- * @typedef {{ type: string, grade: number, weight: number, most: number, least?: number }[]} Mix
+ * `least` if given; and, if given, one of the type's focuses, to ask
+ * something narrower.
+ * @typedef {{ type: string, grade: number, weight: number, most: number, least?: number, focus?: string }[]} Mix
  */
 
 /**
@@ -175,9 +176,9 @@ export function pickQuestion(rng, mix, avoid) {
   const least = part.least ?? 1;
   /** How far a question's difficulty is outside the part's range. */
   const off = (/** @type {Question} */ q) => Math.max(0, least - q.difficulty, q.difficulty - part.most);
-  let nearest = makeQuestion(rng, type, part.grade);
+  let nearest = makeQuestion(rng, type, part.grade, part.focus);
   for (let i = 1; i < TRIES_FOR_DIFFICULTY && off(nearest) > 0; i++) {
-    const another = makeQuestion(rng, type, part.grade);
+    const another = makeQuestion(rng, type, part.grade, part.focus);
     if (off(another) < off(nearest)) nearest = another;
   }
   return nearest;

@@ -242,16 +242,42 @@ const PRODUCTS = [
   [Infinity, [[2, 2], [3, 2], [4, 1]]],
 ];
 
+/**
+ * The times-table families in the order children usually learn them: 2, 5
+ * and 10 first, then the rest (3.OA.7).
+ */
+export const FACT_FAMILIES = { easy: [2, 5, 10], harder: [3, 4, 6, 7, 8, 9] };
+
+/** What each kind of fact a chapter can focus on means. */
+const FACT_FOCUSES = { easy: "Facts with 2, 5 or 10", harder: "Facts with 3, 4, 6, 7, 8 and 9" };
+
+/**
+ * Two factors for a multiplication fact: any up to `top`; or one from the
+ * easy families, either way round; or both from the harder ones.
+ * @param {Rng} rng
+ * @param {number} top
+ * @param {string} [focus]  "easy" or "harder"
+ * @returns {[number, number]}
+ */
+function factPair(rng, top, focus) {
+  if (focus === "easy") {
+    const [a, b] = [rng.pick(FACT_FAMILIES.easy), rng.int(2, 10)];
+    return rng.chance(0.5) ? [a, b] : [b, a];
+  }
+  if (focus === "harder") return [rng.pick(FACT_FAMILIES.harder), rng.pick(FACT_FAMILIES.harder)];
+  return [rng.int(2, top), rng.int(2, top)];
+}
+
 /** @type {QuestionType} */
 export const multiplication = {
   id: "multiplication",
   name: "Multiplication",
-  generate(rng, grade) {
-    const kind = rng.pick(atGrade(grade, PRODUCTS));
+  focuses: FACT_FOCUSES,
+  generate(rng, grade, focus) {
+    const kind = focus === "easy" || focus === "harder" ? "facts" : rng.pick(atGrade(grade, PRODUCTS));
     if (kind === "facts" || kind === "tens") {
       const top = atGrade(grade, FACTORS);
-      const a = rng.int(2, top);
-      const b = kind === "tens" ? 10 * rng.int(2, 9) : rng.int(2, top);
+      const [a, b] = kind === "tens" ? [rng.int(2, top), 10 * rng.int(2, 9)] : factPair(rng, top, focus);
       const product = a * b;
       return {
         prompt: `What is ${a} × ${b}?`,
@@ -304,12 +330,14 @@ export function withRemainder(quotient, remainder) {
 export const division = {
   id: "division",
   name: "Division",
-  generate(rng, grade) {
-    const kind = atGrade(grade, QUOTIENTS);
+  focuses: FACT_FOCUSES,
+  generate(rng, grade, focus) {
+    const kind = focus === "easy" || focus === "harder" ? "facts" : atGrade(grade, QUOTIENTS);
     if (kind === "facts") {
       const top = atGrade(grade, FACTORS);
-      const divisor = rng.int(2, top);
-      const quotient = rng.int(2, top);
+      // Dividing by 2, 5 or 10 first, then by the rest.
+      const divisor = focus === "easy" ? rng.pick(FACT_FAMILIES.easy) : focus === "harder" ? rng.pick(FACT_FAMILIES.harder) : rng.int(2, top);
+      const quotient = rng.int(2, focus ? 10 : top);
       const dividend = divisor * quotient;
       return {
         prompt: `What is ${dividend} ÷ ${divisor}?`,

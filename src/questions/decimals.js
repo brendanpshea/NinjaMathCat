@@ -69,12 +69,23 @@ const PLANS = [
   [Infinity, ["add", "subtract", "multiply", "divide"]],
 ];
 
+/**
+ * The kinds a chapter can focus on, at a grade: what the places are worth,
+ * or dividing.
+ * @type {Record<string, (grade: number) => Kind[]>}
+ */
+const FOCUSED = {
+  "place value": grade => (grade < 5 ? ["toDecimal", "toFraction", "compare", "tenthsHundredths"] : ["compare", "powers"]),
+  dividing: () => ["divide"],
+};
+
 /** @type {QuestionType} */
 export const decimals = {
   id: "decimals",
   name: "Decimals",
-  generate(rng, grade) {
-    const kind = rng.pick(atGrade(grade, PLANS));
+  focuses: { "place value": "What each place is worth: comparing, and multiplying and dividing by 10, 100 and 1000", dividing: "Dividing" },
+  generate(rng, grade, focus) {
+    const kind = rng.pick(focus && FOCUSED[focus] ? FOCUSED[focus](grade) : atGrade(grade, PLANS));
     const big = grade >= 6;
     switch (kind) {
       case "toDecimal": return toDecimal(rng);

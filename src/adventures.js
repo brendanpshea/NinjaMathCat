@@ -30,6 +30,7 @@ import { need, steer } from "./mastery.js";
  * @property {string[]} learn  the question types it brings in or builds up
  * @property {string[]} [warmup]  types from earlier grades it keeps up
  * @property {string} setting  where it happens: a different setting for each chapter of a grade, suited to its topic where one is
+ * @property {Record<string, string>} [focus]  for a type it brings in, one of the type's focuses, to ask something narrower than the grade does
  */
 
 /** @type {Record<number, Chapter[]>} */
@@ -65,10 +66,10 @@ export const ADVENTURES = {
     { id: "2-time", setting: "clocktower", title: "Time, shapes and fractions", at: 2.5, learn: ["time", "shapes", "fractions"], note: "The long hand counts minutes by fives. When it points at the 3, it is 15 minutes past the hour." },
   ],
   3: [
-    { id: "3-groups", setting: "candy", title: "Equal groups", at: 3, learn: ["multiplication", "word_multiplication"], warmup: ["addition", "subtraction", "skip_counting"], note: "Multiplying counts equal groups quickly. 4 × 5 means 4 groups of 5: count by 5s to get 5, 10, 15, 20." },
-    { id: "3-sharing", setting: "kitchen", title: "Sharing equally", at: 3, learn: ["division", "word_division", "missing_number"], note: "Dividing shares things into equal groups. To find 20 ÷ 4, ask: 4 times what makes 20?" },
+    { id: "3-groups", setting: "candy", title: "Equal groups", at: 3, learn: ["multiplication", "word_multiplication"], focus: { multiplication: "easy" }, warmup: ["addition", "subtraction", "skip_counting"], note: "Multiplying counts equal groups quickly. 4 × 5 means 4 groups of 5: count by 5s to get 5, 10, 15, 20." },
+    { id: "3-sharing", setting: "kitchen", title: "Sharing equally", at: 3, learn: ["division", "word_division", "missing_number"], focus: { division: "easy" }, note: "Dividing shares things into equal groups. To find 20 ÷ 4, ask: 4 times what makes 20?" },
     { id: "3-measures", setting: "clocktower", title: "Time, measures and rounding", at: 3, learn: ["time", "conversions", "rounding"], warmup: ["number_line", "money"], note: "To round to the nearest ten, find the two tens a number sits between and see which is closer. Halfway rounds up." },
-    { id: "3-two-step", setting: "farm", title: "Harder facts and two-step stories", at: 3.5, learn: ["multiplication", "division", "word_two_step"], warmup: ["word_addition", "word_subtraction", "comparison"], note: "Some stories take two steps. Find the first answer, then use it to find the second." },
+    { id: "3-two-step", setting: "farm", title: "Harder facts and two-step stories", at: 3.5, learn: ["multiplication", "division", "word_two_step"], focus: { multiplication: "harder", division: "harder" }, warmup: ["word_addition", "word_subtraction", "comparison"], note: "Some stories take two steps. Find the first answer, then use it to find the second." },
     { id: "3-area", setting: "attic", title: "Area", at: 3, learn: ["area"], note: "Area is how many squares cover a shape. For a rectangle, count the squares in one row, then multiply by the number of rows." },
     { id: "3-fractions", setting: "swamp", title: "Fractions", at: 3.5, learn: ["fractions", "fraction_line", "fraction_compare"], note: "A fraction is equal parts of a whole. 3/4 means the whole is cut into 4 equal parts, and we have 3 of them." },
     { id: "3-graphs", setting: "library", title: "Graphs and line plots", at: 3.5, learn: ["picture_graph", "bar_graph", "line_plot"], note: "Read a graph's key and scale first. One picture, or one step up the scale, can stand for more than one." },
@@ -80,15 +81,15 @@ export const ADVENTURES = {
     { id: "4-multiply", setting: "farm", title: "Multiplying bigger numbers", at: 4, learn: ["multiplication", "word_multiplication", "factors"], warmup: ["missing_number"], note: "Split a number into tens and ones, multiply each part, and add: 6 × 23 is 6 × 20 plus 6 × 3." },
     { id: "4-divide", setting: "seaside", title: "Dividing and remainders", at: 4, learn: ["division", "word_division", "word_two_step"], warmup: ["word_addition", "word_subtraction"], note: "When things don't share out evenly, what is left over is the remainder. It is always less than the number you divide by." },
     { id: "4-angles", setting: "observatory", title: "Angles and shapes", at: 4.5, learn: ["angles", "shapes"], note: "Angles are measured in degrees. A square corner, a right angle, is 90 degrees, and a full turn is 360." },
-    { id: "4-fractions", setting: "kitchen", title: "Fractions", at: 4.5, learn: ["fraction_compare", "fraction_arithmetic"], note: "To add fractions with the same bottom number, add the tops and keep the bottom: 2/8 + 3/8 = 5/8." },
+    { id: "4-fractions", setting: "kitchen", title: "Fractions", at: 4.5, learn: ["fraction_compare", "fraction_arithmetic"], focus: { fraction_arithmetic: "adding" }, note: "To add fractions with the same bottom number, add the tops and keep the bottom: 2/8 + 3/8 = 5/8." },
     { id: "4-decimals", setting: "frozen", title: "Fraction stories and decimals", at: 4.5, learn: ["fraction_stories", "decimals"], note: "Decimals are another way to write tenths and hundredths: 0.3 is 3/10, and 0.25 is 25/100." },
     { id: "4-area", setting: "castle", title: "Area, perimeter and line plots", at: 4.5, learn: ["area", "line_plot"], note: "A rectangle's area is its length times its width. Its perimeter is two lengths and two widths added up." },
   ],
   5: [
-    { id: "5-decimals", setting: "library", title: "Decimals and place value", at: 5, learn: ["place_value", "decimals", "rounding"], note: "After the decimal point come tenths, hundredths and thousandths. Each place is worth a tenth of the place to its left." },
+    { id: "5-decimals", setting: "library", title: "Decimals and place value", at: 5, learn: ["place_value", "decimals", "rounding"], focus: { decimals: "place value" }, note: "After the decimal point come tenths, hundredths and thousandths. Each place is worth a tenth of the place to its left." },
     { id: "5-multiply", setting: "mushrooms", title: "Multiplying and dividing", at: 5, learn: ["multiplication", "division"], note: "Multiply big numbers one place at a time and add the parts. Check a division by multiplying back." },
     { id: "5-expressions", setting: "clocktower", title: "Expressions", at: 5, learn: ["expressions"], note: "Work out what is in parentheses first, then multiply and divide, then add and subtract." },
-    { id: "5-fractions", setting: "candy", title: "Adding fractions", at: 5, learn: ["fraction_arithmetic"], note: "To add fractions with different bottoms, make the bottoms the same first: 1/2 + 1/3 is 3/6 + 2/6, which is 5/6." },
+    { id: "5-fractions", setting: "candy", title: "Adding fractions", at: 5, learn: ["fraction_arithmetic"], focus: { fraction_arithmetic: "adding" }, note: "To add fractions with different bottoms, make the bottoms the same first: 1/2 + 1/3 is 3/6 + 2/6, which is 5/6." },
     { id: "5-stories", setting: "seaside", title: "Fraction stories", at: 5.5, learn: ["fraction_stories"], note: "A fraction is a division too: 3 pizzas shared by 4 friends is 3/4 of a pizza each." },
     { id: "5-units", setting: "frozen", title: "Units and line plots", at: 5.5, learn: ["conversions", "line_plot"], note: "To change to a bigger unit, divide: 250 centimeters is 2.5 meters." },
     { id: "5-volume", setting: "temple", title: "Volume", at: 5.5, learn: ["volume", "area"], note: "Volume is how many cubes fill a box: its length times its width times its height." },
@@ -96,7 +97,7 @@ export const ADVENTURES = {
   ],
   6: [
     { id: "6-ratios", setting: "kitchen", title: "Ratios and rates", at: 6, learn: ["ratios"], note: "A ratio compares two amounts. With 2 cats for every 3 dogs, the ratio of cats to dogs is 2:3." },
-    { id: "6-dividing", setting: "library", title: "Dividing fractions and decimals", at: 6, learn: ["fraction_arithmetic", "decimals", "division"], note: "To divide by a fraction, ask how many of it fit. 2 ÷ 1/4 is 8, because eight quarters make 2." },
+    { id: "6-dividing", setting: "library", title: "Dividing fractions and decimals", at: 6, learn: ["fraction_arithmetic", "decimals", "division"], focus: { fraction_arithmetic: "dividing", decimals: "dividing" }, note: "To divide by a fraction, ask how many of it fit. 2 ÷ 1/4 is 8, because eight quarters make 2." },
     { id: "6-factors", setting: "castle", title: "Factors and multiples", at: 6, learn: ["common_factors"], note: "The greatest common factor is the biggest number that divides both. The least common multiple is the smallest number both divide into." },
     { id: "6-negatives", setting: "frozen", title: "Negative numbers", at: 6.5, learn: ["integers", "coordinates"], note: "Numbers below zero are negative. −3 is 3 steps to the left of 0 on a number line, so it is less than −1." },
     { id: "6-expressions", setting: "clocktower", title: "Expressions with letters", at: 6.5, learn: ["expressions"], note: "A letter stands for a number. 3n means 3 times n, so when n is 4, 3n is 12." },
@@ -212,12 +213,13 @@ export function pitchFor(type, at) {
  */
 export function exampleFor(chapter) {
   const type = chapter.learn[0];
+  const focus = chapter.focus?.[type];
   let seed = 7;
   for (const c of chapter.id) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
   /** @type {Question | undefined} */
   let example;
   for (const most of [1, 2, 3]) {
-    const mix = [{ type, grade: pitchFor(type, chapter.at), weight: 1, most }];
+    const mix = [{ type, grade: pitchFor(type, chapter.at), weight: 1, most, ...(focus ? { focus } : {}) }];
     for (let k = 0; k < 10; k++) {
       example = pickQuestion(createRng(seed + k), mix);
       if (!["0", "1"].includes(String(example.answer))) return example;
@@ -243,12 +245,13 @@ export function residents(setting) {
  * @param {number} weight
  * @param {number} most  the hardest the level asks for
  * @param {Mastery} mastery
+ * @param {string} [focus]  one of the type's focuses
  * @returns {Mix[number]}
  */
-function pitched(type, at, weight, most, mastery) {
+function pitched(type, at, weight, most, mastery, focus) {
   const s = steer(mastery[type]);
   const hardest = Math.min(most, s.most);
-  return { type, grade: pitchFor(type, s.earlier ? at - 0.5 : at), weight, most: hardest, least: Math.min(s.least, hardest) };
+  return { type, grade: pitchFor(type, s.earlier ? at - 0.5 : at), weight, most: hardest, least: Math.min(s.least, hardest), ...(focus ? { focus } : {}) };
 }
 
 /** The least share of review a kind gets, against the most needed, so none drops out of sight. */
@@ -279,7 +282,7 @@ export function planLevel(level, mastery = {}, now = 0) {
   const allNeed = needs.reduce((a, b) => a + b, 0);
   /** @type {Mix} */
   const mix = [
-    ...fresh.map(type => pitched(type, chapter.at, freshShare / fresh.length, plan.most, mastery)),
+    ...fresh.map(type => pitched(type, chapter.at, freshShare / fresh.length, plan.most, mastery, chapter.focus?.[type])),
     ...earlier.map((type, i) => pitched(type, chapter.at, ((1 - freshShare) * needs[i]) / allNeed, 3, mastery)),
   ];
   const who = residents(settingFor(level.grade, level.chapter));

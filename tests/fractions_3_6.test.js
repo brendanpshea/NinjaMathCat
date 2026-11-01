@@ -6,6 +6,8 @@ import { fractionCompare, fractionArithmetic } from "../src/questions/fraction_o
 import { add, subtract, multiply, divide, same, compare, parseFraction, simplify, frac, formatFraction } from "../src/questions/rational.js";
 import { fractionStories } from "../src/questions/fraction_stories.js";
 import { questionsOf, numbersIn } from "./helpers.js";
+import { makeQuestion } from "../src/questions/common.js";
+import { createRng } from "../src/rng.js";
 
 /** Whether "3/4 < 5/6" is true. */
 function holds(statement) {
@@ -100,6 +102,21 @@ describe("fraction stories", () => {
       // Fifth grade writes answers in simplest form.
       if (grade >= 5) assert.equal(q.answer, formatFraction(simplify(expected), { mixed: true }), at);
       for (const c of q.choices) if (c !== q.answer) assert.ok(!same(parseFraction(c), expected), `${at} → ${c} is right too`);
+    }
+  });
+});
+
+describe("fraction arithmetic, for chapters that focus on one operation", () => {
+  it("asks only that operation", () => {
+    const signs = { adding: /^What is .+ [+−] .+\?$/, multiplying: /×/, dividing: /÷/ };
+    for (const [focus, sign] of Object.entries(signs)) {
+      for (const grade of [4.5, 5, 6]) {
+        const rng = createRng(21);
+        for (let i = 0; i < 150; i++) {
+          const q = makeQuestion(rng, fractionArithmetic, grade, focus);
+          assert.match(q.prompt, sign, `${focus} at ${grade}: ${q.prompt}`);
+        }
+      }
     }
   });
 });

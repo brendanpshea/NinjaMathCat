@@ -6,7 +6,7 @@ import {
   ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, pitchFor, residents, settingFor, exampleFor,
   newProgress, recordLevel, levelStates, nextLevel, openChapter, starsFor,
 } from "../src/adventures.js";
-import { CURRICULUM, GRADES, typesForGrade, pickQuestion, mixForGrade } from "../src/curriculum.js";
+import { CURRICULUM, GRADES, typesForGrade, pickQuestion, mixForGrade, typeById } from "../src/curriculum.js";
 import { startBattle, answer } from "../src/battle.js";
 import { createRng } from "../src/rng.js";
 import { BACKDROPS } from "../src/backdrops.js";
@@ -38,6 +38,24 @@ describe("adventures", () => {
         assert.ok(chapter.title.length > 0 && chapter.note.length > 20 && chapter.note.length < 200, chapter.id);
       }
     }
+  });
+
+  it("focus only on what their own question types offer, and only in their new questions", () => {
+    for (const grade of ADVENTURE_GRADES) {
+      for (const [c, chapter] of chaptersFor(grade).entries()) {
+        for (const [type, focus] of Object.entries(chapter.focus ?? {})) {
+          assert.ok(chapter.learn.includes(type), `${chapter.id}: ${type} isn't brought in here`);
+          assert.ok(typeById(type).focuses?.[focus], `${chapter.id}: ${type} has no focus "${focus}"`);
+        }
+        for (const level of levelsFor(grade).filter(l => l.chapter === c)) {
+          for (const part of planLevel(level).mix) {
+            const focused = chapter.learn.includes(part.type) ? chapter.focus?.[part.type] : undefined;
+            assert.equal(part.focus, focused, `${level.id}: ${part.type}`);
+          }
+        }
+      }
+    }
+    assert.equal(exampleFor(chaptersFor(3)[0]).type, "multiplication");
   });
 
   it("get to every kind of question the grade asks, some time in the year", () => {
