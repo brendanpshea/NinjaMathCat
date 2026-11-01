@@ -155,8 +155,17 @@
       doc().dispatchEvent(new KeyboardEvent("keydown", { key: String(asked.choices.indexOf(asked.answer) + 1), bubbles: true }));
       await until(() => game().battle.question !== asked, "the number key to answer");
       report.keys = true;
+      await readyToAnswer();
       click("[data-act=ask]");
       report.restAsks = /Leave this adventure/.test($(".leave").textContent);
+      // While it asks, a number key answers nothing, and Escape keeps playing.
+      const before = game().battle;
+      doc().dispatchEvent(new KeyboardEvent("keydown", { key: "1", bubbles: true }));
+      await wait(300);
+      report.keysWaitWhileAsking = game().battle === before && Boolean($("[data-act=go]"));
+      doc().dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      report.escapeKeepsPlaying = Boolean($("[data-act=ask]")) && !$("[data-act=go]");
+      click("[data-act=ask]");
       click("[data-act=go]");
       await until(() => game().screen === "title", "the title after resting");
       report.rested = true;

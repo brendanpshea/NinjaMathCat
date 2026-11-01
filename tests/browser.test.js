@@ -93,6 +93,8 @@ describe("in a real browser", { skip }, () => {
   it("answers with the number keys, and asks before resting", () => {
     assert.equal(played.keys, true);
     assert.equal(played.restAsks, true);
+    assert.equal(played.keysWaitWhileAsking, true, "a number key answered while Leave was being asked");
+    assert.equal(played.escapeKeepsPlaying, true);
     assert.equal(played.rested, true);
   });
 

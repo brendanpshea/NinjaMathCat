@@ -187,6 +187,11 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, onPr
   });
   document.addEventListener("keydown", event => {
     if (event.altKey || event.ctrlKey || event.metaKey || event.target instanceof HTMLSelectElement) return;
+    // While "Leave this adventure?" is asked, the number keys wait, and Escape means keep playing.
+    if (ref("leave").querySelector("[data-act=go]")) {
+      if (event.key === "Escape") showRest();
+      return;
+    }
     if (/^[1-4]$/.test(event.key)) choose(Number(event.key) - 1);
   }, { signal: listening.signal });
 
