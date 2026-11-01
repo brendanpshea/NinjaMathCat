@@ -1,6 +1,7 @@
-// The monsters an adventure is made from. Each id names its sprite strip,
-// which comes over from LotRD with the battle stage. The names are LotRD's
-// for now; kid-friendly ones come with the sprites.
+// The monsters an adventure is made from. Each is a sprite strip (stand,
+// attack, recoil) from Loop of the Recursive Dragon, in
+// assets/sprites/monsters/ under its id, with a name and a line about it
+// written for young readers.
 
 /** @import { Rng } from "./rng.js" */
 
@@ -8,39 +9,47 @@
  * @typedef {object} Monster
  * @property {string} id  its sprite's name
  * @property {string} name
+ * @property {string} description  one short sentence a beginning reader can manage
  * @property {number} tier  1 to 4: how tough it is, and so how late in an adventure it comes
  */
 
 /** @type {readonly Monster[]} */
 export const MONSTERS = [
-  { id: "evil_duck", name: "Evil Duck", tier: 1 },
-  { id: "broom", name: "Animated Broom", tier: 1 },
-  { id: "shrub", name: "Awakened Shrub", tier: 1 },
-  { id: "grumpy_cloud", name: "Grumpy Cloud", tier: 1 },
-  { id: "yarn", name: "Yarn Elemental", tier: 1 },
-  { id: "soup_spirit", name: "Soup Spirit", tier: 1 },
+  { id: "evil_duck", name: "Sneaky Duck", tier: 1, description: "A duck with a very sneaky plan." },
+  { id: "broom", name: "Swishy Broom", tier: 1, description: "It sweeps up anything in its way." },
+  { id: "shrub", name: "Grumbly Bush", tier: 1, description: "A grumpy bush that hates being trimmed." },
+  { id: "grumpy_cloud", name: "Grumpy Cloud", tier: 1, description: "It rains on all the fun." },
+  { id: "yarn", name: "Tangle Ball", tier: 1, description: "A ball of yarn that loves to tie knots." },
+  { id: "soup_spirit", name: "Tomato Trouble", tier: 1, description: "A tomato with a giant soup spoon." },
 
-  { id: "goblin", name: "Goblin", tier: 2 },
-  { id: "kobold", name: "Kobold", tier: 2 },
-  { id: "jelly", name: "Jelly Cube", tier: 2 },
-  { id: "flying_sword", name: "Flying Sword", tier: 2 },
-  { id: "origami", name: "Origami Dragon", tier: 2 },
-  { id: "teapot_dragon", name: "Teapot Dragon", tier: 2 },
+  { id: "goblin", name: "Grabby Goblin", tier: 2, description: "It grabs shiny things and won't give them back." },
+  { id: "kobold", name: "Ladle Lizard", tier: 2, description: "Look out for its giant spoon!" },
+  { id: "jelly", name: "Wobble Cube", tier: 2, description: "A wiggly, jiggly cube of lime jelly." },
+  { id: "flying_sword", name: "Swoosh Sword", tier: 2, description: "A sword that zooms through the clouds." },
+  { id: "origami", name: "Paper Dragon", tier: 2, description: "Folded from one big sheet of paper." },
+  { id: "teapot_dragon", name: "Teapot Dragon", tier: 2, description: "It's short and stout, and very, very hot." },
 
-  { id: "mimic", name: "Mimic", tier: 3 },
-  { id: "cheese_golem", name: "Cheese Golem", tier: 3 },
-  { id: "scarecrow", name: "Scarecrow", tier: 3 },
-  { id: "topiary", name: "Living Topiary", tier: 3 },
-  { id: "puzzle_golem", name: "Puzzle Golem", tier: 3 },
-  { id: "button_golem", name: "Button Golem", tier: 3 },
+  { id: "mimic", name: "Chompy Chest", tier: 3, description: "It looks like treasure until it opens its mouth." },
+  { id: "cheese_golem", name: "Big Cheese", tier: 3, description: "A giant made of cheese. It thinks it's the boss." },
+  { id: "scarecrow", name: "Silly Scarecrow", tier: 3, description: "It can't scare crows, so it tries to scare you." },
+  { id: "topiary", name: "Bushicorn", tier: 3, description: "A unicorn trimmed out of a hedge." },
+  { id: "puzzle_golem", name: "Jigsaw Giant", tier: 3, description: "Made of puzzle pieces, with a few missing." },
+  { id: "pseudo_dragon", name: "Spiky Dragonling", tier: 3, description: "A baby dragon with a spiky club." },
 
-  { id: "troll", name: "Troll", tier: 4 },
-  { id: "dozing_drake", name: "Dozing Drake", tier: 4 },
-  { id: "swamp_dragon", name: "Swamp Dragon", tier: 4 },
-  { id: "clockwork_knight", name: "Clockwork Knight", tier: 4 },
-  { id: "prism_beast", name: "Prism Beast", tier: 4 },
-  { id: "sphinx", name: "Marble Sphinx", tier: 4 },
+  { id: "troll", name: "Bridge Troll", tier: 4, description: "Beat it to cross its bridge." },
+  { id: "dozing_drake", name: "Sleepy Dragon", tier: 4, description: "Shh! It gets cranky when you wake it up." },
+  { id: "swamp_dragon", name: "Swamp Chomper", tier: 4, description: "It lives in the mud and puffs out fire." },
+  { id: "clockwork_knight", name: "Tick-Tock Knight", tier: 4, description: "A wind-up knight. Tick, tock, here it comes!" },
+  { id: "prism_beast", name: "Rainbow Rumbler", tier: 4, description: "A gem that shines in every color." },
+  { id: "sphinx", name: "Riddle Sphinx", tier: 4, description: "It loves riddles, and math ones most of all." },
 ];
+
+/**
+ * @param {Monster} monster
+ */
+export function monsterSprite(monster) {
+  return `assets/sprites/monsters/${monster.id}.webp`;
+}
 
 /**
  * The monsters for one adventure: `perTier` of each tier, weakest first,

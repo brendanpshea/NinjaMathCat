@@ -4,8 +4,8 @@ A math battle game for kindergarten through 6th grade. Each right answer powers
 your hero's attack; each wrong one lets the monster strike back.
 
 > **Being rebuilt.** The original game is in [`legacy/`](legacy/) and still
-> runs from there. This version has its question engine, battle rules and
-> question pictures so far, with tests. The battle stage and the screens come
+> runs from there. This version has its question engine, battle rules,
+> question pictures and battle stage so far, with tests. The screens come
 > next. Grades K–3 are written, and 4–6 will follow.
 
 ## Working on it
@@ -19,7 +19,12 @@ npm run sample -- 2.5         # print ten sample questions for mid-second grade
 npm run sample -- 1 5 money   # five money questions for first grade
 npm run simulate -- 2         # how adventures go for children of different accuracy
 npm run gallery               # out/gallery.html: sample questions with their pictures
+npm run stage                 # out/stage-preview/: try the battle stage with any hero and monster
 ```
+
+The stage preview loads the game's files, so open it through a local web
+server: from the repository root run `python -m http.server 8080`, then go to
+http://localhost:8080/out/stage-preview/local.html.
 
 There is no build step. The browser runs `src/` exactly as written. Types come
 from JSDoc comments, and `tsc` checks them without compiling anything.
@@ -34,9 +39,12 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/visuals/` | Draws a question's picture as SVG: counters, patterns, coins, clocks, shapes, number lines, picture and bar graphs, fraction models. Each renderer is a plain function from data to markup. |
 | `src/battle.js` | A battle as a state machine. `answer(battle, choice, rng)` returns the next state and a `round` saying what happened, for the stage to act out. It has no timers and never touches the page. |
 | `src/combat.js` | The numbers: health, attack, damage, streaks, experience and levels. |
-| `src/monsters.js`, `src/treasures.js` | Who you fight (four tiers), and what they drop. |
+| `src/monsters.js`, `src/heroes.js`, `src/treasures.js` | Who you fight (four tiers, each with a name and a line for young readers), who you can play as, and what monsters drop. |
+| `src/stage.js` | A round as a sequence of timed beats (the hero lunges, the monster reels…) and as a sentence for screen readers. |
+| `src/ui/stage_view.js`, `css/stage.css` | The battle stage on the page: plays a round's beats with CSS animations, and does nothing at all under reduced motion. |
+| `assets/` | Sprite strips for the heroes and monsters, and the backdrops. |
 | `tests/` | `node --test`, with no test framework to install. `balance.test.js` plays whole adventures to check the game still feels right. |
-| `tools/` | `sample_questions.js` prints questions as a child would see them. `simulate_battle.js` shows how the balance plays out. `build_gallery.js` makes a page of sample questions with their pictures. |
+| `tools/` | `sample_questions.js` prints questions as a child would see them. `simulate_battle.js` shows how the balance plays out. `build_gallery.js` makes a page of sample questions with their pictures, and `build_stage_preview.js` a page for trying the stage. |
 
 ### How a battle works
 
@@ -70,10 +78,13 @@ how many parts are shaded, and every shape's sides and angles).
 
 ## Art
 
-The hero and monster sprites will come from
-[Loop of the Recursive Dragon](https://github.com/brendanpshea/LotRD). Each
-one is a three-pose strip (stand, attack, recoil). The backgrounds are this
-project's own, in `legacy/assets/sprites/backgrounds/` for now.
+The hero and monster sprites come from
+[Loop of the Recursive Dragon](https://github.com/brendanpshea/LotRD), the
+same author's quiz game, along with the stage's choreography and animations.
+Each sprite is a strip of three poses (stand, attack, recoil), all facing
+right; the stage mirrors the monster. LotRD's `images/sprites/roster.json`
+and `tools/sprite_prompts.py` and `tools/sprite_sheets.py` make new ones.
+The backdrops are this game's own, from the original version.
 
 ## License
 

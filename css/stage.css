@@ -1,0 +1,202 @@
+/* The battle stage (src/ui/stage_view.js): the hero, left, facing the monster,
+   right, over a backdrop. Its colours are its own and stay the same in light
+   and dark pages, like a picture. --dir is the way a side faces, so one set
+   of keyframes moves both. Adapted from Loop of the Recursive Dragon. */
+
+.stage {
+  --sprite-h: 150px;
+  --ink: #1b2333;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  border-radius: 16px;
+  background: #24324c;
+  color: var(--ink);
+}
+
+.stage-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-position: center bottom;
+  image-rendering: pixelated;
+}
+/* A little shade toward the ground, so the fighters stand out from busy backdrops. */
+.stage-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0) 40%, rgb(0 0 0 / 0.3));
+}
+
+.combatant { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.combatant[hidden] { display: none; } /* once every monster is beaten */
+.combatant--hero { --dir: 1; }
+.combatant--monster { --dir: -1; }
+
+.plate {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.9);
+  font-weight: 700;
+}
+.plate-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plate-level { flex: none; font-size: 0.82em; color: #4b5563; }
+
+.hp {
+  position: relative;
+  height: 18px;
+  border-radius: 9px;
+  background: rgb(255 255 255 / 0.8);
+  border: 2px solid rgb(27 35 51 / 0.85);
+  overflow: hidden;
+}
+.hp-fill {
+  height: 100%;
+  width: calc(var(--hp, 1) * 100%);
+  background: #22c55e;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+.hp[data-level="mid"] .hp-fill { background: #eab308; }
+.hp[data-level="low"] .hp-fill { background: #ef4444; }
+.hp-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Room for the tallest monster. Each fighter stands toward the middle. */
+.sprite-slot { position: relative; height: calc(var(--sprite-h) * 1.2); }
+.actor {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  transform-origin: 50% 100%;
+}
+.combatant--hero .actor { justify-content: flex-end; padding-right: 6%; }
+.combatant--monster .actor { justify-content: flex-start; padding-left: 6%; }
+
+.sprite {
+  display: block;
+  width: min(100%, calc(var(--sprite-h) * var(--frame-aspect, 1)));
+  aspect-ratio: var(--frame-aspect, 1);
+  background-repeat: no-repeat;
+  background-size: 300% 100%;
+  background-position: 0 0;
+  scale: var(--size, 1);
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 3px 0 rgb(0 0 0 / 0.25));
+  opacity: 0; /* until the strip has loaded and its shape is known */
+}
+.sprite.is-ready { opacity: 1; }
+.sprite[data-pose="attack"] { background-position: 50% 0; }
+.sprite[data-pose="recoil"] { background-position: 100% 0; }
+.combatant--monster .sprite { scale: calc(var(--size, 1) * -1) var(--size, 1); }
+
+/* For screen readers only: each round in words. */
+.stage-news {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.float-text {
+  position: absolute;
+  left: 50%;
+  top: 20%;
+  z-index: 3;
+  font-size: 1.6rem;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+  color: #fff;
+  text-shadow: 0 2px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 4px 6px rgb(0 0 0 / 0.4);
+  animation: float-up 0.9s ease-out forwards;
+}
+.float-text--hit { color: #fde047; }
+.float-text--hurt { color: #fca5a5; }
+.float-text--heal { color: #86efac; }
+.float-text--gold { color: #fcd34d; }
+.float-text--item { font-size: 2.4rem; text-shadow: none; }
+
+@keyframes float-up {
+  0% { opacity: 1; transform: translate(-50%, 0) scale(1.3); }
+  55% { opacity: 1; transform: translate(-50%, -30px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -52px) scale(0.9); }
+}
+@keyframes stage-lunge {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(calc(var(--dir) * 48px)); }
+  65% { transform: translateX(calc(var(--dir) * 40px)); }
+  100% { transform: translateX(0); }
+}
+@keyframes stage-recoil {
+  0% { transform: translateX(0); filter: none; }
+  15% { transform: translateX(calc(var(--dir) * -14px)); filter: brightness(3) saturate(0); }
+  40% { transform: translateX(calc(var(--dir) * -10px)); filter: none; }
+  55% { filter: brightness(2) saturate(0); }
+  100% { transform: translateX(0); filter: none; }
+}
+@keyframes stage-vanish {
+  0% { opacity: 1; transform: none; filter: none; }
+  20% { opacity: 1; transform: translateX(calc(var(--dir) * -8px)); filter: brightness(4) saturate(0); }
+  100% { opacity: 0; transform: translateX(calc(var(--dir) * -14px)) scaleY(0.3); filter: brightness(2) saturate(0) blur(1px); }
+}
+@keyframes stage-down {
+  0% { transform: none; filter: none; }
+  30% { transform: translateX(calc(var(--dir) * -10px)) rotate(calc(var(--dir) * -20deg)); }
+  100% { transform: translateX(calc(var(--dir) * -16px)) rotate(calc(var(--dir) * -85deg)); filter: grayscale(1) brightness(0.7); }
+}
+@keyframes stage-revive {
+  0% { transform: translateX(calc(var(--dir) * -16px)) rotate(calc(var(--dir) * -85deg)); filter: grayscale(1) brightness(0.7); }
+  55% { transform: none; filter: brightness(1.5) drop-shadow(0 0 12px #fcd34d); }
+  100% { transform: none; filter: none; }
+}
+@keyframes stage-enter {
+  from { opacity: 0; transform: translateX(calc(var(--dir) * -60px)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes stage-glow {
+  0%, 100% { filter: none; }
+  35% { filter: brightness(1.4) drop-shadow(0 0 12px var(--glow)); }
+}
+
+.actor.is-lunging { animation: stage-lunge 420ms ease-out; }
+.actor.is-lunging.is-charged { animation: stage-lunge 420ms ease-out, stage-glow 420ms ease-out; --glow: #fb923c; }
+.actor.is-hit { animation: stage-recoil 380ms ease-out; }
+.actor.is-vanquished { animation: stage-vanish 650ms ease-in forwards; }
+.actor.is-down { animation: stage-down 550ms ease-in forwards; }
+.actor.is-reviving { animation: stage-revive 700ms ease-out; }
+.actor.is-entering { animation: stage-enter 400ms ease-out; }
+.actor.is-glowing { animation: stage-glow 700ms ease-out; }
+.actor[data-tone="heal"] { --glow: #4ade80; }
+.actor[data-tone="gold"] { --glow: #fcd34d; }
+
+@media (max-width: 560px) {
+  .stage { --sprite-h: 100px; gap: 8px; padding: 10px 10px 8px; }
+  .plate { padding: 3px 7px; font-size: 0.9rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actor, .float-text { animation: none !important; }
+  .hp-fill { transition: none; }
+}
