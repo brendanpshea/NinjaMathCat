@@ -66,3 +66,53 @@ Panel 3: an old stone bridge at the edge of a misty swamp. The ground is the fla
 
 Panel 4 (bottom): inside an ancient temple built into a crystal cave. The ground is smooth, sandy stone tiles. Behind it: carved sandstone columns, a wide doorway up a few steps, purple and blue crystals growing from the cave walls, a glimpse of desert sky through an opening above. At the far left edge, a cluster of crystals; at the far right edge, a weathered sandstone pillar. Don't draw statues, sphinxes, dragons or bright glowing crystals.
 ```
+
+## Sheet c: Seaside Cove, Mushroom Forest, Frozen Lake, Candy Hills
+
+Save Gemini's picture as `assets/backdrops/sheets/c.png` (or .jpg or .webp).
+
+```text
+Make one tall picture, portrait 9:16, at the highest resolution you can. It is a sheet of four separate backgrounds for a cute 2D fantasy battle game for children, stacked from top to bottom as four equal horizontal panels, each the full width of the picture. Separate the panels with a thin, straight, pure white line. Nothing crosses from one panel into the next.
+
+All four panels share one style: a soft, painterly storybook illustration, like the background of a gentle animated film. Gentle shading, soft edges, thin light outlines, and a hazy, paler distance. Muted, harmonious colors, never neon. Soft daylight from the upper left.
+
+Every panel follows the same layout, because two small characters will stand in front of it later, facing each other:
+- A side view, with the camera at ground level looking straight across.
+- The bottom fifth of the panel is flat, open, walkable ground running the whole width, seen from the side, with nothing standing on it.
+- A low horizon, about two fifths of the way up.
+- Tall things only at the far left and far right edges. The middle is open and calm.
+- No people, animals, monsters, faces or creatures of any kind, and no statues or carvings of them. No text, signs or letters. No glowing or very bright objects. Not pixel art.
+
+Panel 1 (top): a sandy cove by the sea on a bright summer day. The ground is smooth, firm golden sand. Behind it: gentle turquoise waves, a rocky arch out in the water, a white lighthouse on a far headland, a few puffy clouds. At the far left edge, a tall leaning palm tree; at the far right edge, a stack of weathered rocks with seaweed. Don't draw crabs, coral, shells, boats or umbrellas.
+
+Panel 2: a shady forest glade full of giant mushrooms. The ground is soft mossy earth with a few fallen leaves. Behind it: huge spotted mushrooms of different heights, tall mossy tree trunks, ferns, soft beams of sunlight through the leaves. At the far left edge, a giant red-and-white spotted mushroom; at the far right edge, a thick mossy tree trunk with shelf fungus. Don't draw fairies, helmets, houses in the mushrooms or glowing mushrooms.
+
+Panel 3: a frozen lake in a snowy pine forest on a clear winter day. The ground is flat, snow-dusted ice. Behind it: snowy pine trees, distant white mountains, a small wooden cabin with a snowy roof far away, a pale blue sky. At the far left edge, a tall snow-covered pine tree; at the far right edge, a snowdrift over rocks hung with icicles. Don't draw snowmen, ice crystals, armor or footprints.
+
+Panel 4 (bottom): a land made of sweets on a bright, cheerful day. The ground is a flat, wide path of pale pink frosting. Behind it: rolling hills of chocolate and whipped cream, lollipop trees, a gingerbread cottage far away, pastel cotton-candy clouds. At the far left edge, a giant striped candy cane; at the far right edge, a tall stack of colorful macarons. Don't draw gingerbread people, witches, or faces on the sweets.
+```
+
+## Sheet d: Grand Library, Clock Tower, Starry Observatory, Stormy Peak
+
+Save Gemini's picture as `assets/backdrops/sheets/d.png` (or .jpg or .webp).
+
+```text
+Make one tall picture, portrait 9:16, at the highest resolution you can. It is a sheet of four separate backgrounds for a cute 2D fantasy battle game for children, stacked from top to bottom as four equal horizontal panels, each the full width of the picture. Separate the panels with a thin, straight, pure white line. Nothing crosses from one panel into the next.
+
+All four panels share one style: a soft, painterly storybook illustration, like the background of a gentle animated film. Gentle shading, soft edges, thin light outlines, and a hazy, paler distance. Muted, harmonious colors, never neon. Soft daylight from the upper left.
+
+Every panel follows the same layout, because two small characters will stand in front of it later, facing each other:
+- A side view, with the camera at ground level looking straight across.
+- The bottom fifth of the panel is flat, open, walkable ground running the whole width, seen from the side, with nothing standing on it.
+- A low horizon, about two fifths of the way up.
+- Tall things only at the far left and far right edges. The middle is open and calm.
+- No people, animals, monsters, faces or creatures of any kind, and no statues or carvings of them. No text, signs or letters. No glowing or very bright objects. Not pixel art.
+
+Panel 1 (top): a grand old library with towering bookshelves. The ground is a polished wooden floor with a long patterned rug. Behind it: tall shelves of books with rolling ladders, a balcony with a carved railing, tall arched windows letting in soft daylight, a big globe on a stand. At the far left edge, a tall bookshelf with a wooden ladder; at the far right edge, a wooden reading desk with a stack of closed books. Don't draw open or flying books, ink, lamps, lanterns or whales.
+
+Panel 2: high inside an old clock tower full of giant gears. The ground is a flat floor of thick wooden planks. Behind it: huge interlocking brass and copper gears, the back of a big round clock face seen from inside with daylight through it, wooden beams, ropes and pulleys. At the far left edge, a tall iron pendulum hanging still; at the far right edge, a stack of wooden crates beside a workbench. Don't draw birds, robots, buttons, rust, or numbers on the clock.
+
+Panel 3: the stone terrace of a mountaintop observatory at dusk. The ground is smooth stone tiles of the terrace. Behind it: a deep blue evening sky with the first stars and a thin crescent moon, the observatory's dome with a long telescope, a sea of clouds and far peaks in the last pink light. At the far left edge, a brass telescope on a tall tripod; at the far right edge, a stone balustrade post with a potted plant. Don't draw shooting stars, star patterns shaped like figures, dragons, or jellyfish.
+
+Panel 4 (bottom): a rocky mountain summit under a dramatic stormy sky. The ground is flat, dark gray rock. Behind it: jagged peaks, a distant smoking volcano, swirling gray and purple storm clouds with gaps of warm sunlight breaking through. At the far left edge, a tall jagged rock spire; at the far right edge, an old broken stone archway. Don't draw lightning, lava, fire, glowing cracks or dragons.
+```
