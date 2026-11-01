@@ -207,6 +207,23 @@ select {
 .choice.wrong::after { content: "✗"; color: var(--wrong); }
 .feedback { margin: 0; min-height: 1.5em; font-weight: 800; }
 
+/* Wide but short screens, like a school laptop's 1366 x 768 or a tablet on
+   its side: stacked, the stage, picture and answers need about 900 pixels,
+   so the answers fell below the fold. Side by side, the fight stays in view
+   beside the question. */
+@media (min-width: 960px) and (max-height: 1000px) {
+  .game:has(.battle) { max-width: 1320px; }
+  .battle { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; }
+  .battle-bar { grid-column: 1 / -1; }
+  .battle > [data-ref="stage"] { position: sticky; top: 10px; }
+  /* A taller stage in its narrower column, as on phones; the backdrop
+     still covers it from the floor up. */
+  .battle .stage { --aspect: 1.7; }
+  .picture svg:is([data-visual="coordinates"], [data-visual="bar_graph"], [data-visual="picture_graph"], [data-visual="line_plot"], [data-visual="angle"]) {
+    max-height: max(230px, min(380px, 100vh - 390px));
+  }
+}
+
 /* The victory and the treasures */
 .facts { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
 .facts li { padding: 12px 14px; background: var(--surface); border: 2px solid var(--line); border-radius: 12px; }
