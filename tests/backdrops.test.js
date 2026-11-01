@@ -39,7 +39,9 @@ describe("painted backdrops", () => {
   });
 
   it("have prompts.md up to date with scenes.json", () => {
-    assert.equal(readFileSync("assets/backdrops/prompts.md", "utf8"), buildPrompts(), "run npm run backdrop-prompts");
+    // Line endings aside, which Git on Windows may change.
+    const written = readFileSync("assets/backdrops/prompts.md", "utf8").replace(/\r\n/g, "\n");
+    assert.equal(written, buildPrompts(), "run npm run backdrop-prompts");
   });
 
   it("ask for the layout the stage needs", () => {

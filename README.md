@@ -121,7 +121,6 @@ painted backdrops are made with Gemini, four to a picture:
    look at it with `npm run backdrops`. Adjust its `floor` until the fighters
    stand on the ground.
 
-Until a setting has its own, it borrows one of the original game's backgrounds.
 
 ## License
 
