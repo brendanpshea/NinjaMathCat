@@ -26,11 +26,11 @@ for (const { type } of CURRICULUM) {
       }
     });
 
-    it("use only whole numbers from 0 up, before negatives and fractions are taught", () => {
-      for (const { question: q, at } of questionsOf(type)) {
+    it("use whole numbers for numeric answers, and negatives only from sixth grade (6.NS.5)", () => {
+      for (const { grade, question: q, at } of questionsOf(type)) {
         for (const c of q.choices) {
-          if (typeof c === "number") assert.ok(Number.isInteger(c) && c >= 0, `${at} → ${c}`);
-          else assert.ok(!/(^|\s)-\d/.test(c), `${at} → ${c}`);
+          if (typeof c === "number") assert.ok(Number.isInteger(c) && (c >= 0 || grade >= 6), `${at} → ${c}`);
+          else if (grade < 6) assert.ok(!/(^|\s)[-−]\d/.test(c), `${at} → ${c}`);
         }
       }
     });
@@ -53,8 +53,9 @@ for (const { type } of CURRICULUM) {
       let numeric = 0;
       let atEdge = 0;
       for (const { question: q } of questionsOf(type)) {
-        // "Which number is the biggest?" is answered by an edge on purpose.
-        if (typeof q.answer !== "number" || /biggest|smallest/.test(q.prompt)) continue;
+        // "Which number is the biggest?" is answered by an edge on purpose, and
+        // so is "which number makes x > 7 true?".
+        if (typeof q.answer !== "number" || /\b(biggest|smallest)\b|is the (greatest|least)\?|[<>≤≥]/.test(q.prompt)) continue;
         numeric++;
         const sorted = [...q.choices].sort((a, b) => Number(a) - Number(b));
         if (q.answer === sorted[0] || q.answer === sorted[3]) atEdge++;

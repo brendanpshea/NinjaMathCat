@@ -10,8 +10,10 @@ import { moneyById } from "../questions/money.js";
  * A position on a number line, written as a child would read it: 3, or 3/4.
  * @param {number} units  how many 1/den steps from zero
  * @param {number} den
+ * @returns {string}
  */
 export function positionLabel(units, den) {
+  if (units < 0) return `−${positionLabel(-units, den)}`;
   if (den === 1) return String(units);
   return units % den === 0 ? String(units / den) : `${units}/${den}`;
 }
