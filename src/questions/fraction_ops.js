@@ -26,7 +26,7 @@ const plain = f => `${f.n}/${f.d}`;
  * @param {(f: Fraction) => string} write
  * @param {number[]} [dens]
  */
-function wrongFractions(rng, answer, likely, write, dens) {
+export function wrongFractions(rng, answer, likely, write, dens) {
   /** @type {Fraction[]} */
   const kept = [];
   // Near misses go last, for when the likely mistakes run short.

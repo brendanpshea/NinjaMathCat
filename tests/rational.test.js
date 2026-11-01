@@ -41,6 +41,8 @@ describe("exact fractions", () => {
     assert.equal(formatFraction(frac(6, 4)), "6/4");
     assert.equal(formatFraction(frac(6, 4), { mixed: true }), "1 2/4");
     assert.equal(formatFraction(frac(8, 4), { mixed: true }), "2");
+    assert.equal(formatFraction(frac(4, 4), { mixed: true }), "1");
+    assert.equal(formatFraction(frac(4, 4)), "4/4");
     assert.equal(formatFraction(frac(5)), "5");
     for (const text of ["3/4", "1 1/4", "7", "-2/3", "-1 1/2"]) {
       const f = parseFraction(text);

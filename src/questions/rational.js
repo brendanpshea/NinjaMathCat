@@ -60,18 +60,29 @@ export const compare = (a, b) => Math.sign(a.n * b.d - b.n * a.d);
 
 /**
  * As a child writes it, without simplifying: 3/4, 6/4, or with `mixed`,
- * 1 2/4. A whole number is written as one: 2, not 2/1.
+ * 1 2/4. A whole number is written as one: 2, not 2/1, and as a mixed
+ * number 1, not 4/4.
  * @param {Fraction} f
  * @param {{ mixed?: boolean }} [options]
  */
 export function formatFraction({ n, d }, { mixed = false } = {}) {
   if (d === 1) return String(n);
-  if (mixed && Math.abs(n) > d) {
+  if (mixed && Math.abs(n) >= d) {
     const whole = Math.trunc(n / d);
     const rest = Math.abs(n % d);
     return rest === 0 ? String(whole) : `${whole} ${rest}/${d}`;
   }
   return `${n}/${d}`;
+}
+
+/**
+ * A whole number of 1/den steps as a ruler is read: simplest form, mixed.
+ * 6 eighths is 3/4, 10 fourths is 2 1/2, 8 fourths is 2.
+ * @param {number} units
+ * @param {number} den
+ */
+export function rulerText(units, den) {
+  return formatFraction(simplify(frac(units, den)), { mixed: true });
 }
 
 /**

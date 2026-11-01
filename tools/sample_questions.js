@@ -45,6 +45,7 @@ for (let i = 0; i < Number(countArg); i++) {
     : v.kind === "area" ? `${v.shape} ${v.width} by ${v.height}${v.grid ? " on a grid" : ""}${v.labels ? `, labelled ${v.labels.base} and ${v.labels.height}` : ""}`
     : v.kind === "cubes" ? `box ${v.length} by ${v.width} by ${v.height}${v.cubes ? " of cubes" : ""}${v.labels ? `, labelled ${Object.values(v.labels).join(", ")}` : ""}`
     : v.kind === "angle" ? `${v.degrees}° angle from a ray pointing ${v.base}${v.protractor ? ", on a protractor" : ""}`
+    : v.kind === "line_plot" ? `${v.title}: ${v.counts.map((c, i) => `${v.from + i}/${v.den}×${c}`).join(" ")}`
     : `grid ${v.min} to ${v.max}: ${v.points.map(p => `${p.label}(${p.x}, ${p.y})`).join(" ")}`;
   console.log(`[${q.type}, difficulty ${q.difficulty}] ${q.prompt}${shown ? `   [${shown}]` : ""}`);
   console.log(`    ${q.choices.map(c => (c === q.answer ? `*${c}*` : String(c))).join("   ")}`);

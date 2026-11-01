@@ -43,6 +43,25 @@ describe("expressions", () => {
           : (n[1] - n[0]) / n[2];
         assert.equal(value(q.answer), meant, at);
       }
+      const patterns = q.prompt.match(/^Pattern A starts at 0 and adds (\d+) each time: ([\d, ]+)\. Pattern B starts at 0 and adds (\d+) each time: ([\d, ]+)\./);
+      if (patterns) {
+        const [a, b] = [Number(patterns[1]), Number(patterns[3])];
+        const [first, second] = [numbersIn(patterns[2]), numbersIn(patterns[4])];
+        first.forEach((term, i) => {
+          assert.equal(term, i * a, at);
+          assert.equal(second[i], i * b, at);
+        });
+        assert.equal(q.answer, /how many times/.test(q.prompt) ? b / a : `(${first.length * a}, ${first.length * b})`, at);
+      }
+      const story = q.prompt.match(/Which expression shows how many/);
+      if (story) {
+        // A number of things every k divides, so each story comes out whole.
+        const n = 2520;
+        const [k] = numbersIn(q.prompt);
+        const meant = /more\./.test(q.prompt) ? n + k : /spent/.test(q.prompt) ? n - k : /Each box/.test(q.prompt) ? k * n : n / k;
+        assert.equal(value(q.answer, n), meant, at);
+        for (const c of q.choices) if (c !== q.answer) assert.notEqual(value(c, n), meant, `${at} → ${c}`);
+      }
       const equal = q.prompt.match(/^Which expression is equal to (.+)\?$/);
       if (equal) {
         for (const x of [2, 3, 7]) assert.equal(value(q.answer, x), value(equal[1], x), at);
@@ -57,6 +76,17 @@ describe("expressions", () => {
 describe("equations and inequalities", () => {
   it("have answers that make them true, and wrong choices that don't", () => {
     for (const { question: q, at } of questionsOf(equations)) {
+      const table = q.prompt.match(/^When x is ([\d, ]+), y is ([\d, ]+)\./);
+      if (table) {
+        const [xs, ys] = [numbersIn(table[1]), numbersIn(table[2])];
+        /** Whether an equation like "y = 4x" or "x = y + 4" holds for every pair. */
+        const fitsAll = equation => {
+          const [left, right] = equation.split(" = ").map(side => side.replace(/(\d)([xy])/g, "$1*$2"));
+          return xs.every((x, i) => Function("x", "y", `return (${left}) === (${right});`)(x, ys[i]));
+        };
+        for (const c of q.choices) assert.equal(fitsAll(c), c === q.answer, `${at} → ${c}`);
+        continue;
+      }
       const eq = q.prompt.match(/(?:Solve for x: |makes )(.+?) = (\d+)/);
       const ineq = q.prompt.match(/makes x ([<>≤≥]) (\d+) true/);
       /** Whether a value of x satisfies the question. */

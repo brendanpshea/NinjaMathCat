@@ -17,7 +17,7 @@ import { escapeXml as esc } from "../src/visuals/svg.js";
 const SEED = Number(process.env.SEED ?? 1);
 const PER_GRADE = 2;
 /** The question types this step added, shown first. */
-const NEW = ["area", "volume", "angles", "coordinates"];
+const NEW = ["line_plot", "data_displays", "shapes", "coordinates"];
 
 const rng = createRng(SEED);
 const labelFor = grade => GRADES.find(g => g.grade === grade)?.label ?? `Grade ${grade}`;

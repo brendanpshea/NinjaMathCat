@@ -62,14 +62,15 @@ describe("adding and subtracting", () => {
 });
 
 describe("missing numbers", () => {
-  it("have an answer that makes the equation true", () => {
-    const apply = { "+": (x, y) => x + y, "−": (x, y) => x - y, "×": (x, y) => x * y, "÷": (x, y) => x / y };
+  it("have an answer that makes the equation true, and only one", () => {
+    /** Both sides of the equation with a number in the box, worked out. */
+    const sides = (q, n) => q.prompt.replace("What number goes in the box? ", "").replace("□", String(n)).split(" = ")
+      .map(side => Function(`return ${side.replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-")};`)());
     for (const { grade, question: q, at } of questionsOf(missingNumber)) {
-      const equation = q.prompt.replace("What number goes in the box? ", "").replace("□", String(q.answer));
-      const [, left, op, right, total] = equation.match(/^(\d+) ([+−×÷]) (\d+) = (\d+)$/) ?? [];
-      assert.ok(left, at);
-      assert.equal(apply[op](Number(left), Number(right)), Number(total), at);
-      if (op === "×" || op === "÷") assert.ok(grade >= 3, `${at}: multiplying and dividing come in third grade`);
+      const [left, right] = sides(q, q.answer);
+      assert.equal(left, right, at);
+      for (const c of q.choices) if (c !== q.answer) assert.notEqual(...sides(q, c), `${at} → ${c} works too`);
+      if (/[×÷]/.test(q.prompt)) assert.ok(grade >= 3, `${at}: multiplying and dividing come in third grade`);
     }
   });
 });

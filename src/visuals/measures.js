@@ -203,6 +203,12 @@ export function coordinates(v) {
     if (k !== 0 || v.min === 0) parts.push(text({ x: X(k), y: numbersY, "font-size": 12, fill: COLORS.muted, "text-anchor": "middle", class: "x-label" }, write(k)));
     if (k !== 0) parts.push(text({ x: numbersX, y: Y(k), "font-size": 12, fill: COLORS.muted, "text-anchor": "end", "dominant-baseline": "central", class: "y-label" }, write(k)));
   }
+  if (v.shape) {
+    // Filled under the grid, so the numbers on the axes still show; outlined over it.
+    const corners = points(v.points.map(p => [X(p.x), Y(p.y)]));
+    parts.unshift(el("polygon", { points: corners, fill: COLORS.fill, "fill-opacity": 0.7 }));
+    parts.push(el("polygon", { points: corners, fill: "none", stroke: COLORS.accent, "stroke-width": 3, "stroke-linejoin": "round", class: "shape" }));
+  }
   for (const p of v.points) {
     parts.push(
       el("circle", { cx: X(p.x), cy: Y(p.y), r: 6, fill: COLORS.point, stroke: COLORS.paper, "stroke-width": 2, class: "point", "data-x": p.x, "data-y": p.y }),

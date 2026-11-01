@@ -3,7 +3,7 @@
 
 import { atGrade, wrongNumbers, formatNumber as fmt } from "./common.js";
 
-/** @import { QuestionType } from "./common.js" */
+/** @import { Draft, QuestionType } from "./common.js" */
 /** @import { Rng } from "../rng.js" */
 
 /**
@@ -147,14 +147,41 @@ export const subtraction = {
 };
 
 /**
+ * The properties of multiplication, as missing numbers: the order can
+ * change, the grouping can change, and a factor can be split (3.OA.5).
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function properties(rng) {
+  const [a, b, c] = [rng.int(2, 9), rng.int(4, 9), rng.int(2, 9)];
+  const part = rng.int(2, b - 2);
+  /** @type {{ equation: string, answer: number, likely: number[], hint: string }[]} */
+  const forms = [
+    { equation: `${a} × ${b} = ${b} × □`, answer: a, likely: [b, a * b, a + b], hint: "Multiplying in either order gives the same answer." },
+    { equation: `(${a} × ${b}) × ${c} = ${a} × (${b} × □)`, answer: c, likely: [b * c, a * b, a], hint: "Grouping the numbers another way gives the same answer." },
+    { equation: `${a} × ${b} = ${a} × ${part} + ${a} × □`, answer: b - part, likely: [b, part, a * (b - part), b + part], hint: `${b} is ${part} and some more. ${a} groups of ${b} are ${a} groups of ${part} and ${a} groups of the rest.` },
+  ];
+  const form = rng.pick(forms);
+  return {
+    prompt: `What number goes in the box? ${form.equation}`,
+    answer: form.answer,
+    wrong: wrongNumbers(rng, form.answer, form.likely.filter(n => n !== form.answer), { min: 1 }),
+    hint: form.hint,
+    difficulty: form.equation.includes("+") ? 3 : 2,
+  };
+}
+
+/**
  * An equation with a box to fill: adding or subtracting (1.OA.8), and from
- * third grade multiplying or dividing too (3.OA.4).
+ * third grade multiplying or dividing too (3.OA.4), and the properties of
+ * multiplying (3.OA.5).
  * @type {QuestionType}
  */
 export const missingNumber = {
   id: "missing_number",
   name: "Missing number",
   generate(rng, grade) {
+    if (grade >= 3 && rng.chance(0.2)) return properties(rng);
     if (grade >= 3 && rng.chance(0.5)) {
       const a = rng.int(2, 10);
       const b = rng.int(2, 10);

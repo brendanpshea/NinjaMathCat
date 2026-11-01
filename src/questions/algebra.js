@@ -1,6 +1,8 @@
 // Expressions and equations: the order of operations and writing expressions
 // (5.OA.1-2); exponents, letters for numbers and equivalent expressions
-// (6.EE.1-4); one-step equations and inequalities (6.EE.5-8).
+// (6.EE.1-4); expressions for stories (6.EE.6); one-step equations and
+// inequalities (6.EE.5-8); and equations for how one quantity depends on
+// another (6.EE.9).
 
 import { atGrade, wrongNumbers } from "./common.js";
 
@@ -9,18 +11,19 @@ import { atGrade, wrongNumbers } from "./common.js";
 
 const SUPERSCRIPTS = { 2: "²", 3: "³", 4: "⁴", 5: "⁵" };
 
-/** @typedef {"order" | "brackets" | "write" | "exponent" | "evaluate" | "equivalent"} ExpressionKind */
+/** @typedef {"order" | "brackets" | "write" | "patterns" | "exponent" | "evaluate" | "equivalent" | "story"} ExpressionKind */
 
 /**
  * What a grade does with expressions: work them out in the right order, with
- * parentheses and brackets, and write them from words (5.OA.1-2); exponents,
- * letters standing for numbers, and expressions that are the same
- * (6.EE.1-4).
+ * parentheses and brackets, and write them from words (5.OA.1-2); compare
+ * two patterns (5.OA.3); exponents,
+ * letters standing for numbers, expressions that are the same, and
+ * expressions for stories (6.EE.1-4, 6.EE.6).
  * @type {readonly [number, ExpressionKind[]][]}
  */
 const EXPRESSIONS = [
-  [5.5, ["order", "brackets", "write"]],
-  [Infinity, ["exponent", "evaluate", "equivalent", "order"]],
+  [5.5, ["order", "brackets", "write", "patterns"]],
+  [Infinity, ["exponent", "evaluate", "equivalent", "story", "order"]],
 ];
 
 /** @type {QuestionType} */
@@ -35,9 +38,70 @@ export const expressions = {
       case "exponent": return exponent(rng);
       case "evaluate": return evaluate(rng);
       case "equivalent": return equivalent(rng);
+      case "story": return story(rng);
+      case "patterns": return twoPatterns(rng);
     }
   },
 };
+
+/**
+ * Two patterns from two rules, side by side: how their terms compare, or the
+ * next pair of matching terms (5.OA.3).
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function twoPatterns(rng) {
+  const a = rng.int(2, 6);
+  const times = rng.int(2, 4);
+  const b = a * times;
+  const terms = 5;
+  const [first, second] = [a, b].map(step => Array.from({ length: terms }, (_, i) => i * step));
+  const shown = `Pattern A starts at 0 and adds ${a} each time: ${first.join(", ")}. Pattern B starts at 0 and adds ${b} each time: ${second.join(", ")}.`;
+  if (rng.chance(0.5)) {
+    return {
+      prompt: `${shown} Each term in pattern B is how many times the matching term in pattern A?`,
+      answer: times,
+      // The difference between the rules, or one of the rules.
+      wrong: wrongNumbers(rng, times, [b - a, a, b].filter(n => n !== times), { min: 1 }),
+      hint: `Compare matching terms: ${first[1]} and ${second[1]}, then ${first[2]} and ${second[2]}.`,
+      difficulty: 2,
+    };
+  }
+  const [x, y] = [terms * a, terms * b];
+  const answer = `(${x}, ${y})`;
+  return {
+    prompt: `${shown} Pairing the terms gives (0, 0), (${first[1]}, ${second[1]}), and so on. What is the next pair after (${first[terms - 1]}, ${second[terms - 1]})?`,
+    answer,
+    // The pair turned round, or one pattern a step behind or ahead.
+    wrong: rng.shuffle([`(${y}, ${x})`, `(${x}, ${y - b})`, `(${x + a}, ${y})`, `(${x}, ${x + b})`]).filter(t => t !== answer),
+    hint: "Find the next term of each pattern, then pair them, A first.",
+    difficulty: 2,
+  };
+}
+
+/**
+ * An expression for a story, with a letter for the number not known (6.EE.6).
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function story(rng) {
+  const k = rng.int(2, 9);
+  const forms = [
+    { text: `Sam has n stickers. He gets ${k} more. Which expression shows how many stickers he has now?`, answer: `n + ${k}`, wrong: [`n − ${k}`, `${k}n`, `${k} − n`] },
+    { text: `Ana had n dollars and spent ${k} of them. Which expression shows how many dollars she has left?`, answer: `n − ${k}`, wrong: [`${k} − n`, `n + ${k}`, `n ÷ ${k}`] },
+    { text: `Each box holds ${k} crayons. Which expression shows how many crayons are in n boxes?`, answer: `${k}n`, wrong: [`n + ${k}`, `n ÷ ${k}`, `${k} ÷ n`] },
+    { text: `There are n cookies, shared equally among ${k} friends. Which expression shows how many cookies each friend gets?`, answer: `n ÷ ${k}`, wrong: [`${k} ÷ n`, `${k}n`, `n − ${k}`] },
+  ];
+  const form = rng.pick(forms);
+  return {
+    prompt: form.text,
+    answer: form.answer,
+    // The other operations, or the right one the wrong way round.
+    wrong: rng.shuffle(form.wrong),
+    hint: "Say what happens to n in words first: more is +, spent is −, each of several is ×, shared is ÷.",
+    difficulty: 2,
+  };
+}
 
 /**
  * An expression where the order matters (5.OA.1), with what working left to
@@ -180,8 +244,9 @@ export const equations = {
   id: "equations",
   name: "Equations and inequalities",
   generate(rng) {
-    const kind = rng.pick(["solve", "solve", "substitute", "inequality"]);
+    const kind = rng.pick(["solve", "solve", "substitute", "inequality", "table"]);
     if (kind === "inequality") return inequality(rng);
+    if (kind === "table") return table(rng);
     if (kind === "substitute") {
       const [a, x, b] = [rng.int(2, 9), rng.int(2, 12), rng.int(1, 20)];
       const total = a * x + b;
@@ -212,6 +277,31 @@ export const equations = {
     };
   },
 };
+
+/**
+ * The equation that fits a table of values, where y depends on x (6.EE.9).
+ * One wrong equation fits the first pair only, so checking one pair is not
+ * enough.
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function table(rng) {
+  const start = rng.int(1, 3);
+  const xs = [start, start + 1, start + 2, start + 3];
+  const k = rng.int(2, 9);
+  const adds = rng.chance(0.5);
+  const ys = xs.map(x => (adds ? x + k : k * x));
+  const firstOnly = adds ? `y = ${ys[0] / xs[0]}x` : `y = x + ${ys[0] - xs[0]}`;
+  return {
+    prompt: `When x is ${xs.join(", ")}, y is ${ys.join(", ")}. Which equation shows how y depends on x?`,
+    answer: adds ? `y = x + ${k}` : `y = ${k}x`,
+    wrong: adds
+      ? [`y = ${k}x`, `x = y + ${k}`, ...(Number.isInteger(ys[0] / xs[0]) ? [firstOnly] : []), `y = x + ${k + 1}`]
+      : [`y = x + ${k}`, `x = ${k}y`, firstOnly, `y = ${k + 1}x`],
+    hint: "Check the equation with every pair in the table, not just the first.",
+    difficulty: 2 + Number(!adds),
+  };
+}
 
 /**
  * A number that makes an inequality true (6.EE.8). The others don't, and one

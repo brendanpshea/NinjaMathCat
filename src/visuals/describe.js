@@ -50,7 +50,12 @@ export function describeVisual(v) {
     case "picture_graph":
       return `A picture graph, "${v.title}", with rows for ${list(v.rows.map(r => r.label))}`;
     case "bar_graph":
-      return `A bar graph, "${v.title}", with bars for ${list(v.bars.map(b => b.label))}`;
+      // A histogram's bars are numbers, which could match an answer by chance.
+      return v.histogram
+        ? `A histogram, "${v.title}", with a bar for each interval`
+        : `A bar graph, "${v.title}", with bars for ${list(v.bars.map(b => b.label))}`;
+    case "line_plot":
+      return `A line plot, "${v.title}", with an X for each one measured`;
     case "fraction":
       return `A ${v.model} cut into equal parts, some of them shaded`;
     case "area":
@@ -64,6 +69,6 @@ export function describeVisual(v) {
     case "angle":
       return v.protractor ? "An angle on a protractor" : "An angle";
     case "coordinates":
-      return `A coordinate grid with points ${list(v.points.map(p => p.label))}`;
+      return `A coordinate grid with ${v.shape ? "a shape with corners" : "points"} ${list(v.points.map(p => p.label))}`;
   }
 }

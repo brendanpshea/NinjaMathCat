@@ -1,4 +1,5 @@
-// Flat shapes: naming them, counting sides and corners, and what is true of them.
+// Flat shapes: naming them, counting sides and corners, what is true of them,
+// their lines of symmetry, and how quadrilaterals fit inside one another.
 
 import { atGrade, wrongNumbers } from "./common.js";
 
@@ -15,19 +16,20 @@ import { atGrade, wrongNumbers } from "./common.js";
  * @property {number} rightAngles
  * @property {number} parallelPairs
  * @property {boolean} equalSides  every straight side the same length
+ * @property {number} symmetry  lines of symmetry; a circle's, without end, are left out as 0
  */
 
 /** @type {readonly Shape[]} */
 export const SHAPES = [
-  { id: "circle", sides: 0, corners: 0, rightAngles: 0, parallelPairs: 0, equalSides: false },
-  { id: "triangle", sides: 3, corners: 3, rightAngles: 0, parallelPairs: 0, equalSides: true },
-  { id: "square", sides: 4, corners: 4, rightAngles: 4, parallelPairs: 2, equalSides: true },
-  { id: "rectangle", sides: 4, corners: 4, rightAngles: 4, parallelPairs: 2, equalSides: false },
-  { id: "hexagon", sides: 6, corners: 6, rightAngles: 0, parallelPairs: 3, equalSides: true },
-  { id: "trapezoid", sides: 4, corners: 4, rightAngles: 0, parallelPairs: 1, equalSides: false },
-  { id: "pentagon", sides: 5, corners: 5, rightAngles: 0, parallelPairs: 0, equalSides: true },
-  { id: "octagon", sides: 8, corners: 8, rightAngles: 0, parallelPairs: 4, equalSides: true },
-  { id: "rhombus", sides: 4, corners: 4, rightAngles: 0, parallelPairs: 2, equalSides: true },
+  { id: "circle", sides: 0, corners: 0, rightAngles: 0, parallelPairs: 0, equalSides: false, symmetry: 0 },
+  { id: "triangle", sides: 3, corners: 3, rightAngles: 0, parallelPairs: 0, equalSides: true, symmetry: 3 },
+  { id: "square", sides: 4, corners: 4, rightAngles: 4, parallelPairs: 2, equalSides: true, symmetry: 4 },
+  { id: "rectangle", sides: 4, corners: 4, rightAngles: 4, parallelPairs: 2, equalSides: false, symmetry: 2 },
+  { id: "hexagon", sides: 6, corners: 6, rightAngles: 0, parallelPairs: 3, equalSides: true, symmetry: 6 },
+  { id: "trapezoid", sides: 4, corners: 4, rightAngles: 0, parallelPairs: 1, equalSides: false, symmetry: 1 },
+  { id: "pentagon", sides: 5, corners: 5, rightAngles: 0, parallelPairs: 0, equalSides: true, symmetry: 5 },
+  { id: "octagon", sides: 8, corners: 8, rightAngles: 0, parallelPairs: 4, equalSides: true, symmetry: 8 },
+  { id: "rhombus", sides: 4, corners: 4, rightAngles: 0, parallelPairs: 2, equalSides: true, symmetry: 2 },
 ];
 
 /** @param {string} id */
@@ -71,6 +73,40 @@ export const TRAITS = [
   { text: "All its sides are the same length.", test: s => s.equalSides, about: s => s.sides > 0 },
   { text: "It has exactly 1 pair of parallel sides.", test: s => s.parallelPairs === 1, about: s => s.sides === 4 },
   { text: "It has 2 pairs of parallel sides.", test: s => s.parallelPairs === 2, about: s => s.sides === 4 },
+];
+
+/**
+ * What a shape can have, for "which shape has...?" (4.G.2). `about` keeps
+ * out shapes where the answer would be arguable, as for TRAITS.
+ * @type {readonly { text: string, test: (s: Shape) => boolean, about?: (s: Shape) => boolean }[]}
+ */
+const HAS = [
+  { text: "exactly 1 pair of parallel sides", test: s => s.parallelPairs === 1, about: s => s.sides > 0 },
+  { text: "no parallel sides at all", test: s => s.parallelPairs === 0, about: s => s.sides > 0 },
+  { text: "right angles", test: s => s.rightAngles > 0, about: s => s.sides > 0 },
+  { text: "2 pairs of parallel sides but no right angles", test: s => s.parallelPairs === 2 && s.rightAngles === 0, about: s => s.sides === 4 },
+  { text: "right angles but sides of different lengths", test: s => s.rightAngles > 0 && !s.equalSides, about: s => s.sides > 0 },
+];
+
+/**
+ * True and false sentences about how quadrilaterals fit inside one another
+ * (5.G.3-4). Trapezoids are left out, since books define them two ways.
+ */
+const ALWAYS_TRUE = [
+  "Every square is a rectangle.",
+  "Every square is a rhombus.",
+  "Every rectangle is a parallelogram.",
+  "Every rhombus is a parallelogram.",
+  "Every parallelogram is a quadrilateral.",
+  "Every square is a parallelogram.",
+];
+const NOT_ALWAYS_TRUE = [
+  "Every rectangle is a square.",
+  "Every rhombus is a square.",
+  "Every parallelogram is a rectangle.",
+  "Every quadrilateral is a parallelogram.",
+  "Every parallelogram is a rhombus.",
+  "Every rectangle is a rhombus.",
 ];
 
 /** @type {QuestionType} */
@@ -119,6 +155,47 @@ export const shapes = {
         wrong: rng.shuffle([...NAMES_BY_SIDES.values(), "circle"].filter(name => name !== answer)),
         hint: "The first part of a shape's name tells you how many sides it has.",
         difficulty: 1 + Number(n > 4),
+      };
+    }
+
+    // Fourth and fifth grade: symmetry (4.G.3), sorting by sides and angles
+    // (4.G.2), and the family of quadrilaterals (5.G.3-4).
+    if (grade >= 4) {
+      const kind = rng.pick(grade < 5 ? ["symmetry", "symmetry", "has", "has"] : ["family", "family", "symmetry", "has"]);
+      if (kind === "symmetry") {
+        const symmetric = rng.pick(known.filter(s => s.symmetry > 0));
+        return {
+          prompt: "How many lines of symmetry does this shape have?",
+          visual: { kind: "shape", shape: symmetric.id },
+          answer: symmetric.symmetry,
+          // Lines through the corners only, or the sides counted instead.
+          wrong: wrongNumbers(rng, symmetric.symmetry, [symmetric.symmetry / 2, symmetric.sides, symmetric.symmetry * 2, symmetric.symmetry + 1].filter(n => n !== symmetric.symmetry), { min: 1 }),
+          hint: "A line of symmetry folds the shape so both halves match exactly. Try lines through corners and through the middles of sides.",
+          difficulty: 2 + Number(symmetric.id === "rectangle" || symmetric.id === "rhombus"),
+        };
+      }
+      if (kind === "has") {
+        for (;;) {
+          const trait = rng.pick(HAS);
+          const fair = known.filter(s => !trait.about || trait.about(s));
+          const yes = fair.filter(trait.test);
+          const no = fair.filter(s => !trait.test(s));
+          if (yes.length === 0 || no.length < 3) continue;
+          return {
+            prompt: `Which shape has ${trait.text}?`,
+            answer: rng.pick(yes).id,
+            wrong: rng.shuffle(no).map(s => s.id),
+            hint: "Picture each shape. Parallel sides run side by side and never meet; a right angle is a square corner.",
+            difficulty: 2,
+          };
+        }
+      }
+      return {
+        prompt: "Which of these is always true?",
+        answer: rng.pick(ALWAYS_TRUE),
+        wrong: rng.shuffle(NOT_ALWAYS_TRUE),
+        hint: "A square has everything a rectangle needs: 4 sides and 4 right angles. Does every rectangle have what a square needs?",
+        difficulty: 3,
       };
     }
 

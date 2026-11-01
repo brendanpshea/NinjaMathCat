@@ -7,6 +7,7 @@ import { SHAPE_CORNERS } from "../src/visuals/pictures.js";
 import { LINE_LEFT, LINE_RIGHT } from "../src/visuals/number_line.js";
 import { linear, niceStep } from "../src/visuals/scale.js";
 import { escapeXml } from "../src/visuals/svg.js";
+import { rulerText } from "../src/questions/rational.js";
 import { CURRICULUM } from "../src/curriculum.js";
 import { SHAPES } from "../src/questions/shapes.js";
 import { questionsOf, elementsIn, wellFormed } from "./helpers.js";
@@ -197,6 +198,16 @@ describe("drawing", () => {
         close(Number(p.cx), first + (Number(p["data-x"]) - v.min) * cell, at);
         close(Number(p.cy) + (Number(p["data-y"]) - v.min) * cell, bottom, at);
       }
+    }
+  });
+
+  it("line plots: a labelled tick at every position, and an X for every thing measured there", () => {
+    for (const { v, svg, at } of rendered("line_plot")) {
+      const ticks = elementsIn(svg, "line", "tick");
+      assert.deepEqual(ticks.map(t => Number(t["data-at"])), v.counts.map((_, i) => v.from + i), at);
+      assert.deepEqual([...svg.matchAll(/class="tick-label"[^>]*>([^<]+)</g)].map(m => m[1]), v.counts.map((_, i) => rulerText(v.from + i, v.den)), at);
+      const marks = elementsIn(svg, "path", "mark");
+      v.counts.forEach((count, i) => assert.equal(marks.filter(m => Number(m["data-at"]) === v.from + i).length, count, at));
     }
   });
 

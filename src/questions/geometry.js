@@ -1,4 +1,5 @@
-// Angles (4.MD.5-7, 4.G.1) and the coordinate plane (5.G.1-2, 6.NS.6, 6.NS.8).
+// Angles (4.MD.5-7, 4.G.1) and the coordinate plane (5.G.1-2, 6.NS.6, 6.NS.8,
+// 6.G.3).
 
 import { atGrade, formatNumber, wrongNumbers } from "./common.js";
 import { gcd } from "./rational.js";
@@ -170,7 +171,7 @@ export function coordinateText(x, y) {
 const GRIDS = [
   [5, { min: 0, max: 8, kinds: ["read", "read", "find", "find"] }],
   [5.5, { min: 0, max: 10, kinds: ["read", "find", "distance"] }],
-  [Infinity, { min: -6, max: 6, kinds: ["read", "find", "distance", "distance", "reflect"] }],
+  [Infinity, { min: -6, max: 6, kinds: ["read", "find", "distance", "distance", "reflect", "rectangle", "rectangle"] }],
 ];
 
 const LABELS = ["A", "B", "C", "D"];
@@ -185,6 +186,7 @@ export const coordinates = {
       case "read": return readPoint(rng, grid);
       case "find": return findPoint(rng, grid);
       case "distance": return distance(rng, grid);
+      case "rectangle": return rectangle(rng);
       default: return reflect(rng);
     }
   },
@@ -310,6 +312,51 @@ function distance(rng, grid) {
     wrong: wrongNumbers(rng, answer, likely, { min: 1 }),
     hint: `They are level with each other, so count the squares ${across ? "across" : "up"} from one to the other.`,
     difficulty: 2,
+  };
+}
+
+/**
+ * A rectangle drawn across the quadrants: its perimeter or area from the
+ * coordinates of its corners, or its missing corner (6.G.3).
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function rectangle(rng) {
+  /** Two numbers from -5 to 5, at least 2 apart, usually either side of 0. */
+  const span = () => {
+    for (;;) {
+      const [a, b] = [rng.int(-5, 5), rng.int(-5, 5)];
+      if (Math.abs(a - b) >= 2 && (a * b < 0 || rng.chance(0.25))) return [Math.min(a, b), Math.max(a, b)];
+    }
+  };
+  const [[left, right], [bottom, top]] = [span(), span()];
+  const [w, h] = [right - left, top - bottom];
+  const corners = [{ x: left, y: top, label: "A" }, { x: right, y: top, label: "B" }, { x: right, y: bottom, label: "C" }, { x: left, y: bottom, label: "D" }];
+  const kind = rng.pick(["perimeter", "area", "corner"]);
+  if (kind === "corner") {
+    const [a, b, c] = corners;
+    const answer = coordinateText(left, bottom);
+    return {
+      prompt: `Three corners of a rectangle are at ${coordinateText(a.x, a.y)}, ${coordinateText(b.x, b.y)} and ${coordinateText(c.x, c.y)}. Where is the fourth corner?`,
+      answer,
+      // The numbers swapped, a sign lost, or a corner already given.
+      wrong: [coordinateText(bottom, left), coordinateText(-left, bottom), coordinateText(left, -bottom), coordinateText(right, top)].filter(t => t !== answer),
+      hint: "The fourth corner lines up with one corner across and with another up and down. Sketch it on a grid.",
+      difficulty: 3,
+    };
+  }
+  // Lengths found by taking the sizes away, the mistake when a side crosses an axis.
+  const slip = Math.abs(Math.abs(right) - Math.abs(left)) || w + 1;
+  const slipUp = Math.abs(Math.abs(top) - Math.abs(bottom)) || h + 1;
+  const perimeter = kind === "perimeter";
+  const answer = perimeter ? 2 * (w + h) : w * h;
+  return {
+    prompt: `What is the ${perimeter ? "perimeter" : "area"} of rectangle ABCD, in ${perimeter ? "units" : "square units"}?`,
+    visual: { kind: "coordinates", min: -6, max: 6, points: corners, shape: true },
+    answer,
+    wrong: wrongNumbers(rng, answer, perimeter ? [w * h, w + h, 2 * (slip + slipUp)] : [2 * (w + h), slip * slipUp, w * h + w], { min: 1 }),
+    hint: `Find each side from the coordinates: from ${formatNumber(left)} to ${formatNumber(right)} across, and from ${formatNumber(bottom)} to ${formatNumber(top)} up.`,
+    difficulty: 3,
   };
 }
 

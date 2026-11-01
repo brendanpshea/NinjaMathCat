@@ -3,8 +3,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { fractionCompare, fractionArithmetic } from "../src/questions/fraction_ops.js";
-import { add, subtract, multiply, divide, same, compare, parseFraction, simplify, frac } from "../src/questions/rational.js";
-import { questionsOf } from "./helpers.js";
+import { add, subtract, multiply, divide, same, compare, parseFraction, simplify, frac, formatFraction } from "../src/questions/rational.js";
+import { fractionStories } from "../src/questions/fraction_stories.js";
+import { questionsOf, numbersIn } from "./helpers.js";
 
 /** Whether "3/4 < 5/6" is true. */
 function holds(statement) {
@@ -67,6 +68,38 @@ describe("fraction arithmetic", () => {
       assert.deepEqual(simplify(f), f, at);
       if (f.n > f.d && f.d > 1) assert.match(q.answer, /^\d+ \d+\/\d+$/, at);
       assert.notDeepEqual(f, frac(0), at);
+    }
+  });
+});
+
+describe("fraction stories", () => {
+  /** The fractions written in a prompt, in order. */
+  const fractionsIn = text => [...text.matchAll(/(\d+)\/(\d+)/g)].map(m => frac(Number(m[1]), Number(m[2])));
+
+  it("are answered correctly, whatever the story", () => {
+    for (const { grade, question: q, at } of questionsOf(fractionStories)) {
+      const p = q.prompt;
+      if (/^Without working it out/.test(p)) {
+        const [, side, n] = p.match(/which is (more|less) than (\d+)\?$/);
+        for (const c of q.choices) {
+          const [f, times] = c.split(" × ");
+          assert.equal(times, n, at);
+          const scale = compare(parseFraction(f), frac(1));
+          assert.equal(scale === (side === "more" ? 1 : -1), c === q.answer, `${at} → ${c}`);
+        }
+        continue;
+      }
+      const [a, b] = fractionsIn(p);
+      const [whole] = numbersIn(p.replace(/\d+\/\d+/g, ""));
+      const expected = /share/.test(p) ? frac(numbersIn(p)[1], numbersIn(p)[0])
+        : /walked|uses .* and|painted/.test(p) ? add(a, b)
+        : /cuts off|drinks|hiked/.test(p) ? subtract(a, b)
+        : b ? multiply(a, b)
+        : multiply(a, frac(whole));
+      assert.ok(same(parseFraction(q.answer), expected), `${at} → ${q.answer}, not ${formatFraction(expected)}`);
+      // Fifth grade writes answers in simplest form.
+      if (grade >= 5) assert.equal(q.answer, formatFraction(simplify(expected), { mixed: true }), at);
+      for (const c of q.choices) if (c !== q.answer) assert.ok(!same(parseFraction(c), expected), `${at} → ${c} is right too`);
     }
   });
 });

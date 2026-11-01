@@ -3,7 +3,7 @@
 
 import { objects, pattern, money, clock, shape } from "./pictures.js";
 import { numberLine } from "./number_line.js";
-import { pictureGraph, barGraph } from "./graphs.js";
+import { pictureGraph, barGraph, linePlot } from "./graphs.js";
 import { fraction } from "./fractions.js";
 import { area, cubes, angle, coordinates } from "./measures.js";
 
@@ -25,6 +25,7 @@ export function renderVisual(v) {
     case "number_line": return numberLine(v);
     case "picture_graph": return pictureGraph(v);
     case "bar_graph": return barGraph(v);
+    case "line_plot": return linePlot(v);
     case "fraction": return fraction(v);
     case "area": return area(v);
     case "cubes": return cubes(v);

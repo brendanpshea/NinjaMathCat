@@ -1,10 +1,11 @@
-// Picture graphs and bar graphs.
+// Picture graphs, bar graphs, histograms and line plots.
 
 import { svg, el, text, COLORS } from "./svg.js";
 import { linear, niceStep } from "./scale.js";
 import { describeVisual } from "./describe.js";
+import { rulerText } from "../questions/rational.js";
 
-/** @import { PictureGraph, BarGraph } from "../questions/common.js" */
+/** @import { PictureGraph, BarGraph, LinePlot } from "../questions/common.js" */
 
 const WIDTH = 560;
 
@@ -71,7 +72,7 @@ export function barGraph(v) {
   );
 
   const slot = (plot.right - plot.left) / v.bars.length;
-  const barWidth = Math.min(72, slot * 0.6);
+  const barWidth = v.histogram ? slot : Math.min(72, slot * 0.6);
   v.bars.forEach((bar, i) => {
     const centre = plot.left + slot * (i + 0.5);
     parts.push(
@@ -80,4 +81,32 @@ export function barGraph(v) {
     );
   });
   return svg("bar_graph", WIDTH, plot.bottom + 44, describeVisual(v), parts);
+}
+
+/**
+ * A line plot: a number line with a tick for every position, each labelled,
+ * and a stack of Xs above it for every thing measured there.
+ * @param {LinePlot} v
+ */
+export function linePlot(v) {
+  const stack = 26;
+  const tallest = Math.max(...v.counts);
+  const line = 66 + tallest * stack;
+  const x = linear([0, v.counts.length - 1], [60, WIDTH - 60]);
+  const parts = [
+    text({ x: WIDTH / 2, y: 30, "font-size": 21, "font-weight": 700, "text-anchor": "middle" }, v.title),
+    el("line", { x1: 30, y1: line, x2: WIDTH - 30, y2: line, stroke: COLORS.ink, "stroke-width": 3 }),
+  ];
+  v.counts.forEach((count, i) => {
+    const at = v.from + i;
+    parts.push(
+      el("line", { x1: x(i), y1: line - 9, x2: x(i), y2: line + 9, stroke: COLORS.ink, "stroke-width": 2.5, class: "tick", "data-at": at }),
+      text({ x: x(i), y: line + 32, "font-size": 17, "font-weight": 600, "text-anchor": "middle", class: "tick-label" }, rulerText(at, v.den)),
+    );
+    for (let k = 0; k < count; k++) {
+      const [cx, cy] = [x(i), line - 22 - k * stack];
+      parts.push(el("path", { d: `M ${cx - 8} ${cy - 8} L ${cx + 8} ${cy + 8} M ${cx + 8} ${cy - 8} L ${cx - 8} ${cy + 8}`, stroke: COLORS.accent, "stroke-width": 3.5, "stroke-linecap": "round", class: "mark", "data-at": at }));
+    }
+  });
+  return svg("line_plot", WIDTH, line + 46, describeVisual(v), parts);
 }

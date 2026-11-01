@@ -2,6 +2,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { shapes, SHAPES, TRAITS, NAMES_BY_SIDES, shapeById } from "../src/questions/shapes.js";
+import { SHAPE_CORNERS } from "../src/visuals/pictures.js";
 import { questionsOf } from "./helpers.js";
 
 describe("shape facts", () => {
@@ -67,6 +68,82 @@ describe("shape questions", () => {
       assert.ok(trait(q.answer).test(shape), `${at} → "${q.answer}" is false of a ${shape.id}`);
       for (const c of q.choices) {
         if (c !== q.answer) assert.ok(!trait(c).test(shape), `${at} → "${c}" is true of a ${shape.id} too`);
+      }
+    }
+    assert.ok(asked > 0);
+  });
+});
+
+describe("symmetry and sorting shapes", () => {
+  /**
+   * Lines of symmetry of a drawn polygon, found by trying each line through
+   * its centre and a corner or the middle of a side, and keeping those that
+   * fold every corner onto a corner.
+   */
+  function linesOfSymmetry(corners) {
+    const [cx, cy] = [0, 1].map(k => corners.reduce((sum, p) => sum + p[k], 0) / corners.length);
+    const through = [...corners, ...corners.map((p, i) => corners[(i + 1) % corners.length]).map((q, i) => [(q[0] + corners[i][0]) / 2, (q[1] + corners[i][1]) / 2])];
+    const angles = new Set();
+    for (const [x, y] of through) {
+      const a = Math.atan2(y - cy, x - cx);
+      const [ux, uy] = [Math.cos(a), Math.sin(a)];
+      const folds = corners.every(([px, py]) => {
+        const along = (px - cx) * ux + (py - cy) * uy;
+        const [rx, ry] = [2 * (cx + along * ux) - px, 2 * (cy + along * uy) - py];
+        return corners.some(([qx, qy]) => Math.hypot(qx - rx, qy - ry) < 0.5);
+      });
+      // A line and its opposite direction are the same line.
+      if (folds) angles.add(Math.round((((a % Math.PI) + Math.PI) % Math.PI) * 1000));
+    }
+    return angles.size;
+  }
+
+  it("count the lines of symmetry each shape has as drawn", () => {
+    for (const shape of SHAPES) {
+      if (shape.id === "circle") continue;
+      assert.equal(linesOfSymmetry(SHAPE_CORNERS[shape.id]), shape.symmetry, shape.id);
+    }
+  });
+
+  it("ask about symmetry, sides and angles with one right answer", () => {
+    /** What each "Which shape has ...?" asks, written out again. */
+    const HAS = {
+      "exactly 1 pair of parallel sides": s => s.parallelPairs === 1,
+      "no parallel sides at all": s => s.parallelPairs === 0,
+      "right angles": s => s.rightAngles > 0,
+      "2 pairs of parallel sides but no right angles": s => s.parallelPairs === 2 && s.rightAngles === 0,
+      "right angles but sides of different lengths": s => s.rightAngles > 0 && !s.equalSides,
+    };
+    for (const { question: q, at } of questionsOf(shapes)) {
+      if (q.prompt.startsWith("How many lines of symmetry")) {
+        assert.equal(q.answer, shapeById(q.visual.shape).symmetry, at);
+      }
+      const has = q.prompt.match(/^Which shape has (.+)\?$/)?.[1];
+      if (has) {
+        for (const c of q.choices) {
+          assert.ok(c !== "circle", `${at}: a circle has no sides to ask about`);
+          assert.equal(HAS[has](shapeById(c)), c === q.answer, `${at} → ${c}`);
+        }
+      }
+    }
+  });
+
+  it("know which quadrilaterals are kinds of which", () => {
+    // Each kind, and every kind it always is.
+    const IS = {
+      square: ["square", "rectangle", "rhombus", "parallelogram", "quadrilateral"],
+      rectangle: ["rectangle", "parallelogram", "quadrilateral"],
+      rhombus: ["rhombus", "parallelogram", "quadrilateral"],
+      parallelogram: ["parallelogram", "quadrilateral"],
+      quadrilateral: ["quadrilateral"],
+    };
+    let asked = 0;
+    for (const { question: q, at } of questionsOf(shapes)) {
+      if (q.prompt !== "Which of these is always true?") continue;
+      asked++;
+      for (const c of q.choices) {
+        const [, kind, family] = c.match(/^Every (\w+) is an? (\w+)\.$/);
+        assert.equal(IS[kind].includes(family), c === q.answer, `${at} → ${c}`);
       }
     }
     assert.ok(asked > 0);

@@ -1,5 +1,6 @@
 // Measuring: area and perimeter (3.MD.5-8, 4.MD.3, 6.G.1), volume (5.MD.3-5,
-// 6.G.2), and changing from one unit to another (3.MD.2, 4.MD.1, 5.MD.1).
+// 6.G.2) and surface area (6.G.4), and changing from one unit to another
+// (3.MD.2, 4.MD.1, 5.MD.1).
 
 import { atGrade, wrongNumbers } from "./common.js";
 import { frac, formatFraction } from "./rational.js";
@@ -240,13 +241,13 @@ function missingHeight(rng, b, h, unit) {
 /** @type {readonly [number, string[]][]} */
 const VOLUMES = [
   [5.5, ["count", "count", "multiply", "layers", "missingEdge", "combine"]],
-  [Infinity, ["half", "half", "multiply", "missingEdge", "combine"]],
+  [Infinity, ["half", "half", "surface", "surface", "multiply", "missingEdge", "combine"]],
 ];
 
 /** @type {QuestionType} */
 export const volume = {
   id: "volume",
-  name: "Volume",
+  name: "Volume and surface area",
   generate(rng, grade) {
     const unit = rng.pick(LENGTHS);
     const sixth = grade >= 6;
@@ -272,6 +273,19 @@ export const volume = {
         difficulty: 3,
       };
       case "combine": return combine(rng, unit);
+      case "surface": {
+        const faces = [l * w, l * h, w * h];
+        const total = 2 * (faces[0] + faces[1] + faces[2]);
+        return {
+          prompt: `What is the surface area of this box, in square ${unit.many}?`,
+          visual: { kind: "cubes", length: l, width: w, height: h, cubes: false, labels: { length: `${l} ${unit.short}`, width: `${w} ${unit.short}`, height: `${h} ${unit.short}` } },
+          answer: total,
+          // The volume, one of each face, or a pair of faces missed.
+          wrong: wrongNumbers(rng, total, [answer, total / 2, total - 2 * faces[2], total - faces[0]], { min: 1 }),
+          hint: "A box has 6 faces, in 3 pairs that match. Find the area of one of each pair, then double the total.",
+          difficulty: 3,
+        };
+      }
       default: return halfEdge(rng, unit);
     }
   },

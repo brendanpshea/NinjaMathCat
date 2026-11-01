@@ -24,6 +24,8 @@ import { integers } from "./questions/integers.js";
 import { statistics } from "./questions/statistics.js";
 import { area, volume, conversions } from "./questions/measurement.js";
 import { angles, coordinates } from "./questions/geometry.js";
+import { linePlot, dataDisplays } from "./questions/plots.js";
+import { fractionStories } from "./questions/fraction_stories.js";
 
 /** @import { Rng } from "./rng.js" */
 /** @import { Question, QuestionType } from "./questions/common.js" */
@@ -58,10 +60,10 @@ export const CURRICULUM = [
   { type: skipCounting, from: 0, to: 4.5, standards: ["K.CC.1", "2.NBT.2", "3.OA.9", "4.OA.5"] },
   { type: comparison, from: 0, to: 4.5, standards: ["K.CC.6", "K.CC.7", "1.NBT.3", "2.NBT.4", "4.NBT.2"] },
   { type: patterns, from: 0, to: 1.5, standards: [] },
-  { type: shapes, from: 0, to: 3.5, standards: ["K.G.2", "1.G.1", "2.G.1", "3.G.1"] },
+  { type: shapes, from: 0, to: 5.5, standards: ["K.G.2", "1.G.1", "2.G.1", "3.G.1", "4.G.2", "4.G.3", "5.G.3", "5.G.4"] },
   { type: addition, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
   { type: subtraction, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
-  { type: missingNumber, from: 1, to: 4.5, standards: ["1.OA.8", "3.OA.4", "3.OA.6"] },
+  { type: missingNumber, from: 1, to: 4.5, standards: ["1.OA.8", "3.OA.4", "3.OA.5", "3.OA.6"] },
   { type: wordAddition, from: 1, to: 4.5, standards: ["1.OA.1", "2.OA.1"] },
   { type: wordSubtraction, from: 1, to: 4.5, standards: ["1.OA.1", "2.OA.1"] },
   { type: time, from: 1, to: 4, standards: ["1.MD.3", "2.MD.7", "3.MD.1", "4.MD.2"] },
@@ -79,20 +81,23 @@ export const CURRICULUM = [
   { type: rounding, from: 3, to: 5.5, standards: ["3.NBT.1", "4.NBT.3", "5.NBT.4"] },
   { type: fractionCompare, from: 3, to: 4.5, standards: ["3.NF.3", "4.NF.1", "4.NF.2"] },
   { type: area, from: 3, to: 6.5, standards: ["3.MD.5", "3.MD.6", "3.MD.7", "3.MD.8", "4.MD.3", "6.G.1"] },
+  { type: linePlot, from: 3, to: 5.5, standards: ["3.MD.4", "4.MD.4", "5.MD.2"] },
   { type: conversions, from: 3, to: 5.5, standards: ["3.MD.2", "4.MD.1", "5.MD.1"] },
   { type: placeValue, from: 4, to: 5.5, standards: ["4.NBT.1", "4.NBT.2", "5.NBT.1", "5.NBT.3"] },
   { type: decimals, from: 4, to: 6.5, standards: ["4.NF.5", "4.NF.6", "4.NF.7", "5.NBT.2", "5.NBT.3", "5.NBT.7", "6.NS.3"] },
   { type: fractionArithmetic, from: 4, to: 6.5, standards: ["4.NF.3", "4.NF.4", "5.NF.1", "5.NF.4", "5.NF.7", "6.NS.1"] },
   { type: factors, from: 4, to: 4.5, standards: ["4.OA.4"] },
+  { type: fractionStories, from: 4.5, to: 5.5, standards: ["4.NF.3", "4.NF.4", "5.NF.2", "5.NF.3", "5.NF.5", "5.NF.6"] },
   { type: angles, from: 4, to: 4.5, standards: ["4.MD.5", "4.MD.6", "4.MD.7", "4.G.1"] },
-  { type: volume, from: 5, to: 6.5, standards: ["5.MD.3", "5.MD.4", "5.MD.5", "6.G.2"] },
-  { type: coordinates, from: 5, to: 6.5, standards: ["5.G.1", "5.G.2", "6.NS.6", "6.NS.8"] },
-  { type: expressions, from: 5, to: 6.5, standards: ["5.OA.1", "5.OA.2", "6.EE.1", "6.EE.2", "6.EE.3", "6.EE.4"] },
+  { type: volume, from: 5, to: 6.5, standards: ["5.MD.3", "5.MD.4", "5.MD.5", "6.G.2", "6.G.4"] },
+  { type: coordinates, from: 5, to: 6.5, standards: ["5.G.1", "5.G.2", "6.NS.6", "6.NS.8", "6.G.3"] },
+  { type: expressions, from: 5, to: 6.5, standards: ["5.OA.1", "5.OA.2", "5.OA.3", "6.EE.1", "6.EE.2", "6.EE.3", "6.EE.4", "6.EE.6"] },
   { type: commonFactors, from: 6, to: 6.5, standards: ["6.NS.4"] },
-  { type: equations, from: 6, to: 6.5, standards: ["6.EE.5", "6.EE.7", "6.EE.8"] },
+  { type: equations, from: 6, to: 6.5, standards: ["6.EE.5", "6.EE.7", "6.EE.8", "6.EE.9"] },
   { type: ratios, from: 6, to: 6.5, standards: ["6.RP.1", "6.RP.2", "6.RP.3"] },
   { type: integers, from: 6, to: 6.5, standards: ["6.NS.5", "6.NS.6", "6.NS.7"] },
   { type: statistics, from: 6, to: 6.5, standards: ["6.SP.3", "6.SP.5"] },
+  { type: dataDisplays, from: 6, to: 6.5, standards: ["6.SP.1", "6.SP.2", "6.SP.4"] },
 ];
 
 /**

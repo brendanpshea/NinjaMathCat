@@ -40,6 +40,20 @@
  * @property {number} scale  the step between gridlines
  * @property {number} max  the top of the scale
  * @property {{ label: string, value: number }[]} bars
+ * @property {boolean} [histogram]  bars for intervals, touching (6.SP.4)
+ */
+
+/**
+ * Data as X marks above a number line, one for each thing measured: a line
+ * plot of lengths in fourths of an inch (3.MD.4), or a dot plot of whole
+ * numbers (6.SP.4). As on a NumberLine, positions are whole numbers of 1/den
+ * steps; `counts[i]` Xs stand at position from + i.
+ * @typedef {object} LinePlot
+ * @property {"line_plot"} kind
+ * @property {string} title
+ * @property {number} den
+ * @property {number} from
+ * @property {number[]} counts
  */
 
 /**
@@ -87,12 +101,14 @@
  */
 
 /**
- * Labelled points on a coordinate grid running from min to max both ways.
+ * Labelled points on a coordinate grid running from min to max both ways,
+ * joined in order into a shape if `shape` is set.
  * @typedef {object} CoordinateGrid
  * @property {"coordinates"} kind
  * @property {number} min
  * @property {number} max
  * @property {{ x: number, y: number, label: string }[]} points
+ * @property {boolean} [shape]
  */
 
 /**
@@ -103,7 +119,7 @@
  *   | { kind: "money", items: string[] }
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
- *   | NumberLine | PictureGraph | BarGraph | FractionModel
+ *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
  *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid} Visual
  */
 

@@ -66,7 +66,12 @@ describe("volume", () => {
       if (v) {
         const edges = [v.labels.length, v.labels.width, v.labels.height].map(labelValue);
         assert.deepEqual([v.length, v.width, v.height], edges.map(e => e.n / e.d), at);
-        assert.ok(same(parseFraction(String(q.answer)), edges.reduce(multiply, frac(1))), `${at} → ${q.answer}`);
+        if (/surface area/.test(p)) {
+          const [l, w, h] = [v.length, v.width, v.height];
+          assert.equal(q.answer, 2 * (l * w + l * h + w * h), at);
+        } else {
+          assert.ok(same(parseFraction(String(q.answer)), edges.reduce(multiply, frac(1))), `${at} → ${q.answer}`);
+        }
         continue;
       }
       const n = numbersIn(p);
@@ -161,6 +166,23 @@ describe("the coordinate plane", () => {
         const [[x, y]] = pointsIn(p);
         assert.deepEqual(v.points.filter(pt => pt.x === x && pt.y === y).map(pt => pt.label), [q.answer], at);
         assert.deepEqual([...q.choices].sort(), ["A", "B", "C", "D"], at);
+      } else if (/of rectangle ABCD/.test(p)) {
+        assert.ok(v.shape, at);
+        const xs = v.points.map(pt => pt.x);
+        const ys = v.points.map(pt => pt.y);
+        const [w, h] = [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
+        // The corners go round the rectangle in order, so its sides run straight across and up.
+        v.points.forEach((pt, i) => {
+          const next = v.points[(i + 1) % 4];
+          assert.ok(pt.x === next.x || pt.y === next.y, at);
+        });
+        assert.equal(q.answer, /perimeter/.test(p) ? 2 * (w + h) : w * h, at);
+      } else if (/^Three corners of a rectangle/.test(p)) {
+        const given = pointsIn(p);
+        const [x, y] = pointsIn(q.answer)[0];
+        // With the fourth corner, each x and each y is used by exactly two corners.
+        const all = [...given, [x, y]];
+        for (const k of [0, 1]) for (const c of all) assert.equal(all.filter(d => d[k] === c[k]).length, 2, `${at} → ${q.answer}`);
       } else if (/apart/.test(p)) {
         const [a, b] = v ? v.points.map(pt => [pt.x, pt.y]) : pointsIn(p);
         assert.ok(a[0] === b[0] || a[1] === b[1], `${at}: the points are level`);
