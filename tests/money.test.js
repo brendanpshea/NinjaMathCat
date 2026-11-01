@@ -51,9 +51,9 @@ describe("money questions", () => {
     }
   });
 
-  it("keep making change for third grade", () => {
+  it("keep making change for third grade and up", () => {
     for (const { grade, question: q, at } of questionsOf(money)) {
-      if (q.prompt.includes("change")) assert.equal(grade, 3, at);
+      if (q.prompt.includes("change")) assert.ok(grade >= 3, at);
     }
   });
 });

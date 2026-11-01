@@ -7,6 +7,7 @@ import { isCorrect } from "../questions/common.js";
 import { sfxFor } from "../stage.js";
 import { renderVisual } from "../visuals/index.js";
 import { escapeXml as esc } from "../visuals/svg.js";
+import { formatNumber } from "../questions/common.js";
 import { createStage } from "./stage_view.js";
 
 /** @import { Battle, Round } from "../battle.js" */
@@ -16,13 +17,18 @@ import { createStage } from "./stage_view.js";
 /** @import { SoundSystem } from "../sound.js" */
 
 /**
- * A choice as markup: fractions stacked, the way children write them.
+ * A choice as markup, the way children write it: big numbers with commas,
+ * negatives with a true minus, fractions stacked, and mixed numbers as a
+ * whole number beside a stacked fraction.
  * @param {Answer} choice
  */
 export function choiceHtml(choice) {
-  const fraction = String(choice).match(/^(\d+)\/(\d+)$/);
+  if (typeof choice === "number") return esc(formatNumber(choice));
+  const fraction = choice.match(/^(-?)(?:(\d+) )?(\d+)\/(\d+)$/);
   if (!fraction) return esc(choice);
-  return `<math aria-label="${esc(choice)}"><mfrac><mn>${fraction[1]}</mn><mn>${fraction[2]}</mn></mfrac></math>`;
+  const [, minus, whole, top, bottom] = fraction;
+  const stacked = `<mfrac><mn>${top}</mn><mn>${bottom}</mn></mfrac>`;
+  return `<math aria-label="${esc(choice)}">${minus ? "<mo>−</mo>" : ""}${whole ? `<mn>${whole}</mn>` : ""}${stacked}</math>`;
 }
 
 /**

@@ -53,7 +53,7 @@ describe("elapsed time questions", () => {
     for (const { grade, question: q, at } of questionsOf(time)) {
       if (q.visual) continue;
       asked++;
-      assert.equal(grade, 3, `${at}: elapsed time is a third-grade skill`);
+      assert.ok(grade >= 3, `${at}: elapsed time starts in third grade`);
       const [, start, rest] = q.prompt.match(/starts at (\d+:\d+ [AP]M) and (.*)$/);
       const ends = rest.match(/^ends at (\d+:\d+ [AP]M)\./);
       if (ends) {

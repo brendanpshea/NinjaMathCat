@@ -33,7 +33,7 @@ describe("skip counting", () => {
       const step = b - a;
       assert.equal(c - b, step, at);
       assert.equal(q.answer, c + step, at);
-      assert.ok(Math.min(a, q.answer) >= 0 && Math.max(a, q.answer) <= 1000, at);
+      assert.ok(Math.min(a, q.answer) >= 0 && Math.max(a, q.answer) <= 10000, at);
     }
   });
 

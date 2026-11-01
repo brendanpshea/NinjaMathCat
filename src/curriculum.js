@@ -1,7 +1,7 @@
 // What each grade practises. A grade is a single number: 0 is the start of
-// kindergarten, 0.5 the middle of it, 1 the start of first grade, and so on.
-// Grades 4 to 6 join the ladder as their question types are written; adding
-// one is a row in GRADES and rows in CURRICULUM.
+// kindergarten, 0.5 the middle of it, 1 the start of first grade, and so on,
+// up to 6.5, the middle of sixth grade. Each question type says which grades
+// draw on it and which Common Core standards it covers (src/standards.js).
 
 import { makeQuestion } from "./questions/common.js";
 import { addition, subtraction, missingNumber, multiplication, division } from "./questions/arithmetic.js";
@@ -10,7 +10,7 @@ import { patterns } from "./questions/patterns.js";
 import { money } from "./questions/money.js";
 import { time } from "./questions/time.js";
 import { shapes } from "./questions/shapes.js";
-import { wordAddition, wordSubtraction, wordMultiplication, wordDivision } from "./questions/word_problems.js";
+import { wordAddition, wordSubtraction, wordMultiplication, wordDivision, wordTwoStep } from "./questions/word_problems.js";
 import { pictureGraph, barGraph } from "./questions/graphs.js";
 import { numberLine, fractionLine } from "./questions/number_lines.js";
 import { fractions } from "./questions/fractions.js";
@@ -27,6 +27,9 @@ export const GRADES = [
   { grade: 2, label: "2nd grade" },
   { grade: 2.5, label: "2nd grade (mid-year)" },
   { grade: 3, label: "3rd grade" },
+  { grade: 3.5, label: "3rd grade (mid-year)" },
+  { grade: 4, label: "4th grade" },
+  { grade: 4.5, label: "4th grade (mid-year)" },
 ];
 
 /**
@@ -38,26 +41,27 @@ export const GRADES = [
 export const CURRICULUM = [
   { type: counting, from: 0, to: 0.5, standards: ["K.CC.4", "K.CC.5"] },
   { type: sequence, from: 0, to: 1.5, standards: ["K.CC.2", "1.NBT.1"] },
-  { type: skipCounting, from: 0, to: 3, standards: ["K.CC.1", "2.NBT.2", "3.OA.9"] },
-  { type: comparison, from: 0, to: 3, standards: ["K.CC.6", "K.CC.7", "1.NBT.3", "2.NBT.4"] },
+  { type: skipCounting, from: 0, to: 4.5, standards: ["K.CC.1", "2.NBT.2", "3.OA.9", "4.OA.5"] },
+  { type: comparison, from: 0, to: 4.5, standards: ["K.CC.6", "K.CC.7", "1.NBT.3", "2.NBT.4", "4.NBT.2"] },
   { type: patterns, from: 0, to: 1.5, standards: [] },
-  { type: shapes, from: 0, to: 3, standards: ["K.G.2", "1.G.1", "2.G.1", "3.G.1"] },
-  { type: addition, from: 0, to: 3, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2"] },
-  { type: subtraction, from: 0, to: 3, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2"] },
-  { type: missingNumber, from: 1, to: 3, standards: ["1.OA.8"] },
-  { type: wordAddition, from: 1, to: 3, standards: ["1.OA.1", "2.OA.1"] },
-  { type: wordSubtraction, from: 1, to: 3, standards: ["1.OA.1", "2.OA.1"] },
-  { type: time, from: 1, to: 3, standards: ["1.MD.3", "2.MD.7", "3.MD.1"] },
-  { type: money, from: 1, to: 3, standards: ["2.MD.8"] },
-  { type: pictureGraph, from: 1, to: 3, standards: ["1.MD.4", "2.MD.10", "3.MD.3"] },
-  { type: fractions, from: 1, to: 3, standards: ["1.G.3", "2.G.3", "3.NF.1"] },
-  { type: barGraph, from: 2, to: 3, standards: ["2.MD.10", "3.MD.3"] },
-  { type: numberLine, from: 2, to: 3, standards: ["2.MD.6"] },
-  { type: wordMultiplication, from: 2, to: 3, standards: ["2.OA.4", "3.OA.3"] },
-  { type: multiplication, from: 2.5, to: 3, standards: ["2.OA.4", "3.OA.7"] },
-  { type: division, from: 3, to: 3, standards: ["3.OA.7"] },
-  { type: wordDivision, from: 3, to: 3, standards: ["3.OA.3"] },
-  { type: fractionLine, from: 3, to: 3, standards: ["3.NF.2"] },
+  { type: shapes, from: 0, to: 3.5, standards: ["K.G.2", "1.G.1", "2.G.1", "3.G.1"] },
+  { type: addition, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
+  { type: subtraction, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
+  { type: missingNumber, from: 1, to: 4.5, standards: ["1.OA.8", "3.OA.4", "3.OA.6"] },
+  { type: wordAddition, from: 1, to: 4.5, standards: ["1.OA.1", "2.OA.1"] },
+  { type: wordSubtraction, from: 1, to: 4.5, standards: ["1.OA.1", "2.OA.1"] },
+  { type: time, from: 1, to: 4, standards: ["1.MD.3", "2.MD.7", "3.MD.1", "4.MD.2"] },
+  { type: money, from: 1, to: 4, standards: ["2.MD.8", "4.MD.2"] },
+  { type: pictureGraph, from: 1, to: 3.5, standards: ["1.MD.4", "2.MD.10", "3.MD.3"] },
+  { type: fractions, from: 1, to: 3.5, standards: ["1.G.3", "2.G.3", "3.NF.1", "3.G.2"] },
+  { type: barGraph, from: 2, to: 3.5, standards: ["2.MD.10", "3.MD.3"] },
+  { type: numberLine, from: 2, to: 3.5, standards: ["2.MD.6"] },
+  { type: wordMultiplication, from: 2, to: 4.5, standards: ["2.OA.4", "3.OA.1", "3.OA.3", "4.OA.1", "4.OA.2"] },
+  { type: multiplication, from: 2.5, to: 5.5, standards: ["2.OA.4", "3.OA.7", "3.NBT.3", "4.NBT.5", "5.NBT.5"] },
+  { type: division, from: 3, to: 6.5, standards: ["3.OA.7", "4.NBT.6", "5.NBT.6", "6.NS.2"] },
+  { type: wordDivision, from: 3, to: 4.5, standards: ["3.OA.2", "3.OA.3", "4.OA.3"] },
+  { type: wordTwoStep, from: 3, to: 4.5, standards: ["3.OA.8", "4.OA.3"] },
+  { type: fractionLine, from: 3, to: 3.5, standards: ["3.NF.2"] },
 ];
 
 /**

@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { loadSave, writeSave, newSave } from "../src/save.js";
 import { suggestGrade, firstTryShare } from "../src/progress.js";
 import { TREASURES } from "../src/treasures.js";
+import { GRADES } from "../src/curriculum.js";
 
 /** A stand-in for localStorage. */
 function memoryStorage(initial = {}) {
@@ -64,6 +65,6 @@ describe("suggesting a grade", () => {
     assert.equal(suggestGrade(tally(14, 4, 2), 2), null);
     assert.equal(suggestGrade(tally(1, 3, 3), 2), null);
     assert.equal(suggestGrade(tally(3, 10, 10), 0), null);
-    assert.equal(suggestGrade(tally(30, 0, 0), 3), null);
+    assert.equal(suggestGrade(tally(30, 0, 0), GRADES[GRADES.length - 1].grade), null);
   });
 });

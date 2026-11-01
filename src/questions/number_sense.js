@@ -1,7 +1,7 @@
 // Counting and the order of numbers: how many, what comes next, skip counting,
 // and which is bigger.
 
-import { atGrade, wrongNumbers } from "./common.js";
+import { atGrade, wrongNumbers, formatNumber as fmt } from "./common.js";
 
 /** @import { QuestionType } from "./common.js" */
 
@@ -52,7 +52,8 @@ export const sequence = {
  * How a grade skip-counts, as [step, highest number reached] pairs. A negative
  * step counts back. Tens to 100 in kindergarten (K.CC.1); 2s, 5s and 10s in
  * first grade; 5s, 10s and 100s within 1000 in second (2.NBT.2); multiples
- * that build the times tables in third (3.OA.9).
+ * that build the times tables in third (3.OA.9); and in fourth, patterns that
+ * follow a rule, starting anywhere (4.OA.5).
  * @type {readonly [number, [number, number][]][]}
  */
 const SKIPS = [
@@ -62,7 +63,9 @@ const SKIPS = [
   [1.5, [[2, 100], [5, 120], [10, 120], [-10, 120]]],
   [2, [[5, 1000], [10, 1000], [100, 1000], [-10, 1000]]],
   [2.5, [[5, 1000], [10, 1000], [25, 1000], [100, 1000], [-5, 1000], [-10, 1000], [-100, 1000]]],
-  [Infinity, [[3, 60], [4, 80], [6, 120], [25, 1000], [50, 1000], [100, 1000], [-10, 1000], [-100, 1000]]],
+  [3, [[3, 60], [4, 80], [6, 120], [25, 1000], [50, 1000], [100, 1000], [-10, 1000], [-100, 1000]]],
+  [3.5, [[7, 140], [8, 160], [9, 180], [25, 1000], [50, 1000], [-25, 1000]]],
+  [Infinity, [[11, 300], [12, 300], [15, 600], [75, 3000], [250, 10000], [-50, 5000], [-25, 1000]]],
 ];
 
 /** @type {QuestionType} */
@@ -74,7 +77,7 @@ export const skipCounting = {
     const size = Math.abs(step);
     // Starting anywhere ("43, 53, 63") is for tens and hundreds once children
     // can find ten more or less mentally (1.NBT.5); otherwise start on a multiple.
-    const anyStart = grade >= 1.5 && (size === 10 || size === 100);
+    const anyStart = grade >= 4 || (grade >= 1.5 && (size === 10 || size === 100));
     const lowest = step > 0 ? 0 : 3 * size;
     const highest = step > 0 ? upTo - 3 * size : upTo;
     const start = anyStart
@@ -83,11 +86,11 @@ export const skipCounting = {
     const shown = [start, start + step, start + 2 * step];
     const answer = start + 3 * step;
     return {
-      prompt: `What comes next? ${shown.join(", ")}, ?`,
+      prompt: `What comes next? ${shown.map(fmt).join(", ")}, ?`,
       answer,
       // One step too far, the last number again, counting by ones, or a ten off.
       wrong: wrongNumbers(rng, answer, [answer + step, answer - step, answer + Math.sign(step), answer + 10, answer - 10]),
-      hint: `Count ${step > 0 ? "up" : "back"} by ${size}s.`,
+      hint: grade >= 4 ? "Find the rule: how much does each number go up or down by?" : `Count ${step > 0 ? "up" : "back"} by ${size}s.`,
       difficulty: 1 + Number(step < 0) + Number(![2, 5, 10, 100].includes(size)),
     };
   },
@@ -95,10 +98,26 @@ export const skipCounting = {
 
 /**
  * The numbers a grade compares: within 10 in kindergarten (K.CC.7), two-digit
- * numbers with >, = and < in first grade (1.NBT.3), three-digit in second (2.NBT.4).
+ * numbers with >, = and < in first grade (1.NBT.3), three-digit in second
+ * (2.NBT.4), and up to a million in fourth (4.NBT.2).
  * @type {readonly [number, number][]}
  */
-const COMPARE_UP_TO = [[0, 5], [0.5, 10], [1.5, 100], [Infinity, 1000]];
+const COMPARE_UP_TO = [[0, 5], [0.5, 10], [1.5, 100], [3, 1000], [3.5, 10000], [Infinity, 1000000]];
+
+/**
+ * The number with two neighbouring digits swapped (452,318 → 425,318), or
+ * null if every swap would leave it the same or start it with a zero.
+ * @param {import("../rng.js").Rng} rng
+ * @param {number} n
+ */
+function swapNeighbours(rng, n) {
+  const digits = String(n).split("");
+  const places = digits.slice(0, -1).map((_, i) => i).filter(i => digits[i] !== digits[i + 1] && !(i === 0 && digits[1] === "0"));
+  if (places.length === 0) return null;
+  const i = rng.pick(places);
+  [digits[i], digits[i + 1]] = [digits[i + 1], digits[i]];
+  return Number(digits.join(""));
+}
 
 /** @type {QuestionType} */
 export const comparison = {
@@ -141,20 +160,23 @@ export const comparison = {
       };
     }
 
-    // Two numbers and a symbol. Half the time the digits are swapped (47 and 74),
-    // so the tens have to be read, not just the ones.
+    // Two numbers and a symbol. Half the time the digits are swapped (47 and
+    // 74), so the tens have to be read, not just the ones; big numbers differ
+    // by two neighbouring digits, so every place has to be read.
     const a = rng.int(10, top);
     const reversed = Number(String(a).split("").reverse().join(""));
-    let b = rng.chance(0.5) && reversed !== a && reversed <= top ? reversed : rng.int(10, top);
+    const lookalike = top > 1000 ? swapNeighbours(rng, a) : reversed;
+    let b = (top > 1000 || rng.chance(0.5)) && lookalike !== null && lookalike !== a && lookalike <= top ? lookalike : rng.int(10, top);
     if (b === a) b = a === top ? a - 1 : a + 1;
     const op = a > b ? ">" : "<";
     const flipped = op === ">" ? "<" : ">";
+    const [x, y] = [fmt(a), fmt(b)];
     return {
       prompt: "Which is true?",
-      answer: `${a} ${op} ${b}`,
-      wrong: [`${a} ${flipped} ${b}`, `${a} = ${b}`, `${b} ${op} ${a}`],
-      hint: "The open side of < or > faces the bigger number.",
-      difficulty: 1 + Number(Math.floor(a / 10) === Math.floor(b / 10)) + Number(top > 100),
+      answer: `${x} ${op} ${y}`,
+      wrong: [`${x} ${flipped} ${y}`, `${x} = ${y}`, `${y} ${op} ${x}`],
+      hint: top > 1000 ? "Compare the digits place by place, starting from the biggest place." : "The open side of < or > faces the bigger number.",
+      difficulty: Math.min(3, 1 + Number(Math.floor(a / 10) === Math.floor(b / 10)) + Number(top > 100) + Number(top > 10000)),
     };
   },
 };

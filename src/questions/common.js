@@ -93,6 +93,17 @@
  */
 
 /**
+ * A whole number as children read it: with commas from 10,000 up (4.NBT.2),
+ * and a true minus sign for negatives (6.NS.5).
+ * @param {number} n
+ */
+export function formatNumber(n) {
+  const size = Math.abs(n);
+  const digits = size >= 10000 ? size.toLocaleString("en-US") : String(size);
+  return n < 0 ? `−${digits}` : digits;
+}
+
+/**
  * Look a grade up in a table of [up to this grade, value] rows, in rising
  * order. End the table with an Infinity row so that every grade finds one.
  * @template T
