@@ -29,83 +29,80 @@ import { need, steer } from "./mastery.js";
  * @property {number} at  the point in the year its questions are pitched at, such as 3 or 3.5
  * @property {string[]} learn  the question types it brings in or builds up
  * @property {string[]} [warmup]  types from earlier grades it keeps up
- * @property {string} [setting]  where it happens; by default, the next in SETTINGS
+ * @property {string} setting  where it happens: a different setting for each chapter of a grade, suited to its topic where one is
  */
-
-/** The settings chapters happen in, gentle to grand, in order unless a chapter says otherwise. */
-export const SETTINGS = ["meadow", "attic", "hilltop", "kitchen", "farm", "swamp", "castle", "temple"];
 
 /** @type {Record<number, Chapter[]>} */
 export const ADVENTURES = {
   0: [
-    { id: "0-counting", title: "Counting", at: 0, learn: ["counting"], note: "Touch each thing once as you count. The last number you say tells how many there are." },
-    { id: "0-next", title: "What comes next", at: 0, learn: ["sequence"], note: "Numbers always come in the same order. Say them in your head to find the one that comes next." },
-    { id: "0-shapes", title: "Shapes", at: 0, learn: ["shapes"], note: "Every shape has a name. Count its sides and corners to tell which one it is." },
-    { id: "0-more", title: "More and fewer", at: 0, learn: ["comparison"], note: "When you count, the number you say later is the bigger one." },
-    { id: "0-patterns", title: "Patterns", at: 0, learn: ["patterns", "skip_counting"], note: "A pattern repeats the same way again and again. Find the part that repeats to see what comes next." },
-    { id: "0-adding", title: "Adding", at: 0, learn: ["addition"], note: "Adding puts groups together. Count them all to find how many there are now." },
-    { id: "0-taking", title: "Taking away", at: 0, learn: ["subtraction"], note: "Taking away makes a group smaller. Count what is left." },
-    { id: "0-to-ten", title: "Adding and taking away to 10", at: 0.5, learn: ["addition", "subtraction"], note: "Now the numbers go up to 10. Count on from the bigger number to add, or count back to take away." },
+    { id: "0-counting", setting: "meadow", title: "Counting", at: 0, learn: ["counting"], note: "Touch each thing once as you count. The last number you say tells how many there are." },
+    { id: "0-next", setting: "attic", title: "What comes next", at: 0, learn: ["sequence"], note: "Numbers always come in the same order. Say them in your head to find the one that comes next." },
+    { id: "0-shapes", setting: "kitchen", title: "Shapes", at: 0, learn: ["shapes"], note: "Every shape has a name. Count its sides and corners to tell which one it is." },
+    { id: "0-more", setting: "farm", title: "More and fewer", at: 0, learn: ["comparison"], note: "When you count, the number you say later is the bigger one." },
+    { id: "0-patterns", setting: "mushrooms", title: "Patterns", at: 0, learn: ["patterns", "skip_counting"], note: "A pattern repeats the same way again and again. Find the part that repeats to see what comes next." },
+    { id: "0-adding", setting: "candy", title: "Adding", at: 0, learn: ["addition"], note: "Adding puts groups together. Count them all to find how many there are now." },
+    { id: "0-taking", setting: "seaside", title: "Taking away", at: 0, learn: ["subtraction"], note: "Taking away makes a group smaller. Count what is left." },
+    { id: "0-to-ten", setting: "hilltop", title: "Adding and taking away to 10", at: 0.5, learn: ["addition", "subtraction"], note: "Now the numbers go up to 10. Count on from the bigger number to add, or count back to take away." },
   ],
   1: [
-    { id: "1-facts", title: "Adding and taking away", at: 1, learn: ["addition", "subtraction"], warmup: ["sequence", "comparison"], note: "A fact you know can help with one you don't. 5 + 5 is 10, so 5 + 6 is one more: 11." },
-    { id: "1-stories", title: "Number stories", at: 1, learn: ["word_addition", "word_subtraction"], note: "Read the story and ask: are things being put together, or taken away? Then add or subtract." },
-    { id: "1-missing", title: "Missing numbers", at: 1, learn: ["missing_number"], note: "The box hides a number. Ask what number would make the sum come out right." },
-    { id: "1-to-120", title: "Counting to 120", at: 1.5, learn: ["sequence", "comparison", "skip_counting"], warmup: ["patterns"], note: "Tens and ones build every number. 34 is 3 tens and 4 ones, so it comes after 33 and before 35." },
-    { id: "1-time", title: "Telling time", at: 1, learn: ["time"], note: "The short hand points to the hour. When the long hand points straight up, it is o'clock." },
-    { id: "1-money", title: "Money", at: 1.5, learn: ["money"], note: "Start with the coins worth the most, then count on with the rest." },
-    { id: "1-graphs", title: "Picture graphs", at: 1.5, learn: ["picture_graph"], note: "Each picture stands for something that was counted. Count the pictures in a row to find how many." },
-    { id: "1-shares", title: "Shapes and equal shares", at: 1.5, learn: ["shapes", "fractions"], note: "A shape cut into equal parts can be shared fairly. Two equal parts are halves; four are fourths." },
+    { id: "1-facts", setting: "meadow", title: "Adding and taking away", at: 1, learn: ["addition", "subtraction"], warmup: ["sequence", "comparison"], note: "A fact you know can help with one you don't. 5 + 5 is 10, so 5 + 6 is one more: 11." },
+    { id: "1-stories", setting: "farm", title: "Number stories", at: 1, learn: ["word_addition", "word_subtraction"], note: "Read the story and ask: are things being put together, or taken away? Then add or subtract." },
+    { id: "1-missing", setting: "attic", title: "Missing numbers", at: 1, learn: ["missing_number"], note: "The box hides a number. Ask what number would make the sum come out right." },
+    { id: "1-to-120", setting: "hilltop", title: "Counting to 120", at: 1.5, learn: ["sequence", "comparison", "skip_counting"], warmup: ["patterns"], note: "Tens and ones build every number. 34 is 3 tens and 4 ones, so it comes after 33 and before 35." },
+    { id: "1-time", setting: "clocktower", title: "Telling time", at: 1, learn: ["time"], note: "The short hand points to the hour. When the long hand points straight up, it is o'clock." },
+    { id: "1-money", setting: "seaside", title: "Money", at: 1.5, learn: ["money"], note: "Start with the coins worth the most, then count on with the rest." },
+    { id: "1-graphs", setting: "kitchen", title: "Picture graphs", at: 1.5, learn: ["picture_graph"], note: "Each picture stands for something that was counted. Count the pictures in a row to find how many." },
+    { id: "1-shares", setting: "candy", title: "Shapes and equal shares", at: 1.5, learn: ["shapes", "fractions"], note: "A shape cut into equal parts can be shared fairly. Two equal parts are halves; four are fourths." },
   ],
   2: [
-    { id: "2-to-100", title: "Adding and subtracting to 100", at: 2, learn: ["addition", "subtraction"], warmup: ["missing_number"], note: "Add the tens, then the ones. If the ones make 10 or more, trade 10 ones for a ten." },
-    { id: "2-stories", title: "Number stories", at: 2, learn: ["word_addition", "word_subtraction"], note: "What do you know, and what do you need to find? Then decide whether to add or subtract." },
-    { id: "2-to-1000", title: "Numbers to 1000", at: 2, learn: ["comparison", "skip_counting"], note: "In 352, the 3 means 3 hundreds. To compare numbers, look at the hundreds first." },
-    { id: "2-lines", title: "Number lines", at: 2, learn: ["number_line"], note: "On a number line, numbers get bigger to the right. A jump forward adds; a jump back takes away." },
-    { id: "2-bigger", title: "Bigger sums", at: 2.5, learn: ["addition", "subtraction"], note: "With three-digit numbers, line up the hundreds, tens and ones, and work one place at a time." },
-    { id: "2-groups", title: "Equal groups", at: 2.5, learn: ["word_multiplication", "multiplication"], note: "Equal groups have the same number in each. 3 groups of 4 is 4 + 4 + 4, which is 12." },
-    { id: "2-money", title: "Money and graphs", at: 2.5, learn: ["money", "picture_graph", "bar_graph"], note: "A bar graph shows how many by how tall each bar is. Read across from the top of a bar to the numbers." },
-    { id: "2-time", title: "Time, shapes and fractions", at: 2.5, learn: ["time", "shapes", "fractions"], note: "The long hand counts minutes by fives. When it points at the 3, it is 15 minutes past the hour." },
+    { id: "2-to-100", setting: "meadow", title: "Adding and subtracting to 100", at: 2, learn: ["addition", "subtraction"], warmup: ["missing_number"], note: "Add the tens, then the ones. If the ones make 10 or more, trade 10 ones for a ten." },
+    { id: "2-stories", setting: "farm", title: "Number stories", at: 2, learn: ["word_addition", "word_subtraction"], note: "What do you know, and what do you need to find? Then decide whether to add or subtract." },
+    { id: "2-to-1000", setting: "library", title: "Numbers to 1000", at: 2, learn: ["comparison", "skip_counting"], note: "In 352, the 3 means 3 hundreds. To compare numbers, look at the hundreds first." },
+    { id: "2-lines", setting: "hilltop", title: "Number lines", at: 2, learn: ["number_line"], note: "On a number line, numbers get bigger to the right. A jump forward adds; a jump back takes away." },
+    { id: "2-bigger", setting: "kitchen", title: "Bigger sums", at: 2.5, learn: ["addition", "subtraction"], note: "With three-digit numbers, line up the hundreds, tens and ones, and work one place at a time." },
+    { id: "2-groups", setting: "mushrooms", title: "Equal groups", at: 2.5, learn: ["word_multiplication", "multiplication"], note: "Equal groups have the same number in each. 3 groups of 4 is 4 + 4 + 4, which is 12." },
+    { id: "2-money", setting: "seaside", title: "Money and graphs", at: 2.5, learn: ["money", "picture_graph", "bar_graph"], note: "A bar graph shows how many by how tall each bar is. Read across from the top of a bar to the numbers." },
+    { id: "2-time", setting: "clocktower", title: "Time, shapes and fractions", at: 2.5, learn: ["time", "shapes", "fractions"], note: "The long hand counts minutes by fives. When it points at the 3, it is 15 minutes past the hour." },
   ],
   3: [
-    { id: "3-groups", title: "Equal groups", at: 3, learn: ["multiplication", "word_multiplication"], warmup: ["addition", "subtraction", "skip_counting"], note: "Multiplying counts equal groups quickly. 4 × 5 means 4 groups of 5: count by 5s to get 5, 10, 15, 20." },
-    { id: "3-sharing", title: "Sharing equally", at: 3, learn: ["division", "word_division", "missing_number"], note: "Dividing shares things into equal groups. To find 20 ÷ 4, ask: 4 times what makes 20?" },
-    { id: "3-measures", title: "Time, measures and rounding", at: 3, learn: ["time", "conversions", "rounding"], warmup: ["number_line", "money"], note: "To round to the nearest ten, find the two tens a number sits between and see which is closer. Halfway rounds up." },
-    { id: "3-two-step", title: "Harder facts and two-step stories", at: 3.5, learn: ["multiplication", "division", "word_two_step"], warmup: ["word_addition", "word_subtraction", "comparison"], note: "Some stories take two steps. Find the first answer, then use it to find the second." },
-    { id: "3-area", title: "Area", at: 3, learn: ["area"], note: "Area is how many squares cover a shape. For a rectangle, count the squares in one row, then multiply by the number of rows." },
-    { id: "3-fractions", title: "Fractions", at: 3.5, learn: ["fractions", "fraction_line", "fraction_compare"], note: "A fraction is equal parts of a whole. 3/4 means the whole is cut into 4 equal parts, and we have 3 of them." },
-    { id: "3-graphs", title: "Graphs and line plots", at: 3.5, learn: ["picture_graph", "bar_graph", "line_plot"], note: "Read a graph's key and scale first. One picture, or one step up the scale, can stand for more than one." },
-    { id: "3-perimeter", title: "Shapes and perimeter", at: 3.5, learn: ["shapes", "area"], note: "Perimeter is the distance all the way around a shape. Add up the lengths of all its sides." },
+    { id: "3-groups", setting: "candy", title: "Equal groups", at: 3, learn: ["multiplication", "word_multiplication"], warmup: ["addition", "subtraction", "skip_counting"], note: "Multiplying counts equal groups quickly. 4 × 5 means 4 groups of 5: count by 5s to get 5, 10, 15, 20." },
+    { id: "3-sharing", setting: "kitchen", title: "Sharing equally", at: 3, learn: ["division", "word_division", "missing_number"], note: "Dividing shares things into equal groups. To find 20 ÷ 4, ask: 4 times what makes 20?" },
+    { id: "3-measures", setting: "clocktower", title: "Time, measures and rounding", at: 3, learn: ["time", "conversions", "rounding"], warmup: ["number_line", "money"], note: "To round to the nearest ten, find the two tens a number sits between and see which is closer. Halfway rounds up." },
+    { id: "3-two-step", setting: "farm", title: "Harder facts and two-step stories", at: 3.5, learn: ["multiplication", "division", "word_two_step"], warmup: ["word_addition", "word_subtraction", "comparison"], note: "Some stories take two steps. Find the first answer, then use it to find the second." },
+    { id: "3-area", setting: "attic", title: "Area", at: 3, learn: ["area"], note: "Area is how many squares cover a shape. For a rectangle, count the squares in one row, then multiply by the number of rows." },
+    { id: "3-fractions", setting: "swamp", title: "Fractions", at: 3.5, learn: ["fractions", "fraction_line", "fraction_compare"], note: "A fraction is equal parts of a whole. 3/4 means the whole is cut into 4 equal parts, and we have 3 of them." },
+    { id: "3-graphs", setting: "library", title: "Graphs and line plots", at: 3.5, learn: ["picture_graph", "bar_graph", "line_plot"], note: "Read a graph's key and scale first. One picture, or one step up the scale, can stand for more than one." },
+    { id: "3-perimeter", setting: "castle", title: "Shapes and perimeter", at: 3.5, learn: ["shapes", "area"], note: "Perimeter is the distance all the way around a shape. Add up the lengths of all its sides." },
   ],
   4: [
-    { id: "4-place", title: "Place value", at: 4, learn: ["place_value", "rounding", "comparison"], warmup: ["addition", "subtraction", "skip_counting"], note: "Each place is worth ten times the place to its right. In 4,382, the 4 is worth 4,000." },
-    { id: "4-measures", title: "Measuring and converting", at: 4, learn: ["conversions", "time", "money"], note: "A bigger unit holds many smaller ones: 1 foot is 12 inches. To change to the smaller unit, multiply." },
-    { id: "4-multiply", title: "Multiplying bigger numbers", at: 4, learn: ["multiplication", "word_multiplication", "factors"], warmup: ["missing_number"], note: "Split a number into tens and ones, multiply each part, and add: 6 × 23 is 6 × 20 plus 6 × 3." },
-    { id: "4-divide", title: "Dividing and remainders", at: 4, learn: ["division", "word_division", "word_two_step"], warmup: ["word_addition", "word_subtraction"], note: "When things don't share out evenly, what is left over is the remainder. It is always less than the number you divide by." },
-    { id: "4-angles", title: "Angles and shapes", at: 4.5, learn: ["angles", "shapes"], note: "Angles are measured in degrees. A square corner, a right angle, is 90 degrees, and a full turn is 360." },
-    { id: "4-fractions", title: "Fractions", at: 4.5, learn: ["fraction_compare", "fraction_arithmetic"], note: "To add fractions with the same bottom number, add the tops and keep the bottom: 2/8 + 3/8 = 5/8." },
-    { id: "4-decimals", title: "Fraction stories and decimals", at: 4.5, learn: ["fraction_stories", "decimals"], note: "Decimals are another way to write tenths and hundredths: 0.3 is 3/10, and 0.25 is 25/100." },
-    { id: "4-area", title: "Area, perimeter and line plots", at: 4.5, learn: ["area", "line_plot"], note: "A rectangle's area is its length times its width. Its perimeter is two lengths and two widths added up." },
+    { id: "4-place", setting: "library", title: "Place value", at: 4, learn: ["place_value", "rounding", "comparison"], warmup: ["addition", "subtraction", "skip_counting"], note: "Each place is worth ten times the place to its right. In 4,382, the 4 is worth 4,000." },
+    { id: "4-measures", setting: "clocktower", title: "Measuring and converting", at: 4, learn: ["conversions", "time", "money"], note: "A bigger unit holds many smaller ones: 1 foot is 12 inches. To change to the smaller unit, multiply." },
+    { id: "4-multiply", setting: "farm", title: "Multiplying bigger numbers", at: 4, learn: ["multiplication", "word_multiplication", "factors"], warmup: ["missing_number"], note: "Split a number into tens and ones, multiply each part, and add: 6 × 23 is 6 × 20 plus 6 × 3." },
+    { id: "4-divide", setting: "seaside", title: "Dividing and remainders", at: 4, learn: ["division", "word_division", "word_two_step"], warmup: ["word_addition", "word_subtraction"], note: "When things don't share out evenly, what is left over is the remainder. It is always less than the number you divide by." },
+    { id: "4-angles", setting: "observatory", title: "Angles and shapes", at: 4.5, learn: ["angles", "shapes"], note: "Angles are measured in degrees. A square corner, a right angle, is 90 degrees, and a full turn is 360." },
+    { id: "4-fractions", setting: "kitchen", title: "Fractions", at: 4.5, learn: ["fraction_compare", "fraction_arithmetic"], note: "To add fractions with the same bottom number, add the tops and keep the bottom: 2/8 + 3/8 = 5/8." },
+    { id: "4-decimals", setting: "frozen", title: "Fraction stories and decimals", at: 4.5, learn: ["fraction_stories", "decimals"], note: "Decimals are another way to write tenths and hundredths: 0.3 is 3/10, and 0.25 is 25/100." },
+    { id: "4-area", setting: "castle", title: "Area, perimeter and line plots", at: 4.5, learn: ["area", "line_plot"], note: "A rectangle's area is its length times its width. Its perimeter is two lengths and two widths added up." },
   ],
   5: [
-    { id: "5-decimals", title: "Decimals and place value", at: 5, learn: ["place_value", "decimals", "rounding"], note: "After the decimal point come tenths, hundredths and thousandths. Each place is worth a tenth of the place to its left." },
-    { id: "5-multiply", title: "Multiplying and dividing", at: 5, learn: ["multiplication", "division"], note: "Multiply big numbers one place at a time and add the parts. Check a division by multiplying back." },
-    { id: "5-expressions", title: "Expressions", at: 5, learn: ["expressions"], note: "Work out what is in parentheses first, then multiply and divide, then add and subtract." },
-    { id: "5-fractions", title: "Adding fractions", at: 5, learn: ["fraction_arithmetic"], note: "To add fractions with different bottoms, make the bottoms the same first: 1/2 + 1/3 is 3/6 + 2/6, which is 5/6." },
-    { id: "5-stories", title: "Fraction stories", at: 5.5, learn: ["fraction_stories"], note: "A fraction is a division too: 3 pizzas shared by 4 friends is 3/4 of a pizza each." },
-    { id: "5-units", title: "Units and line plots", at: 5.5, learn: ["conversions", "line_plot"], note: "To change to a bigger unit, divide: 250 centimeters is 2.5 meters." },
-    { id: "5-volume", title: "Volume", at: 5.5, learn: ["volume", "area"], note: "Volume is how many cubes fill a box: its length times its width times its height." },
-    { id: "5-coordinates", title: "The coordinate plane", at: 5.5, learn: ["coordinates", "shapes"], note: "A point's first number says how far across to go, and the second how far up." },
+    { id: "5-decimals", setting: "library", title: "Decimals and place value", at: 5, learn: ["place_value", "decimals", "rounding"], note: "After the decimal point come tenths, hundredths and thousandths. Each place is worth a tenth of the place to its left." },
+    { id: "5-multiply", setting: "mushrooms", title: "Multiplying and dividing", at: 5, learn: ["multiplication", "division"], note: "Multiply big numbers one place at a time and add the parts. Check a division by multiplying back." },
+    { id: "5-expressions", setting: "clocktower", title: "Expressions", at: 5, learn: ["expressions"], note: "Work out what is in parentheses first, then multiply and divide, then add and subtract." },
+    { id: "5-fractions", setting: "candy", title: "Adding fractions", at: 5, learn: ["fraction_arithmetic"], note: "To add fractions with different bottoms, make the bottoms the same first: 1/2 + 1/3 is 3/6 + 2/6, which is 5/6." },
+    { id: "5-stories", setting: "seaside", title: "Fraction stories", at: 5.5, learn: ["fraction_stories"], note: "A fraction is a division too: 3 pizzas shared by 4 friends is 3/4 of a pizza each." },
+    { id: "5-units", setting: "frozen", title: "Units and line plots", at: 5.5, learn: ["conversions", "line_plot"], note: "To change to a bigger unit, divide: 250 centimeters is 2.5 meters." },
+    { id: "5-volume", setting: "temple", title: "Volume", at: 5.5, learn: ["volume", "area"], note: "Volume is how many cubes fill a box: its length times its width times its height." },
+    { id: "5-coordinates", setting: "observatory", title: "The coordinate plane", at: 5.5, learn: ["coordinates", "shapes"], note: "A point's first number says how far across to go, and the second how far up." },
   ],
   6: [
-    { id: "6-ratios", title: "Ratios and rates", at: 6, learn: ["ratios"], note: "A ratio compares two amounts. With 2 cats for every 3 dogs, the ratio of cats to dogs is 2:3." },
-    { id: "6-dividing", title: "Dividing fractions and decimals", at: 6, learn: ["fraction_arithmetic", "decimals", "division"], note: "To divide by a fraction, ask how many of it fit. 2 ÷ 1/4 is 8, because eight quarters make 2." },
-    { id: "6-factors", title: "Factors and multiples", at: 6, learn: ["common_factors"], note: "The greatest common factor is the biggest number that divides both. The least common multiple is the smallest number both divide into." },
-    { id: "6-negatives", title: "Negative numbers", at: 6.5, learn: ["integers", "coordinates"], note: "Numbers below zero are negative. −3 is 3 steps to the left of 0 on a number line, so it is less than −1." },
-    { id: "6-expressions", title: "Expressions with letters", at: 6.5, learn: ["expressions"], note: "A letter stands for a number. 3n means 3 times n, so when n is 4, 3n is 12." },
-    { id: "6-equations", title: "Equations", at: 6.5, learn: ["equations"], note: "To solve an equation, undo what is done to x. If x + 5 = 12, then x = 12 − 5." },
-    { id: "6-area", title: "Area and volume", at: 6.5, learn: ["area", "volume"], note: "A triangle's area is half of its base times its height. A box's surface area is the areas of its six faces added up." },
-    { id: "6-statistics", title: "Statistics", at: 6.5, learn: ["statistics", "data_displays"], note: "The mean shares everything out evenly, the median is the middle value, and the range is the highest take away the lowest." },
+    { id: "6-ratios", setting: "kitchen", title: "Ratios and rates", at: 6, learn: ["ratios"], note: "A ratio compares two amounts. With 2 cats for every 3 dogs, the ratio of cats to dogs is 2:3." },
+    { id: "6-dividing", setting: "library", title: "Dividing fractions and decimals", at: 6, learn: ["fraction_arithmetic", "decimals", "division"], note: "To divide by a fraction, ask how many of it fit. 2 ÷ 1/4 is 8, because eight quarters make 2." },
+    { id: "6-factors", setting: "castle", title: "Factors and multiples", at: 6, learn: ["common_factors"], note: "The greatest common factor is the biggest number that divides both. The least common multiple is the smallest number both divide into." },
+    { id: "6-negatives", setting: "frozen", title: "Negative numbers", at: 6.5, learn: ["integers", "coordinates"], note: "Numbers below zero are negative. −3 is 3 steps to the left of 0 on a number line, so it is less than −1." },
+    { id: "6-expressions", setting: "clocktower", title: "Expressions with letters", at: 6.5, learn: ["expressions"], note: "A letter stands for a number. 3n means 3 times n, so when n is 4, 3n is 12." },
+    { id: "6-equations", setting: "swamp", title: "Equations", at: 6.5, learn: ["equations"], note: "To solve an equation, undo what is done to x. If x + 5 = 12, then x = 12 − 5." },
+    { id: "6-area", setting: "temple", title: "Area and volume", at: 6.5, learn: ["area", "volume"], note: "A triangle's area is half of its base times its height. A box's surface area is the areas of its six faces added up." },
+    { id: "6-statistics", setting: "peak", title: "Statistics", at: 6.5, learn: ["statistics", "data_displays"], note: "The mean shares everything out evenly, the median is the middle value, and the range is the highest take away the lowest." },
   ],
 };
 
@@ -166,7 +163,7 @@ export function chaptersFor(grade) {
  * @param {number} chapter
  */
 export function settingFor(grade, chapter) {
-  return chaptersFor(grade)[chapter].setting ?? SETTINGS[chapter % SETTINGS.length];
+  return chaptersFor(grade)[chapter].setting;
 }
 
 /**

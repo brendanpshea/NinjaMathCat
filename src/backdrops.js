@@ -23,6 +23,14 @@ export const BACKDROPS = [
   { id: "castle", name: "Castle Hall", file: "assets/backdrops/castle.webp", floor: 0.9 },
   { id: "swamp", name: "Swamp Bridge", file: "assets/backdrops/swamp.webp", floor: 0.9 },
   { id: "temple", name: "Crystal Temple", file: "assets/backdrops/temple.webp", floor: 0.88 },
+  { id: "seaside", name: "Seaside Cove", file: "assets/backdrops/seaside.webp", floor: 0.9 },
+  { id: "mushrooms", name: "Mushroom Forest", file: "assets/backdrops/mushrooms.webp", floor: 0.9 },
+  { id: "frozen", name: "Frozen Lake", file: "assets/backdrops/frozen.webp", floor: 0.9 },
+  { id: "candy", name: "Candy Hills", file: "assets/backdrops/candy.webp", floor: 0.9 },
+  { id: "library", name: "Grand Library", file: "assets/backdrops/library.webp", floor: 0.9 },
+  { id: "clocktower", name: "Clock Tower", file: "assets/backdrops/clocktower.webp", floor: 0.9 },
+  { id: "observatory", name: "Starry Observatory", file: "assets/backdrops/observatory.webp", floor: 0.9 },
+  { id: "peak", name: "Stormy Peak", file: "assets/backdrops/peak.webp", floor: 0.9 },
 ];
 
 /**

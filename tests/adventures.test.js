@@ -9,6 +9,7 @@ import {
 import { CURRICULUM, GRADES, typesForGrade, pickQuestion, mixForGrade } from "../src/curriculum.js";
 import { startBattle, answer } from "../src/battle.js";
 import { createRng } from "../src/rng.js";
+import { BACKDROPS } from "../src/backdrops.js";
 
 const rowFor = type => CURRICULUM.find(r => r.type.id === type);
 
@@ -58,10 +59,15 @@ describe("adventures", () => {
     }
   });
 
-  it("happen in settings with monsters to fight", () => {
+  it("happen in settings with monsters to fight, a different one for each chapter of a grade", () => {
     for (const grade of ADVENTURE_GRADES) {
       chaptersFor(grade).forEach((chapter, c) => assert.ok(residents(settingFor(grade, c)).length >= 3, chapter.id));
+      const settings = chaptersFor(grade).map((_, c) => settingFor(grade, c));
+      assert.equal(new Set(settings).size, settings.length, `grade ${grade} goes to ${settings.join(", ")}`);
     }
+    // Between them the grades go everywhere.
+    const everywhere = new Set(ADVENTURE_GRADES.flatMap(g => chaptersFor(g).map((_, c) => settingFor(g, c))));
+    assert.equal(everywhere.size, BACKDROPS.length);
   });
 });
 

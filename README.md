@@ -75,7 +75,7 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/battle.js` | A battle as a state machine. `answer(battle, choice, rng)` returns the next state and a `round` saying what happened, for the stage to act out. It has no timers and never touches the page. |
 | `src/combat.js` | The numbers: health, attack, damage, streaks, experience and levels. |
 | `src/monsters.js`, `src/heroes.js`, `src/treasures.js` | Who you fight (four tiers, each with a name and a line for young readers), who you can play as, and what monsters drop. |
-| `src/backdrops.js` | The eight settings battles happen in. Each monster lives in one, and its backdrop goes behind the fight. |
+| `src/backdrops.js` | The sixteen settings battles happen in. Each is home to three monsters, and a chapter of an adventure happens in one; its backdrop goes behind the fight. |
 | `src/stage.js` | A round as a sequence of timed beats (the hero lunges, the monster reels…) and as a sentence for screen readers. |
 | `src/ui/stage_view.js`, `css/stage.css` | The battle stage on the page: plays a round's beats with CSS animations, and does nothing at all under reduced motion. |
 | `assets/` | Sprite strips for the heroes and monsters, and the backdrops. |
@@ -129,7 +129,7 @@ are made with [ZzFX](https://github.com/KilledByAPixel/ZzFX) by Frank Force
 
 ### Backdrops
 
-Each monster lives in one of eight settings, and the stage puts that setting's
+Each monster lives in one of sixteen settings, and the stage puts that setting's
 backdrop behind the fight, with the fighters standing on its floor line. The
 painted backdrops are made with Gemini, four to a picture:
 

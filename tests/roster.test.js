@@ -16,10 +16,10 @@ const STRIPS = [
 ];
 
 describe("monsters", () => {
-  it("have unique ids and names, and six in each of the four tiers", () => {
+  it("have unique ids and names, and as many in each of the four tiers", () => {
     assert.equal(new Set(MONSTERS.map(m => m.id)).size, MONSTERS.length);
     assert.equal(new Set(MONSTERS.map(m => m.name)).size, MONSTERS.length);
-    for (const tier of [1, 2, 3, 4]) assert.equal(MONSTERS.filter(m => m.tier === tier).length, 6, `tier ${tier}`);
+    for (const tier of [1, 2, 3, 4]) assert.equal(MONSTERS.filter(m => m.tier === tier).length, MONSTERS.length / 4, `tier ${tier}`);
   });
 
   it("are described in one short sentence a beginning reader can manage", () => {
