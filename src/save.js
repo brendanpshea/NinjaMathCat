@@ -10,8 +10,10 @@
 import { HEROES, DEFAULT_HERO } from "./heroes.js";
 import { TREASURES } from "./treasures.js";
 import { ADVENTURE_GRADES, levelsFor, newProgress } from "./adventures.js";
+import { CURRICULUM } from "./curriculum.js";
 
 /** @import { AdventureProgress } from "./adventures.js" */
+/** @import { Mastery } from "./mastery.js" */
 
 const KEY = "ninja-math-cat";
 
@@ -28,6 +30,8 @@ export const LONGEST_NAME = 20;
  * @property {number} xp  all the experience ever earned
  * @property {string[]} treasures  ids, in the order found
  * @property {Record<string, AdventureProgress>} adventures  progress in each grade's adventure, by grade
+ * @property {Mastery} mastery  how well they know each kind of question
+ * @property {number} played  battles started, the clock that review is timed by
  */
 
 /**
@@ -61,6 +65,8 @@ export function addPlayer(save, { name, heroId, grade }) {
     xp: 0,
     treasures: [],
     adventures: {},
+    mastery: {},
+    played: 0,
   };
   return { save: { ...save, players: [...save.players, player], current: player.id }, player };
 }
@@ -165,6 +171,15 @@ function cleanPlayer(stored, seen) {
     const progress = cleanProgress(stored.adventures?.[grade], grade);
     if (progress) adventures[grade] = progress;
   }
+  const played = Number.isInteger(stored.played) && stored.played >= 0 ? stored.played : 0;
+  /** @type {Mastery} */
+  const mastery = {};
+  for (const { type } of CURRICULUM) {
+    const m = stored.mastery?.[type.id];
+    if (m && typeof m.score === "number" && m.score >= 0 && m.score <= 1 && Number.isInteger(m.seen) && m.seen > 0 && Number.isInteger(m.last) && m.last >= 0) {
+      mastery[type.id] = { score: m.score, seen: m.seen, last: Math.min(m.last, played) };
+    }
+  }
   return {
     id: stored.id,
     name: cleanName(stored.name) || `Player ${stored.id.slice(1)}`,
@@ -173,6 +188,8 @@ function cleanPlayer(stored, seen) {
     xp: Number.isInteger(stored.xp) && stored.xp >= 0 ? stored.xp : 0,
     treasures: Array.isArray(stored.treasures) ? [...new Set(stored.treasures.filter((/** @type {unknown} */ id) => typeof id === "string" && known.has(id)))] : [],
     adventures,
+    mastery,
+    played,
   };
 }
 

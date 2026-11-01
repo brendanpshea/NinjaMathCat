@@ -6,14 +6,18 @@
 // A chapter brings in a topic gently: its first level asks the easiest
 // questions of it, the next two harder ones, then a review mixes it with the
 // chapters before, and a boss asks everything so far. Each level also keeps
-// up some review of earlier chapters.
+// up some review of earlier chapters, most of it on what the player finds
+// hardest or hasn't practised lately, and pitches each kind of question by
+// how well the player knows it (src/mastery.js).
 
 import { CURRICULUM, pickQuestion } from "./curriculum.js";
 import { MONSTERS } from "./monsters.js";
 import { createRng } from "./rng.js";
+import { need, steer } from "./mastery.js";
 
 /** @import { Mix } from "./curriculum.js" */
 /** @import { Question } from "./questions/common.js" */
+/** @import { Mastery } from "./mastery.js" */
 /** @import { Monster } from "./monsters.js" */
 /** @import { Tally } from "./battle.js" */
 
@@ -235,12 +239,34 @@ export function residents(setting) {
 }
 
 /**
+ * A part of a mix for one kind of question, pitched for this player: easier,
+ * and from earlier in the year, while it's shaky; harder once it's strong.
+ * @param {string} type
+ * @param {number} at  the point in the year
+ * @param {number} weight
+ * @param {number} most  the hardest the level asks for
+ * @param {Mastery} mastery
+ * @returns {Mix[number]}
+ */
+function pitched(type, at, weight, most, mastery) {
+  const s = steer(mastery[type]);
+  const hardest = Math.min(most, s.most);
+  return { type, grade: pitchFor(type, s.earlier ? at - 0.5 : at), weight, most: hardest, least: Math.min(s.least, hardest) };
+}
+
+/** The least share of review a kind gets, against the most needed, so none drops out of sight. */
+const LEAST_NEED = 0.25;
+
+/**
  * Everything needed to play a level: the questions to ask, and the monsters
- * to fight and how tough each is.
+ * to fight and how tough each is. Without a player's mastery, review is
+ * spread evenly and every kind pitched as the level asks.
  * @param {Level} level
+ * @param {Mastery} [mastery]
+ * @param {number} [now]  battles the player has played
  * @returns {{ mix: Mix, adventure: Monster[], pitch: number[], toughness: number[] }}
  */
-export function planLevel(level) {
+export function planLevel(level, mastery = {}, now = 0) {
   const chapters = chaptersFor(level.grade);
   const chapter = chapters[level.chapter];
   const plan = LEVEL_PLANS[level.kind];
@@ -251,10 +277,13 @@ export function planLevel(level) {
     ...(chapter.warmup ?? []),
   ])].filter(type => !fresh.includes(type));
   const freshShare = earlier.length === 0 ? 1 : plan.fresh;
+  // Review goes where it is needed most.
+  const needs = earlier.map(type => Math.max(LEAST_NEED, need(mastery[type], now)));
+  const allNeed = needs.reduce((a, b) => a + b, 0);
   /** @type {Mix} */
   const mix = [
-    ...fresh.map(type => ({ type, grade: pitchFor(type, chapter.at), weight: freshShare / fresh.length, most: plan.most })),
-    ...earlier.map(type => ({ type, grade: pitchFor(type, chapter.at), weight: (1 - freshShare) / earlier.length, most: 3 })),
+    ...fresh.map(type => pitched(type, chapter.at, freshShare / fresh.length, plan.most, mastery)),
+    ...earlier.map((type, i) => pitched(type, chapter.at, ((1 - freshShare) * needs[i]) / allNeed, 3, mastery)),
   ];
   const who = residents(settingFor(level.grade, level.chapter));
   if (who.length < 3) throw new RangeError(`The setting for ${chapter.id} needs three residents`);
@@ -263,6 +292,43 @@ export function planLevel(level) {
     adventure: plan.foes.map(i => who[i]),
     pitch: plan.pitch,
     toughness: plan.toughness,
+  };
+}
+
+/** How many kinds of question a training level works on. */
+export const TRAINING_KINDS = 4;
+
+/**
+ * A training level: review of the kinds that need it most, out of those met
+ * in the adventure so far, at the point in the year reached. It doesn't count
+ * on the map, but earns experience and treasure like any battle. Before
+ * anything has been met, it practises the chapter being played.
+ * @param {number} grade
+ * @param {AdventureProgress} progress
+ * @param {Mastery} mastery
+ * @param {number} now  battles the player has played
+ * @returns {{ mix: Mix, adventure: Monster[], pitch: number[], toughness: number[], kinds: string[] }}
+ */
+export function planTraining(grade, progress, mastery, now) {
+  const chapters = chaptersFor(grade);
+  const levels = levelsFor(grade);
+  const reached = (nextLevel(levels, progress) ?? levels[levels.length - 1]).chapter;
+  const chapter = chapters[reached];
+  const reachedKinds = [...new Set(chapters.slice(0, reached + 1).flatMap(c => [...c.learn, ...(c.warmup ?? [])]))];
+  const met = reachedKinds.filter(type => (mastery[type]?.seen ?? 0) > 0);
+  const pool = met.length > 0 ? met : [...new Set(chapter.learn)];
+  const kinds = pool
+    .map((type, i) => ({ type, i, need: Math.max(LEAST_NEED, need(mastery[type], now)) }))
+    .sort((a, b) => b.need - a.need || a.i - b.i)
+    .slice(0, TRAINING_KINDS);
+  const allNeed = kinds.reduce((sum, k) => sum + k.need, 0);
+  const who = residents(settingFor(grade, reached));
+  return {
+    mix: kinds.map(k => pitched(k.type, chapter.at, k.need / allNeed, 3, mastery)),
+    adventure: [who[0], who[1]],
+    pitch: [0, 0],
+    toughness: [0.9, 0.9],
+    kinds: kinds.map(k => k.type),
   };
 }
 

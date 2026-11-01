@@ -122,9 +122,10 @@ export function generateQuestion(rng, grade, avoid) {
 
 /**
  * Which questions to ask, and how often: each part is a question type, the
- * grade to pitch it at, how much of the time to ask it, and the hardest
- * difficulty (1 to 3) to give.
- * @typedef {{ type: string, grade: number, weight: number, most: number }[]} Mix
+ * grade to pitch it at, how much of the time to ask it, and the range of
+ * difficulty (1 to 3) to try for: no harder than `most`, and no easier than
+ * `least` if given.
+ * @typedef {{ type: string, grade: number, weight: number, most: number, least?: number }[]} Mix
  */
 
 /**
@@ -157,7 +158,8 @@ const TRIES_FOR_DIFFICULTY = 24;
 
 /**
  * A question from a mix: a part picked by weight, then a question of its type
- * no harder than the part allows, where one comes up in a few tries.
+ * in the part's range of difficulty, where one comes up in a few tries, or
+ * else the nearest to it.
  * @param {Rng} rng
  * @param {Mix} mix
  * @param {string} [avoid]  a type not to ask, usually the last one
@@ -170,10 +172,13 @@ export function pickQuestion(rng, mix, avoid) {
   let roll = rng.next() * parts.reduce((sum, p) => sum + p.weight, 0);
   const part = parts.find(p => (roll -= p.weight) < 0) ?? parts[parts.length - 1];
   const type = typeById(part.type);
-  let easiest = makeQuestion(rng, type, part.grade);
-  for (let i = 1; i < TRIES_FOR_DIFFICULTY && easiest.difficulty > part.most; i++) {
+  const least = part.least ?? 1;
+  /** How far a question's difficulty is outside the part's range. */
+  const off = (/** @type {Question} */ q) => Math.max(0, least - q.difficulty, q.difficulty - part.most);
+  let nearest = makeQuestion(rng, type, part.grade);
+  for (let i = 1; i < TRIES_FOR_DIFFICULTY && off(nearest) > 0; i++) {
     const another = makeQuestion(rng, type, part.grade);
-    if (another.difficulty < easiest.difficulty) easiest = another;
+    if (off(another) < off(nearest)) nearest = another;
   }
-  return easiest;
+  return nearest;
 }

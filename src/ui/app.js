@@ -1,11 +1,13 @@
 // The game's screens and the way between them. The title asks who is playing;
 // a player's map shows their grade's adventure, chapter by chapter; a chapter
 // starts with a note on its topic; each level is a short battle; and after it
-// comes how it went. A quick battle, the treasure collection and the player's
-// choices are a tap away from the map. Progress is saved after every answer
-// and every level, so leaving loses nothing but the level being played.
+// comes how it went, topic by topic. The training ground, a quick battle, the
+// treasures, a progress report for grown-ups and the player's choices are a
+// tap away from the map. Every answer teaches the game what the player knows
+// (src/mastery.js), and progress is saved after every answer and every level,
+// so leaving loses nothing but the level being played.
 
-import { GRADES } from "../curriculum.js";
+import { GRADES, typeById } from "../curriculum.js";
 import { HEROES, heroSprite } from "../heroes.js";
 import { MONSTERS, buildAdventure, monsterSprite } from "../monsters.js";
 import { backdropFor } from "../backdrops.js";
@@ -13,9 +15,10 @@ import { startBattle } from "../battle.js";
 import { levelForXp } from "../combat.js";
 import { TREASURES } from "../treasures.js";
 import {
-  ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, settingFor, exampleFor,
+  ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, planTraining, settingFor, exampleFor,
   recordLevel, levelStates, nextLevel, openChapter, starsFor,
 } from "../adventures.js";
+import { learn, strength } from "../mastery.js";
 import { loadSave, writeSave, addPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME } from "../save.js";
 import { renderVisual } from "../visuals/index.js";
 import { escapeXml as esc } from "../visuals/svg.js";
@@ -28,10 +31,47 @@ import { still } from "./sprites.js";
 /** @import { Save, Player } from "../save.js" */
 /** @import { SoundSystem } from "../sound.js" */
 
-/** @typedef {"title" | "player" | "map" | "note" | "battle" | "level-done" | "victory" | "treasures"} ScreenName */
+/** @typedef {"title" | "player" | "map" | "note" | "battle" | "level-done" | "training-done" | "victory" | "treasures" | "report"} ScreenName */
+/** @import { Outcome } from "../mastery.js" */
 
 /** What each kind of level is called on the map. */
 const KIND_NAMES = { learn: "New topic", practice: "Practice", review: "Review", boss: "Boss" };
+
+/** How well a kind of question is known, in words for grown-ups. */
+const STRENGTH_WORDS = { new: "Not met yet", practise: "Needs practice", growing: "Getting there", strong: "Strong" };
+
+/**
+ * "a", "a and b", "a, b and c"
+ * @param {string[]} items
+ */
+function list(items) {
+  return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+/**
+ * How each kind of question went in a battle, in the order first asked.
+ * @param {{ type: string, outcome: Outcome }[]} answers
+ */
+function byKind(answers) {
+  /** @type {Map<string, { asked: number, firstTry: number }>} */
+  const kinds = new Map();
+  for (const { type, outcome } of answers) {
+    const k = kinds.get(type) ?? { asked: 0, firstTry: 0 };
+    kinds.set(type, { asked: k.asked + 1, firstTry: k.firstTry + Number(outcome === "firstTry") });
+  }
+  return [...kinds].map(([type, k]) => ({ type, name: typeById(type).name, ...k }));
+}
+
+/**
+ * What a battle says topic by topic: what went well, and what to keep at.
+ * @param {{ type: string, outcome: Outcome }[]} answers
+ */
+function topicNote(answers) {
+  const kinds = byKind(answers);
+  const great = kinds.filter(k => k.asked >= 2 && k.firstTry === k.asked).map(k => k.name);
+  const keep = kinds.filter(k => k.firstTry < k.asked).map(k => k.name);
+  return [great.length > 0 ? `Great at ${list(great)}!` : "", keep.length > 0 ? `Keep practising ${list(keep)}.` : ""].filter(Boolean).join(" ");
+}
 
 /**
  * A grade as it reads in a sentence: "kindergarten", "3rd grade".
@@ -64,6 +104,8 @@ export function createApp(root, { storage, sound, rng }) {
   let screen = "title";
   /** @type {{ destroy(): void, battle: Battle } | null} */
   let battleScreen = null;
+  /** What has been played since the page was opened, for the progress report. */
+  const session = { battles: 0, asked: 0, firstTry: 0 };
 
   root.innerHTML = `
     <header class="top">
@@ -306,8 +348,10 @@ export function createApp(root, { storage, sound, rng }) {
             : `<p class="map-finished">You finished the whole ${esc(gradeWords(grade))} adventure! Play any level again for more stars, or try the next grade.</p>`}
         </div>
         <div class="actions map-actions">
+          <button type="button" class="quiet" data-ref="training">Training ground</button>
           <button type="button" class="quiet" data-ref="quick">Quick battle</button>
           <button type="button" class="quiet" data-ref="treasures">Treasures</button>
+          <button type="button" class="quiet" data-ref="report">Progress report</button>
           <button type="button" class="quiet" data-ref="edit">Change hero or grade</button>
           <button type="button" class="quiet" data-ref="switch">Switch player</button>
         </div>
@@ -337,8 +381,10 @@ export function createApp(root, { storage, sound, rng }) {
 
     part("hero").replaceChildren(still(heroSprite(hero), hero.name));
     if (next) onTap(part("continue"), () => begin(next));
+    onTap(part("training"), () => training());
     onTap(part("quick"), () => quickBattle());
     onTap(part("treasures"), () => treasures());
+    onTap(part("report"), () => report());
     onTap(part("edit"), () => playerForm(player));
     onTap(part("switch"), () => title());
     screenEl.querySelector(".chapters")?.addEventListener("click", event => {
@@ -432,7 +478,7 @@ export function createApp(root, { storage, sound, rng }) {
     const foundBefore = new Set(player.treasures);
     const battle = startBattle(rng, {
       grade: chapter.at,
-      ...planLevel(level),
+      ...planLevel(level, player.mastery, player.played),
       hero: { level: startLevel, xp: player.xp },
       treasures: player.treasures,
     });
@@ -459,11 +505,37 @@ export function createApp(root, { storage, sound, rng }) {
   }
 
   /**
-   * Show a battle, saving what is earned as it goes.
+   * Training: a short battle on the kinds of question that need it most.
+   */
+  function training() {
+    const player = me();
+    const plan = planTraining(player.grade, progressIn(player, player.grade), player.mastery, player.played);
+    const startLevel = levelForXp(player.xp);
+    const foundBefore = new Set(player.treasures);
+    const battle = startBattle(rng, {
+      grade: plan.mix[0].grade,
+      ...plan,
+      hero: { level: startLevel, xp: player.xp },
+      treasures: player.treasures,
+    });
+    fight(battle, {
+      title: `Training ground · ${list(plan.kinds.map(k => typeById(k).name))}`,
+      onWin: b => trainingDone(b, startLevel, foundBefore),
+    });
+  }
+
+  /**
+   * Show a battle, saving what is earned as it goes, and learning from every
+   * answer what the player knows. Each battle moves the clock that review is
+   * timed by.
    * @param {Battle} battle
    * @param {{ title?: string, onWin: (battle: Battle) => void }} options
    */
   function fight(battle, { title: name, onWin }) {
+    const now = me().played + 1;
+    change({ played: now });
+    session.battles++;
+    let learned = 0;
     show("battle", "");
     battleScreen = createBattleScreen(screenEl, {
       battle,
@@ -471,7 +543,16 @@ export function createApp(root, { storage, sound, rng }) {
       rng,
       sound,
       title: name,
-      onProgress: b => change({ xp: b.hero.xp, treasures: b.treasures }),
+      onProgress: b => {
+        let mastery = me().mastery;
+        for (const { type, outcome } of b.tally.answers.slice(learned)) {
+          mastery = learn(mastery, type, outcome, now);
+          session.asked++;
+          session.firstTry += Number(outcome === "firstTry");
+        }
+        learned = b.tally.answers.length;
+        change({ xp: b.hero.xp, treasures: b.treasures, mastery });
+      },
       onWin,
       onLeave: map,
     });
@@ -510,6 +591,8 @@ export function createApp(root, { storage, sound, rng }) {
     const finishedChapter = level.kind === "boss" && chapterLevels.every(l => progress.done[l.id]);
     const following = chapters[level.chapter + 1];
     const hero = heroOf(player);
+    const stars = starsFor(tally.firstTry, asked);
+    const note = topicNote(tally.answers);
     show("level-done", `
       <section class="victory-screen level-done">
         <div class="banner">
@@ -519,13 +602,18 @@ export function createApp(root, { storage, sound, rng }) {
             <p class="tagline">${esc(hero.name)} beat ${esc(battle.adventure.map(m => m.name).join(" and "))}.</p>
           </div>
         </div>
-        <p class="stars-big">${starsHtml(starsFor(tally.firstTry, asked))}</p>
+        <p class="stars-big">${starsHtml(stars)}</p>
+        ${note ? `<p class="topic-note">${esc(note)}</p>` : ""}
         <ul class="facts">
           <li><strong>${tally.firstTry} of ${asked}</strong> right the first time</li>
           <li><strong>Level ${battle.hero.level}</strong> ${gained > 0 ? `up ${gained} ${gained === 1 ? "level" : "levels"}!` : "and climbing"}</li>
           <li><strong>${found.length}</strong> new ${found.length === 1 ? "treasure" : "treasures"}</li>
         </ul>
         ${found.length > 0 ? `<ul class="treasure-grid">${found.map(treasureCard).join("")}</ul>` : ""}
+        ${stars === 1 ? `<div class="card training-offer">
+          <p>That was a tough one. The training ground practises what's been tricky, a little at a time.</p>
+          <button type="button" class="quiet" data-ref="training">Go to the training ground</button>
+        </div>` : ""}
         ${finishedChapter ? `<div class="card chapter-note">
           <h2 class="card-title">You finished ${esc(chapter.title)}!</h2>
           <p>${chapterStars} of ${chapterLevels.length * 3} stars in this chapter. ${following ? `Next up: <strong>${esc(following.title)}</strong>.` : `That was the last chapter of the ${esc(gradeWords(level.grade))} adventure. Well done!`}</p>
@@ -537,6 +625,96 @@ export function createApp(root, { storage, sound, rng }) {
       </section>`);
     part("banner-hero").replaceChildren(still(heroSprite(hero), hero.name));
     if (next) onTap(part("next"), () => begin(next));
+    onTap(part("training"), () => training());
+    onTap(part("map"), () => map());
+  }
+
+  /**
+   * How training went: each kind of question it worked on, and how well it is known now.
+   * @param {Battle} battle
+   * @param {number} startLevel
+   * @param {Set<string>} foundBefore
+   */
+  function trainingDone(battle, startLevel, foundBefore) {
+    sound.play("victory");
+    const player = me();
+    const found = newTreasures(battle, foundBefore);
+    const gained = battle.hero.level - startLevel;
+    const hero = heroOf(player);
+    show("training-done", `
+      <section class="victory-screen">
+        <div class="banner">
+          <span data-ref="banner-hero"></span>
+          <div>
+            <h1 tabindex="-1">Training done!</h1>
+            <p class="tagline">${esc(hero.name)} beat ${esc(battle.adventure.map(m => m.name).join(" and "))}.</p>
+          </div>
+        </div>
+        <ul class="facts">${byKind(battle.tally.answers).map(k => `
+          <li><strong>${k.firstTry} of ${k.asked}</strong> ${esc(k.name)}, right the first time
+            <span class="fact-note">${esc(STRENGTH_WORDS[strength(player.mastery[k.type])])}</span></li>`).join("")}
+        </ul>
+        <p class="tagline">Level ${battle.hero.level}${gained > 0 ? `, up ${gained}!` : ""} · ${found.length} new ${found.length === 1 ? "treasure" : "treasures"}</p>
+        ${found.length > 0 ? `<ul class="treasure-grid">${found.map(treasureCard).join("")}</ul>` : ""}
+        <div class="actions">
+          <button type="button" class="primary big" data-ref="again">Train again</button>
+          <button type="button" class="quiet" data-ref="map">Back to the map</button>
+        </div>
+      </section>`);
+    part("banner-hero").replaceChildren(still(heroSprite(hero), hero.name));
+    onTap(part("again"), () => training());
+    onTap(part("map"), () => map());
+  }
+
+  /**
+   * For grown-ups: every kind of question in the player's grade, in the order
+   * the adventure brings them in, and how well each is known.
+   */
+  function report() {
+    const player = me();
+    const grade = player.grade;
+    const levels = levelsFor(grade);
+    const progress = progressIn(player, grade);
+    const done = levels.filter(l => progress.done[l.id]).length;
+    const kinds = [...new Set(chaptersFor(grade).flatMap(c => [...c.learn, ...(c.warmup ?? [])]))];
+    /** @param {number} last */
+    const when = last => {
+      const ago = player.played - last;
+      return ago <= 0 ? "In the last battle" : `${ago} ${ago === 1 ? "battle" : "battles"} ago`;
+    };
+    show("report", `
+      <section class="report-screen">
+        <h1 tabindex="-1">${esc(player.name)}'s progress</h1>
+        <p class="tagline">For grown-ups: how the ${esc(gradeWords(grade))} adventure is going, topic by topic.</p>
+        <ul class="facts">
+          <li><strong>${done} of ${levels.length}</strong> levels done</li>
+          <li><strong>${player.played}</strong> ${player.played === 1 ? "battle" : "battles"} played in all</li>
+          <li>${session.asked > 0
+            ? `<strong>${Math.round((100 * session.firstTry) / session.asked)}%</strong> right the first time since this page was opened, of ${session.asked} ${session.asked === 1 ? "question" : "questions"}`
+            : `<strong>No questions</strong> answered yet since this page was opened`}</li>
+        </ul>
+        <div class="card report-table">
+          <!-- The roles keep it a table to a screen reader when a phone lays its rows out as cards. -->
+          <table role="table">
+            <caption>Topics in the order the adventure brings them in</caption>
+            <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Topic</th><th role="columnheader" scope="col">Answered</th><th role="columnheader" scope="col">How it's going</th><th role="columnheader" scope="col">Last practised</th></tr></thead>
+            <tbody role="rowgroup">${kinds.map(type => {
+              const m = player.mastery[type];
+              const s = strength(m);
+              return `<tr role="row" class="is-${s}"><th role="rowheader" scope="row">${esc(typeById(type).name)}</th>
+                <td role="cell" data-label="Answered">${m?.seen ?? 0}</td>
+                <td role="cell" data-label="How it's going"><span class="strength strength--${s}">${STRENGTH_WORDS[s]}</span></td>
+                <td role="cell" data-label="Last practised">${m ? when(m.last) : "Not yet"}</td></tr>`;
+            }).join("")}</tbody>
+          </table>
+        </div>
+        <p class="field-hint">"How it's going" follows the most recent answers, so it changes as a child practises. The training ground works on the topics that need it most.</p>
+        <div class="actions">
+          <button type="button" class="primary" data-ref="training">Go to the training ground</button>
+          <button type="button" class="quiet" data-ref="map">Back to the map</button>
+        </div>
+      </section>`);
+    onTap(part("training"), () => training());
     onTap(part("map"), () => map());
   }
 

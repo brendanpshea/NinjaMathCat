@@ -18,6 +18,13 @@ and progress, all saved in the browser after every level; nothing leaves it.
 A grown-up can open a later chapter to match what a class is studying, and a
 quick battle of eight monsters is always there for a few spare minutes.
 
+The game learns, from every answer, how well each child knows each kind of
+question. Each level's review goes mostly to what they find hard or haven't
+practised lately; shaky topics come easier, and strong ones harder; a kind
+they miss comes back a couple of questions later. The training ground builds
+a short battle from the topics that need it most, and a progress report shows
+grown-ups how each topic is going.
+
 **Play it:** open `index.html` through any web server (see below), or on the
 project's GitHub Pages site. The original version of the game is kept in
 [`legacy/`](legacy/).
@@ -58,7 +65,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `index.html`, `src/main.js` | The page, and what starts the game on it. |
 | `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasure collection. |
 | `src/save.js` | What the browser remembers: each player, with their hero, grade, experience, treasures and progress in every grade's adventure. A save from before there were players becomes the first player. |
-| `src/adventures.js` | Each grade's adventure: its chapters, with their notes and the question types each brings in; the levels in each chapter, what each asks and which monsters it fights; and progress, stars and which levels are open. |
+| `src/adventures.js` | Each grade's adventure: its chapters, with their notes and the question types each brings in; the levels in each chapter, what each asks (pitched by the player's mastery) and which monsters it fights; training levels; and progress, stars and which levels are open. |
+| `src/mastery.js` | How well a player knows each kind of question, from their answers: a score that follows recent answers, how much a kind needs review, and how hard to pitch it. |
 | `src/sound.js`, `src/zzfx.js` | Sound effects, made by ZzFX as the game runs. |
 | `src/rng.js` | Seeded random numbers. Pass the same seed and you get the same question, which is how the tests replay a failure. |
 | `src/curriculum.js` | The grade ladder, and the table of which question types each grade asks and which Common Core standards each covers. |

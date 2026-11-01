@@ -94,7 +94,7 @@
     async adventure() {
       localStorage.clear();
       await load();
-      const report = { title: {}, form: {}, map: {}, note: {}, battle: {}, done: {}, after: {}, open: {}, treasures: {}, quick: {}, second: {}, reload: {} };
+      const report = { title: {}, form: {}, map: {}, note: {}, battle: {}, done: {}, after: {}, progress: {}, training: {}, open: {}, treasures: {}, quick: {}, second: {}, reload: {} };
 
       report.title.heading = $("h1").textContent;
       report.title.players = $$("[data-player]").length;
@@ -163,6 +163,7 @@
       report.done.heading = $("h1").textContent;
       report.done.stars = $(".stars-big .stars").getAttribute("aria-label");
       report.done.facts = $$(".facts li").map(li => li.textContent.replace(/\s+/g, " ").trim());
+      report.done.topicNote = text(".topic-note");
       report.done.next = text("[data-ref=next]");
       report.done.saved = saved();
 
@@ -193,6 +194,22 @@
       report.after.firstLevel = $(".level-button").getAttribute("aria-label");
       report.after.secondLevel = $$(".level-button")[1].getAttribute("aria-label");
       report.after.count = text(".map-count");
+
+      // The progress report, for grown-ups, then a training battle.
+      click("[data-ref=report]");
+      await on("report", "the progress report");
+      report.progress.heading = $("h1").textContent;
+      report.progress.rows = $$(".report-table tbody tr").length;
+      report.progress.strengths = [...new Set($$(".report-table .strength").map(s => s.textContent))];
+      click("[data-ref=training]");
+      await on("battle", "a training battle");
+      report.training.title = $(".journey-title").textContent;
+      await winBattle();
+      await on("training-done", "the end of training");
+      report.training.heading = $("h1").textContent;
+      report.training.facts = $$(".facts li").map(li => li.textContent.replace(/\s+/g, " ").trim());
+      click("[data-ref=map]");
+      await on("map", "the map after training");
 
       // A grown-up opens chapter 5 early.
       click(".chapter[data-chapter='4'] [data-act=open-ask]");
@@ -273,6 +290,7 @@
         case "map": break;
         case "note": click(".chapter[data-chapter='4'] [data-act=note]"); break;
         case "treasures": click("[data-ref=treasures]"); break;
+        case "report": click("[data-ref=report]"); break;
         case "victory":
           click("[data-ref=quick]");
           await on("battle");

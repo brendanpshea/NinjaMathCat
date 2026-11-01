@@ -85,6 +85,8 @@ describe("in a real browser", { skip }, () => {
     assert.match(played.done.stars, /^[123] of 3 stars$/);
     assert.match(played.done.facts[0], /right the first time/);
     assert.match(played.done.next, /^Next: Level 2: Practice/);
+    assert.ok(played.done.topicNote, "a word on how each topic went");
+    assert.match(played.done.topicNote, /^(Great at .+!)? ?(Keep practising .+\.)?$/);
     const sam = played.done.saved.players[0];
     assert.equal(sam.name, "Sam");
     assert.equal(sam.heroId, "owl_wizard");
@@ -105,6 +107,17 @@ describe("in a real browser", { skip }, () => {
     assert.match(played.after.firstLevel, /^Level 1, New topic, [123] of 3 stars$/);
     assert.equal(played.after.secondLevel, "Level 2, Practice, ready to play");
     assert.match(played.after.count, /^1 of 40 levels done/);
+  });
+
+  it("reports each topic for grown-ups, and trains on the ones that need it", () => {
+    assert.equal(played.progress.heading, "Sam's progress");
+    assert.equal(played.progress.rows, new Set(chaptersFor(2).flatMap(c => [...c.learn, ...(c.warmup ?? [])])).size);
+    assert.ok(played.progress.strengths.includes("Not met yet"));
+    assert.ok(played.progress.strengths.some(s => s !== "Not met yet"), "the level played shows up");
+    assert.match(played.training.title, /^Training ground · /);
+    assert.equal(played.training.heading, "Training done!");
+    assert.ok(played.training.facts.length >= 1);
+    assert.match(played.training.facts[0], /^\d+ of \d+ .+, right the first time (Not met yet|Needs practice|Getting there|Strong)$/);
   });
 
   it("lets a grown-up open a chapter early, with every chapter before it", () => {

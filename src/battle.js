@@ -12,6 +12,7 @@ import { pickTreasure } from "./treasures.js";
 /** @import { Rng } from "./rng.js" */
 /** @import { Answer, Question } from "./questions/common.js" */
 /** @import { Mix } from "./curriculum.js" */
+/** @import { Outcome } from "./mastery.js" */
 /** @import { Monster } from "./monsters.js" */
 /** @import { Treasure } from "./treasures.js" */
 
@@ -42,6 +43,7 @@ export const TRIES = 2;
  * @property {number} missed  shown the answer
  * @property {number} knockouts
  * @property {Record<string, { asked: number, firstTry: number }>} byType  by question type
+ * @property {{ type: string, outcome: Outcome }[]} answers  every question finished, in order
  */
 
 /**
@@ -57,6 +59,7 @@ export const TRIES = 2;
  * @property {Foe | null} foe  the one being fought; null once all are beaten
  * @property {Question | null} question  null once all are beaten
  * @property {Answer[]} ruledOut  wrong choices already tried on this question
+ * @property {{ type: string, in: number }[]} again  kinds of question to ask again soon, each after `in` more questions
  * @property {number} streak  questions right the first time in a row
  * @property {string[]} treasures  ids of every treasure collected, in earlier battles too
  * @property {Tally} tally
@@ -115,9 +118,10 @@ export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), p
     foe: meet(setup, adventure, 0, hero.level),
     question: pickQuestion(rng, mix),
     ruledOut: [],
+    again: [],
     streak: 0,
     treasures: [...treasures],
-    tally: { firstTry: 0, secondTry: 0, missed: 0, knockouts: 0, byType: {} },
+    tally: { firstTry: 0, secondTry: 0, missed: 0, knockouts: 0, byType: {}, answers: [] },
   };
 }
 
@@ -182,6 +186,8 @@ function strike(battle, question, foe, rng) {
   const won = beaten === battle.adventure.length;
   const drop = defeatedFoe && foe.dropsTreasure ? pickTreasure(rng, battle.treasures) : null;
   const nextFoe = !defeatedFoe ? { ...foe, hp: foeHp } : won ? null : meet(battle, battle.adventure, beaten, battle.startLevel);
+  const outcome = secondTry ? "secondTry" : "firstTry";
+  const next = won ? { question: null, again: [] } : ask(rng, battle.mix, question.type, queueAgain(battle.again, question.type, outcome));
 
   return {
     battle: {
@@ -189,11 +195,12 @@ function strike(battle, question, foe, rng) {
       hero: { level, xp, hp },
       beaten,
       foe: nextFoe,
-      question: won ? null : pickQuestion(rng, battle.mix, question.type),
+      question: next.question,
       ruledOut: [],
+      again: next.again,
       streak,
       treasures: drop && !battle.treasures.includes(drop.id) ? [...battle.treasures, drop.id] : battle.treasures,
-      tally: record(battle.tally, question, secondTry ? "secondTry" : "firstTry"),
+      tally: record(battle.tally, question, outcome),
     },
     round: {
       correct: true,
@@ -231,14 +238,16 @@ function takeHit(battle, question, foe, choice, rng) {
   const ruledOut = [...battle.ruledOut, choice];
   const again = ruledOut.length < TRIES;
   const tally = { ...battle.tally, knockouts: battle.tally.knockouts + Number(knockedOut) };
+  const next = again ? { question, again: battle.again } : ask(rng, battle.mix, question.type, queueAgain(battle.again, question.type, "missed"));
 
   return {
     battle: {
       ...battle,
       hero: { ...battle.hero, hp },
       foe: knockedOut ? { ...foe, dropsTreasure: false } : foe,
-      question: again ? question : pickQuestion(rng, battle.mix, question.type),
+      question: next.question,
       ruledOut: again ? ruledOut : [],
+      again: next.again,
       streak: 0,
       tally: again ? tally : record(tally, question, "missed"),
     },
@@ -260,6 +269,39 @@ function takeHit(battle, question, foe, choice, rng) {
   };
 }
 
+/** How many questions later to ask a kind again, after it was missed or needed a second try. */
+export const ASK_AGAIN = { missed: 2, secondTry: 3 };
+
+/**
+ * The kinds to ask again, once a question of one kind is finished: right the
+ * first time, it needn't come back; otherwise it comes back soon.
+ * @param {Battle["again"]} again
+ * @param {string} type
+ * @param {Outcome} outcome
+ * @returns {Battle["again"]}
+ */
+function queueAgain(again, type, outcome) {
+  const rest = again.filter(a => a.type !== type);
+  return outcome === "firstTry" ? rest : [...rest, { type, in: ASK_AGAIN[outcome] }];
+}
+
+/**
+ * The next question: a kind that is due to be asked again, if there is one,
+ * or else one from the mix that isn't the kind just asked.
+ * @param {Rng} rng
+ * @param {Mix} mix
+ * @param {string} last  the kind just asked
+ * @param {Battle["again"]} again
+ * @returns {{ question: Question, again: Battle["again"] }}
+ */
+function ask(rng, mix, last, again) {
+  const counted = again.map(a => ({ ...a, in: a.in - 1 }));
+  const due = counted.find(a => a.in <= 0 && mix.some(p => p.type === a.type));
+  const part = due && mix.find(p => p.type === due.type);
+  if (due && part) return { question: pickQuestion(rng, [{ ...part, weight: 1 }]), again: counted.filter(a => a !== due) };
+  return { question: pickQuestion(rng, mix, last), again: counted };
+}
+
 /**
  * The tally with one more finished question in it.
  * @param {Tally} tally
@@ -274,6 +316,7 @@ function record(tally, question, outcome) {
     firstTry: tally.firstTry + Number(outcome === "firstTry"),
     secondTry: tally.secondTry + Number(outcome === "secondTry"),
     missed: tally.missed + Number(outcome === "missed"),
+    answers: [...tally.answers, { type: question.type, outcome }],
     byType: {
       ...tally.byType,
       [question.type]: { asked: sofar.asked + 1, firstTry: sofar.firstTry + Number(outcome === "firstTry") },
