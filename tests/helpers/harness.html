@@ -70,12 +70,13 @@
 
       report.title.heading = $("h1").textContent;
       report.title.heroes = $$("input[name=hero]").length;
-      report.title.grades = $$("#grade option").length;
+      // A button for each year, and each year has a start and a middle.
+      report.title.grades = $$("input[name=grade]").length * $$("input[name=term]").length;
       report.title.returningRecord = Boolean($(".record"));
       click(".hero-choice[data-hero=owl_wizard]");
-      const grade = $("#grade");
-      grade.value = "2";
-      grade.dispatchEvent(new Event("change", { bubbles: true }));
+      click("input[name=grade][value='2']");
+      click("input[name=term][value='0']");
+      report.title.practice = $("[data-ref=practice]").textContent.replace(/\s+/g, " ").trim();
       click("[data-ref=start]");
 
       await until(() => game().screen === "battle", "the battle");
@@ -144,7 +145,7 @@
       await load();
       report.reload.record = $(".record")?.textContent.replace(/\s+/g, " ").trim();
       report.reload.hero = $("input[name=hero]:checked")?.value;
-      report.reload.grade = $("#grade").value;
+      report.reload.grade = String(Number($("input[name=grade]:checked").value) + Number($("input[name=term]:checked").value));
 
       // The number keys answer, and Rest leaves after asking.
       click("[data-ref=start]");

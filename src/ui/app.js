@@ -2,9 +2,10 @@
 // grade), the battle, the victory, and the treasure collection. What is earned
 // is saved after every answer, so leaving early loses nothing but the fight.
 
-import { GRADES } from "../curriculum.js";
+import { GRADES, gradeOutline } from "../curriculum.js";
 import { HEROES, heroSprite } from "../heroes.js";
-import { buildAdventure } from "../monsters.js";
+import { MONSTERS, buildAdventure, monsterSprite } from "../monsters.js";
+import { backdropFor } from "../backdrops.js";
 import { startBattle } from "../battle.js";
 import { levelForXp } from "../combat.js";
 import { TREASURES } from "../treasures.js";
@@ -72,6 +73,7 @@ export function createApp(root, { storage, sound, rng }) {
     battleScreen?.destroy();
     battleScreen = null;
     screen = name;
+    root.dataset.screen = name;
     screenEl.innerHTML = markup;
     screenEl.querySelector("h1")?.focus();
     window.scrollTo?.(0, 0);
@@ -83,15 +85,29 @@ export function createApp(root, { storage, sound, rng }) {
   function title() {
     const level = levelForXp(save.xp);
     const returning = save.xp > 0 || save.treasures.length > 0;
+    // A monster from somewhere in the game, at home in front of its own backdrop.
+    const foe = rng.pick(MONSTERS);
+    const scene = backdropFor(foe.setting);
+    const [year, term] = [Math.floor(save.grade), save.grade % 1];
+    const years = [...new Set(GRADES.map(g => Math.floor(g.grade)))];
     show("title", `
       <section class="title-screen">
-        <div class="banner">
-          <span data-ref="banner-hero"></span>
-          <div>
+        <div class="title-stage" style="background-image: url('${scene.file}'); --floor: ${scene.floor}">
+          <div class="title-words">
             <h1 tabindex="-1">Ninja Math Cat</h1>
-            <p class="tagline">Answer math questions to power up your hero and beat the monsters!</p>
+            <p class="tagline">Answer math questions to power up your hero and beat eight monsters!</p>
+          </div>
+          <div class="title-fighter title-fighter--hero">
+            <span class="title-plate" data-ref="hero-name">${esc(hero().name)}</span>
+            <span data-ref="banner-hero"></span>
+          </div>
+          <div class="title-fighter title-fighter--monster">
+            <span class="title-plate">${esc(foe.name)}</span>
+            <span data-ref="banner-monster"></span>
           </div>
         </div>
+        ${returning ? `<p class="record"><span><strong>Level ${level}</strong> · ${save.treasures.length} of ${TREASURES.length} treasures found</span>
+          <button type="button" class="link" data-ref="treasures">See your treasures</button></p>` : ""}
         <fieldset class="card">
           <legend>Choose your hero</legend>
           <div class="heroes">${HEROES.map(h => `
@@ -101,20 +117,36 @@ export function createApp(root, { storage, sound, rng }) {
             </label>`).join("")}
           </div>
         </fieldset>
-        <div class="card">
-          <label class="card-title" for="grade">Choose your grade</label>
-          <select id="grade" data-ref="grade">${GRADES.map(g =>
-            `<option value="${g.grade}"${g.grade === save.grade ? " selected" : ""}>${esc(g.label)}</option>`).join("")}
-          </select>
-        </div>
-        ${returning ? `<p class="record">Level ${level} · ${save.treasures.length} of ${TREASURES.length} treasures found
-          <button type="button" class="link" data-ref="treasures">See your treasures</button></p>` : ""}
-        <button type="button" class="primary big" data-ref="start">Start adventure!</button>
+        <fieldset class="card" data-ref="grade">
+          <legend>Choose your grade</legend>
+          <div class="grade-years">${years.map(y => `
+            <label class="grade-choice">
+              <input type="radio" name="grade" value="${y}"${y === year ? " checked" : ""}>
+              <span class="grade-number" aria-hidden="true">${y === 0 ? "K" : y}</span>
+              <span class="grade-word">${y === 0 ? "Kinder&shy;garten" : `${esc(gradeLabel(y).replace(" grade", ""))}<span class="visually-hidden"> grade</span>`}</span>
+            </label>`).join("")}
+          </div>
+          <fieldset class="grade-terms">
+            <legend class="visually-hidden">When in the school year?</legend>
+            <label><input type="radio" name="term" value="0"${term === 0 ? " checked" : ""}> Start of the year</label>
+            <label><input type="radio" name="term" value="0.5"${term !== 0 ? " checked" : ""}> Middle of the year</label>
+          </fieldset>
+          <div class="practice" data-ref="practice" aria-live="polite"></div>
+        </fieldset>
+        <div class="start-bar"><button type="button" class="primary big" data-ref="start">Start adventure!</button></div>
+        <footer class="title-footer">
+          <p>Questions follow the Common Core math standards, from kindergarten to 6th grade. It is free, with nothing to sign up for: your hero's progress is saved in this browser only.</p>
+          <p><a href="https://github.com/brendanpshea/NinjaMathCat">Source code</a> · <a href="legacy/">The original game</a> · Free software (GPL-3.0)</p>
+        </footer>
       </section>`);
 
     const banner = part("banner-hero");
-    const showBanner = () => banner.replaceChildren(still(heroSprite(hero()), hero().name));
+    const showBanner = () => {
+      banner.replaceChildren(still(heroSprite(hero()), hero().name));
+      part("hero-name").textContent = hero().name;
+    };
     showBanner();
+    part("banner-monster").replaceChildren(still(monsterSprite(foe), foe.name));
     for (const label of screenEl.querySelectorAll(".hero-choice")) {
       const h = HEROES.find(x => x.id === /** @type {HTMLElement} */ (label).dataset.hero);
       if (h) label.prepend(still(heroSprite(h)));
@@ -123,10 +155,30 @@ export function createApp(root, { storage, sound, rng }) {
       update({ heroId: /** @type {HTMLInputElement} */ (event.target).value });
       showBanner();
     });
-    part("grade").addEventListener("change", event => update({ grade: Number(/** @type {HTMLSelectElement} */ (event.target).value) }));
+
+    // What the chosen grade practices: what is new this year, then how much is review.
+    const showPractice = () => {
+      const { fresh, review } = gradeOutline(save.grade);
+      const year = gradeLabel(Math.floor(save.grade));
+      part("practice").innerHTML = `
+        <p class="practice-head">${review > 0 ? `New in ${esc(year)}` : `${esc(year)} practices`}</p>
+        <ul class="topics">${fresh.map(name => `<li>${esc(name)}</li>`).join("")}</ul>
+        ${review > 0 ? `<p class="practice-more">Plus ${review} ${review === 1 ? "kind" : "kinds"} of question from earlier grades.</p>` : ""}`;
+    };
+    showPractice();
+    const chosen = (/** @type {string} */ name) => Number(/** @type {HTMLInputElement | null} */ (screenEl.querySelector(`input[name=${name}]:checked`))?.value ?? 0);
+    part("grade").addEventListener("change", () => {
+      const grade = chosen("grade") + chosen("term");
+      // Every grade has a start and a middle; this keeps to the ladder if that ever changes.
+      update({ grade: GRADES.some(g => g.grade === grade) ? grade : Math.floor(grade) });
+      showPractice();
+    });
     part("treasures")?.addEventListener("click", () => { sound.play("click"); treasures(); });
     part("start").addEventListener("click", () => { sound.play("click"); play(); });
   }
+
+  /** @param {number} grade */
+  const gradeLabel = grade => GRADES.find(g => g.grade === grade)?.label ?? `Grade ${grade}`;
 
   function play() {
     const startLevel = levelForXp(save.xp);

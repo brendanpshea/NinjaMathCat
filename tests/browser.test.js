@@ -39,6 +39,7 @@ describe("in a real browser", { skip }, () => {
     assert.equal(played.title.heading, "Ninja Math Cat");
     assert.equal(played.title.heroes, 6);
     assert.equal(played.title.grades, GRADES.length);
+    assert.match(played.title.practice, /^New in 2nd grade .*Bar graphs.* Plus \d+ kinds of question from earlier grades\.$/);
     assert.equal(played.title.returningRecord, false);
   });
 

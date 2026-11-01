@@ -115,6 +115,79 @@ select {
 .title-screen, .victory-screen, .treasures-screen { display: grid; gap: 18px; }
 .banner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
 .banner .still { height: 140px; }
+.game[data-screen="title"] .brand { visibility: hidden; } /* the title says it already */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* The chosen hero faces a monster in front of one of the painted backdrops,
+   standing on its floor line as on the battle stage (css/stage.css). The art
+   covers the stage from the bottom up: when the stage is shorter than the
+   art's 2.4:1 shape, the art's floor is that much further up. 100cqw is the
+   title screen's width, which is the stage's. */
+.title-screen { container-type: inline-size; }
+.title-stage {
+  --floor: 0.9;
+  position: relative;
+  isolation: isolate;
+  height: min(100cqw / 2.4, 330px);
+  overflow: hidden;
+  border-radius: 18px;
+  background: #24324c center bottom / cover no-repeat;
+  box-shadow: 0 8px 24px rgb(27 35 51 / 0.18);
+}
+.title-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse 80% 90% at 50% 70%, rgb(0 0 0 / 0) 60%, rgb(16 22 40 / 0.3));
+}
+.title-words {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  translate: -50% 0;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 10px 24px 12px;
+  text-align: center;
+  background: rgb(255 255 255 / 0.86);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgb(27 35 51 / 0.15);
+}
+.title-words .tagline { margin-top: 4px; color: var(--ink); }
+.title-fighter {
+  position: absolute;
+  bottom: calc((1 - var(--floor)) * max(100%, 100cqw / 2.4));
+  height: 50%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  justify-items: center;
+  gap: 4px;
+}
+.title-fighter--hero { left: 10%; }
+.title-fighter--monster { right: 10%; }
+.title-fighter .still { height: 100%; }
+.title-fighter--monster .still { scale: -1 1; } /* facing the hero */
+.title-fighter::after { /* a shadow at its feet */
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: -7px;
+  left: 50%;
+  translate: -50% 0;
+  width: 70%;
+  height: 16px;
+  background: radial-gradient(closest-side, rgb(16 22 40 / 0.4), rgb(16 22 40 / 0));
+}
+.title-plate {
+  padding: 2px 10px;
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  background: rgb(255 255 255 / 0.9);
+  border-radius: 9px;
+}
+
 .heroes { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 132px), 1fr)); }
 .hero-choice {
   position: relative;
@@ -129,11 +202,79 @@ select {
   align-content: start;
 }
 .hero-choice .still { height: 84px; }
-.hero-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .hero-choice:has(input:checked) { border-color: var(--orange); background: var(--orange-soft); }
 .hero-choice:has(input:focus-visible) { outline: 4px solid var(--indigo); outline-offset: 2px; }
 .hero-name { font-weight: 800; text-align: center; }
-.record { margin: 0; font-weight: 700; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.record {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 10px 16px;
+  font-weight: 700;
+  background: var(--indigo-soft);
+  border: 2px solid #dcdaf7;
+  border-radius: var(--radius);
+}
+
+/* Grades: a button for each year, then the start or middle of it, then what
+   that grade practices. */
+.grade-years { display: grid; gap: 8px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.grade-choice {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: 8px 2px 7px;
+  text-align: center;
+  background: var(--surface);
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.grade-choice input, .hero-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.grade-number { font: 800 30px/1.1 var(--display); color: var(--indigo); }
+.grade-word { font-size: 13px; font-weight: 700; line-height: 1.2; color: var(--muted); }
+.grade-choice:hover, .hero-choice:hover { border-color: var(--indigo); }
+.grade-choice:has(input:checked) { border-color: var(--orange); background: var(--orange-soft); }
+.grade-choice:has(input:checked) .grade-number { color: var(--orange-deep); }
+.grade-choice:has(input:focus-visible) { outline: 4px solid var(--indigo); outline-offset: 2px; }
+.grade-terms { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.grade-terms label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px 7px 12px;
+  font-weight: 700;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.grade-terms label:has(input:checked) { border-color: var(--indigo); background: var(--indigo-soft); }
+.grade-terms input { width: 18px; height: 18px; margin: 0; accent-color: var(--indigo); }
+.practice { display: grid; gap: 8px; padding: 12px 14px; background: #f6f8fc; border-radius: 12px; }
+.practice p { margin: 0; }
+.practice-head { font-weight: 800; }
+.practice-more { font-size: 15px; color: var(--muted); }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.topics li { padding: 3px 11px; font-size: 15px; font-weight: 700; color: var(--indigo); background: var(--indigo-soft); border-radius: 999px; }
+
+/* Start stays in sight while the choices above it are scrolled through. */
+.start-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-block: -12px;
+  padding-block: 12px;
+  background: linear-gradient(to top, rgb(255 243 223 / 0.96) 60%, rgb(255 243 223 / 0));
+}
+.start-bar .primary { box-shadow: 0 6px 18px rgb(185 76 8 / 0.28); }
+
+.title-footer { padding-top: 14px; font-size: 15px; color: var(--muted); border-top: 2px solid var(--line); }
+.title-footer p { margin: 0 0 6px; }
+.title-footer a { color: var(--indigo); font-weight: 700; }
 
 /* The battle */
 .battle { display: grid; gap: 14px; }
@@ -225,10 +366,28 @@ select {
 .suggestion .quiet { justify-self: start; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 
+/* On a phone the title stage is taller than the art, which is then cropped
+   at the sides; the words sit above the fighters instead of over them. */
+@media (max-width: 640px) {
+  .title-stage { height: 330px; }
+  .title-words { top: 12px; width: auto; left: 12px; right: 12px; translate: none; max-width: none; padding: 10px 14px; }
+  .title-fighter { height: 42%; }
+  .title-fighter--hero { left: 5%; }
+  .title-fighter--monster { right: 5%; }
+  .heroes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .hero-choice { padding: 8px 4px; gap: 4px; }
+  .hero-choice .still { height: 58px; }
+  .hero-name { font-size: 14px; line-height: 1.2; }
+  .grade-years { gap: 5px; }
+  .grade-number { font-size: 26px; }
+  .grade-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } /* the number is enough to see */
+  .grade-terms label { flex: 1 1 auto; justify-content: center; padding-inline: 10px; font-size: 16px; }
+}
 @media (max-width: 480px) {
   .choices { grid-template-columns: minmax(0, 1fr); }
   .choice { min-height: 56px; font-size: 20px; }
   .banner .still { height: 110px; }
+  .start-bar .primary { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

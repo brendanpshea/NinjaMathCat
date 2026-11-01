@@ -1,7 +1,7 @@
 // tests/curriculum.test.js — the grade ladder and which types each grade asks (src/curriculum.js).
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { CURRICULUM, GRADES, typesForGrade, generateQuestion } from "../src/curriculum.js";
+import { CURRICULUM, GRADES, typesForGrade, gradeOutline, generateQuestion } from "../src/curriculum.js";
 import { createRng } from "../src/rng.js";
 
 describe("the grade ladder", () => {
@@ -76,5 +76,21 @@ describe("the curriculum", () => {
 
   it("refuses a grade with nothing to ask", () => {
     assert.throws(() => generateQuestion(createRng(1), 9), RangeError);
+  });
+
+  it("outlines each grade: what begins this school year, and how much carries on", () => {
+    for (const { grade } of GRADES) {
+      const { fresh, review } = gradeOutline(grade);
+      const asked = typesForGrade(grade);
+      assert.equal(fresh.length + review, asked.length, `grade ${grade}`);
+      assert.ok(fresh.length > 0, `grade ${grade} brings something new`);
+      for (const name of fresh) {
+        const row = CURRICULUM.find(r => r.type.name === name);
+        assert.ok(row.from >= Math.floor(grade) && row.from <= grade, `${name} at grade ${grade}`);
+      }
+    }
+    assert.equal(gradeOutline(0).review, 0);
+    assert.ok(gradeOutline(4).fresh.includes("Angles"));
+    assert.ok(!gradeOutline(4).fresh.includes("Addition"));
   });
 });

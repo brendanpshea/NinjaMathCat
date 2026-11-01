@@ -110,6 +110,18 @@ export function typesForGrade(grade) {
 }
 
 /**
+ * What a grade practices, for the title screen: the names of the question
+ * types it asks that begin this school year, and how many more carry on
+ * from earlier grades.
+ * @param {number} grade
+ */
+export function gradeOutline(grade) {
+  const asked = CURRICULUM.filter(({ from, to }) => grade >= from && grade <= to);
+  const fresh = asked.filter(({ from }) => from >= Math.floor(grade));
+  return { fresh: fresh.map(({ type }) => type.name), review: asked.length - fresh.length };
+}
+
+/**
  * A question for a grade, of one of its types chosen at random.
  * @param {Rng} rng
  * @param {number} grade
