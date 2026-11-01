@@ -32,3 +32,33 @@ export function* questionsOf(type, seeds = SEEDS) {
 export function numbersIn(text) {
   return (text.match(/\d+/g) ?? []).map(Number);
 }
+
+/**
+ * The attributes of every element in some SVG markup with this tag and,
+ * if given, this class.
+ * @returns {Record<string, string>[]}
+ */
+export function elementsIn(svg, tag, className) {
+  const found = [];
+  for (const [, attrs] of svg.matchAll(new RegExp(`<${tag}\\b([^>]*?)/?>`, "g"))) {
+    const parsed = Object.fromEntries([...attrs.matchAll(/([\w:-]+)="([^"]*)"/g)].map(([, k, v]) => [k, v]));
+    if (!className || (parsed.class ?? "").split(" ").includes(className)) found.push(parsed);
+  }
+  return found;
+}
+
+/** Whether markup opens and closes its tags in order, with no stray & or <. */
+export function wellFormed(markup) {
+  const open = [];
+  for (const [tag, closing, name, selfClosing] of markup.matchAll(/<(\/?)([a-zA-Z]+)\b[^>]*?(\/?)>/g)) {
+    if (selfClosing) continue;
+    if (closing) {
+      if (open.pop() !== name) return false;
+    } else {
+      open.push(name);
+    }
+    void tag;
+  }
+  const text = markup.replace(/<[^>]*>/g, "");
+  return open.length === 0 && !/[<>]/.test(text) && !/&(?!amp;|lt;|gt;|quot;|#39;)/.test(markup);
+}

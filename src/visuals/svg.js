@@ -1,0 +1,83 @@
+// Small helpers for writing SVG as text. Visuals are built as strings so they
+// can be made, and tested, without a browser; the UI puts them into the page.
+
+/**
+ * The colours every visual shares. Shading never carries meaning by colour
+ * alone (it is also outlined and patterned by position), so children who
+ * see colour differently read the same picture.
+ */
+export const COLORS = {
+  ink: "#1f2937",
+  muted: "#4b5563",
+  line: "#6b7280",
+  grid: "#d1d5db",
+  paper: "#ffffff",
+  fill: "#bfdbfe",
+  accent: "#2563eb",
+  point: "#dc2626",
+};
+
+export const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+
+/** @param {string | number} value */
+export function escapeXml(value) {
+  return String(value).replace(/[&<>"']/g, c => ESCAPES[/** @type {keyof typeof ESCAPES} */ (c)]);
+}
+const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+
+/**
+ * A coordinate, to at most two decimal places.
+ * @param {number} x
+ */
+export function num(x) {
+  return String(Math.round(x * 100) / 100);
+}
+
+/**
+ * An element. Attribute values are escaped and numbers rounded; attributes
+ * that are undefined are left out. Children are markup already.
+ * @param {string} name
+ * @param {Record<string, string | number | undefined>} [attrs]
+ * @param {...string} children
+ */
+export function el(name, attrs = {}, ...children) {
+  const attributes = Object.entries(attrs)
+    .filter(([, v]) => v !== undefined)
+    .map(([k, v]) => ` ${k}="${escapeXml(typeof v === "number" ? num(v) : /** @type {string} */ (v))}"`)
+    .join("");
+  return children.length > 0 ? `<${name}${attributes}>${children.join("")}</${name}>` : `<${name}${attributes}/>`;
+}
+
+/**
+ * A piece of text, escaped.
+ * @param {Record<string, string | number | undefined>} attrs
+ * @param {string | number} content
+ */
+export function text(attrs, content) {
+  return el("text", { "font-family": FONT, fill: COLORS.ink, ...attrs }, escapeXml(content));
+}
+
+/**
+ * A whole visual: an SVG that scales to fit its container, labelled for screen
+ * readers. `kind` goes in data-visual, where tests and styles can find it.
+ * @param {string} kind
+ * @param {number} width
+ * @param {number} height
+ * @param {string} label
+ * @param {string[]} body
+ */
+export function svg(kind, width, height, label, body) {
+  return el(
+    "svg",
+    {
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: `0 0 ${num(width)} ${num(height)}`,
+      role: "img",
+      "aria-label": label,
+      "data-visual": kind,
+      class: "visual",
+    },
+    el("title", {}, escapeXml(label)),
+    ...body,
+  );
+}

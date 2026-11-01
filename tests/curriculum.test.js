@@ -27,6 +27,17 @@ describe("the curriculum", () => {
     }
   });
 
+  it("names the Common Core standards each type covers, at grades it is asked", () => {
+    for (const { type, from, to, standards } of CURRICULUM) {
+      for (const code of standards) {
+        const [, grade] = code.match(/^(K|[1-6])\.(CC|OA|NBT|NF|MD|G|RP|NS|EE|SP)\.\d+$/) ?? [];
+        assert.ok(grade, `${type.id}: "${code}" is not a standard`);
+        const g = grade === "K" ? 0 : Number(grade);
+        assert.ok(g + 0.5 >= from && g <= to, `${type.id} covers ${code} but is asked at grades ${from}–${to}`);
+      }
+    }
+  });
+
   it("names each question type once", () => {
     const ids = CURRICULUM.map(e => e.type.id);
     assert.equal(new Set(ids).size, ids.length);

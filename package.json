@@ -9,7 +9,8 @@
     "typecheck": "tsc -p .",
     "check": "npm run typecheck && npm test",
     "sample": "node tools/sample_questions.js",
-    "simulate": "node tools/simulate_battle.js"
+    "simulate": "node tools/simulate_battle.js",
+    "gallery": "node tools/build_gallery.js"
   },
   "engines": {
     "node": ">=22"

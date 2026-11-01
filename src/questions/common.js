@@ -8,13 +8,58 @@
  */
 
 /**
- * Something to show beside the prompt. It is data, not markup: the UI decides
- * how a clock or a coin looks.
+ * A number line. Every position is a whole number of 1/den steps, so lines in
+ * fourths or thirds stay exact: a line from 0 to 1 in fourths has den 4,
+ * from 0, to 4, tick 1. Labels go at multiples of `label`; points are dots;
+ * jumps are arcs from one position to another.
+ * @typedef {object} NumberLine
+ * @property {"number_line"} kind
+ * @property {number} den
+ * @property {number} from
+ * @property {number} to
+ * @property {number} tick
+ * @property {number} label
+ * @property {number[]} points
+ * @property {[number, number][]} jumps
+ */
+
+/**
+ * @typedef {object} PictureGraph
+ * @property {"picture_graph"} kind
+ * @property {string} title
+ * @property {[string, string]} unit  what one data point is, singular and plural: ["child", "children"]
+ * @property {number} each  how many each picture stands for
+ * @property {{ label: string, icon: string, value: number }[]} rows
+ */
+
+/**
+ * @typedef {object} BarGraph
+ * @property {"bar_graph"} kind
+ * @property {string} title
+ * @property {string} axis  what the numbers count: "Number of children"
+ * @property {number} scale  the step between gridlines
+ * @property {number} max  the top of the scale
+ * @property {{ label: string, value: number }[]} bars
+ */
+
+/**
+ * A shape cut into equal parts, the first `shaded` of them shaded.
+ * @typedef {object} FractionModel
+ * @property {"fraction"} kind
+ * @property {"circle" | "bar"} model
+ * @property {number} parts
+ * @property {number} shaded
+ */
+
+/**
+ * Something to show beside the prompt. It is data, not markup: the
+ * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
  *   | { kind: "pattern", items: (string | null)[] }
  *   | { kind: "money", items: string[] }
  *   | { kind: "clock", hours: number, minutes: number }
- *   | { kind: "shape", shape: string }} Visual
+ *   | { kind: "shape", shape: string }
+ *   | NumberLine | PictureGraph | BarGraph | FractionModel} Visual
  */
 
 /**

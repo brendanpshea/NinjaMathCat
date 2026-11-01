@@ -11,6 +11,9 @@ import { money } from "./questions/money.js";
 import { time } from "./questions/time.js";
 import { shapes } from "./questions/shapes.js";
 import { wordAddition, wordSubtraction, wordMultiplication, wordDivision } from "./questions/word_problems.js";
+import { pictureGraph, barGraph } from "./questions/graphs.js";
+import { numberLine, fractionLine } from "./questions/number_lines.js";
+import { fractions } from "./questions/fractions.js";
 
 /** @import { Rng } from "./rng.js" */
 /** @import { Question, QuestionType } from "./questions/common.js" */
@@ -27,29 +30,34 @@ export const GRADES = [
 ];
 
 /**
- * The grades that draw on each question type, `from` and `to` both included.
- * The Common Core standards beside each are where the placement comes from.
- * Within its span, a type scales itself to the grade.
- * @type {readonly { type: QuestionType, from: number, to: number }[]}
+ * The grades that draw on each question type, `from` and `to` both included,
+ * and the Common Core standards it covers, which are where its placement
+ * comes from. Within its span, a type scales itself to the grade.
+ * @type {readonly { type: QuestionType, from: number, to: number, standards: string[] }[]}
  */
 export const CURRICULUM = [
-  { type: counting, from: 0, to: 0.5 }, // K.CC.4–5
-  { type: sequence, from: 0, to: 1.5 }, // K.CC.2, 1.NBT.1
-  { type: skipCounting, from: 0, to: 3 }, // K.CC.1, 2.NBT.2, 3.OA.9
-  { type: comparison, from: 0, to: 3 }, // K.CC.6–7, 1.NBT.3, 2.NBT.4
-  { type: patterns, from: 0, to: 1.5 },
-  { type: shapes, from: 0, to: 3 }, // K.G.2, 1.G.1, 2.G.1, 3.G.1
-  { type: addition, from: 0, to: 3 }, // K.OA.5, 1.OA.6, 2.NBT.5–7, 3.NBT.2
-  { type: subtraction, from: 0, to: 3 }, // K.OA.5, 1.OA.6, 2.NBT.5–7, 3.NBT.2
-  { type: missingNumber, from: 1, to: 3 }, // 1.OA.8
-  { type: wordAddition, from: 1, to: 3 }, // 1.OA.1, 2.OA.1
-  { type: wordSubtraction, from: 1, to: 3 }, // 1.OA.1, 2.OA.1
-  { type: time, from: 1, to: 3 }, // 1.MD.3, 2.MD.7, 3.MD.1
-  { type: money, from: 1, to: 3 }, // 2.MD.8
-  { type: wordMultiplication, from: 2, to: 3 }, // 2.OA.4, 3.OA.3
-  { type: multiplication, from: 2.5, to: 3 }, // 2.OA.4, 3.OA.7
-  { type: division, from: 3, to: 3 }, // 3.OA.7
-  { type: wordDivision, from: 3, to: 3 }, // 3.OA.3
+  { type: counting, from: 0, to: 0.5, standards: ["K.CC.4", "K.CC.5"] },
+  { type: sequence, from: 0, to: 1.5, standards: ["K.CC.2", "1.NBT.1"] },
+  { type: skipCounting, from: 0, to: 3, standards: ["K.CC.1", "2.NBT.2", "3.OA.9"] },
+  { type: comparison, from: 0, to: 3, standards: ["K.CC.6", "K.CC.7", "1.NBT.3", "2.NBT.4"] },
+  { type: patterns, from: 0, to: 1.5, standards: [] },
+  { type: shapes, from: 0, to: 3, standards: ["K.G.2", "1.G.1", "2.G.1", "3.G.1"] },
+  { type: addition, from: 0, to: 3, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2"] },
+  { type: subtraction, from: 0, to: 3, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2"] },
+  { type: missingNumber, from: 1, to: 3, standards: ["1.OA.8"] },
+  { type: wordAddition, from: 1, to: 3, standards: ["1.OA.1", "2.OA.1"] },
+  { type: wordSubtraction, from: 1, to: 3, standards: ["1.OA.1", "2.OA.1"] },
+  { type: time, from: 1, to: 3, standards: ["1.MD.3", "2.MD.7", "3.MD.1"] },
+  { type: money, from: 1, to: 3, standards: ["2.MD.8"] },
+  { type: pictureGraph, from: 1, to: 3, standards: ["1.MD.4", "2.MD.10", "3.MD.3"] },
+  { type: fractions, from: 1, to: 3, standards: ["1.G.3", "2.G.3", "3.NF.1"] },
+  { type: barGraph, from: 2, to: 3, standards: ["2.MD.10", "3.MD.3"] },
+  { type: numberLine, from: 2, to: 3, standards: ["2.MD.6"] },
+  { type: wordMultiplication, from: 2, to: 3, standards: ["2.OA.4", "3.OA.3"] },
+  { type: multiplication, from: 2.5, to: 3, standards: ["2.OA.4", "3.OA.7"] },
+  { type: division, from: 3, to: 3, standards: ["3.OA.7"] },
+  { type: wordDivision, from: 3, to: 3, standards: ["3.OA.3"] },
+  { type: fractionLine, from: 3, to: 3, standards: ["3.NF.2"] },
 ];
 
 /**

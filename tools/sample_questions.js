@@ -36,7 +36,12 @@ for (let i = 0; i < Number(countArg); i++) {
     : v.kind === "pattern" ? v.items.map(x => x ?? "__").join(" ")
     : v.kind === "money" ? v.items.join(", ")
     : v.kind === "clock" ? `clock at ${v.hours}:${String(v.minutes).padStart(2, "0")}`
-    : `shape: ${v.shape}`;
+    : v.kind === "shape" ? `shape: ${v.shape}`
+    : v.kind === "number_line" ? `line ${v.from}–${v.to}${v.den > 1 ? ` in steps of 1/${v.den}` : ""}, ticks ${v.tick}, labels ${v.label}`
+        + `${v.points.length ? `, dot at ${v.points}` : ""}${v.jumps.length ? `, jump ${v.jumps[0].join("→")}` : ""}`
+    : v.kind === "picture_graph" ? `${v.title}: ${v.rows.map(r => `${r.label} ${r.value}`).join(", ")} (each picture = ${v.each})`
+    : v.kind === "bar_graph" ? `${v.title}: ${v.bars.map(b => `${b.label} ${b.value}`).join(", ")} (gridlines every ${v.scale}, up to ${v.max})`
+    : `${v.shaded} of ${v.parts} parts of a ${v.model} shaded`;
   console.log(`[${q.type}, difficulty ${q.difficulty}] ${q.prompt}${shown ? `   [${shown}]` : ""}`);
   console.log(`    ${q.choices.map(c => (c === q.answer ? `*${c}*` : String(c))).join("   ")}`);
   console.log(`    hint: ${q.hint}\n`);

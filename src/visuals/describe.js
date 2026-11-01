@@ -1,0 +1,55 @@
+// Visuals in words, for screen readers. A description says what the picture
+// is and what it is labelled with, but never the quantity a question asks
+// about: "a clock face", not "a clock showing 2:50".
+
+import { moneyById } from "../questions/money.js";
+
+/** @import { Visual } from "../questions/common.js" */
+
+/**
+ * A position on a number line, written as a child would read it: 3, or 3/4.
+ * @param {number} units  how many 1/den steps from zero
+ * @param {number} den
+ */
+export function positionLabel(units, den) {
+  if (den === 1) return String(units);
+  return units % den === 0 ? String(units / den) : `${units}/${den}`;
+}
+
+/**
+ * "a, b and c"
+ * @param {string[]} items
+ */
+function list(items) {
+  return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+/**
+ * @param {Visual} v
+ * @returns {string}
+ */
+export function describeVisual(v) {
+  switch (v.kind) {
+    case "objects":
+      return `Pictures of ${v.emoji} to count`;
+    case "pattern":
+      return "A row of pictures with one missing";
+    case "money":
+      return `Money: ${list(v.items.map(id => moneyById(id).name))}`;
+    case "clock":
+      return "A clock face";
+    case "shape":
+      return "A flat shape";
+    case "number_line": {
+      const marks = [v.jumps.length > 0 ? "a jump" : "", v.points.length > 0 ? "a point marked" : ""].filter(Boolean);
+      const range = `A number line from ${positionLabel(v.from, v.den)} to ${positionLabel(v.to, v.den)}`;
+      return marks.length > 0 ? `${range}, with ${list(marks)}` : range;
+    }
+    case "picture_graph":
+      return `A picture graph, "${v.title}", with rows for ${list(v.rows.map(r => r.label))}`;
+    case "bar_graph":
+      return `A bar graph, "${v.title}", with bars for ${list(v.bars.map(b => b.label))}`;
+    case "fraction":
+      return `A ${v.model} cut into equal parts, some of them shaded`;
+  }
+}
