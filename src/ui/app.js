@@ -19,7 +19,8 @@ import {
   recordLevel, levelStates, nextLevel, openChapter, starsFor,
 } from "../adventures.js";
 import { learn, strength } from "../mastery.js";
-import { loadSave, writeSave, addPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME, READ_ALOUD_UP_TO } from "../save.js";
+import { loadSave, writeSave, addPlayer, importPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME, READ_ALOUD_UP_TO } from "../save.js";
+import { encodePlayer, decodePlayer } from "../progress_code.js";
 import { escapeXml as esc } from "../visuals/svg.js";
 import { createBattleScreen, choiceHtml, pictureHtml } from "./battle_screen.js";
 import { still } from "./sprites.js";
@@ -204,6 +205,9 @@ export function createApp(root, { storage, sound, speech, rng }) {
             ${save.players.length < MOST_PLAYERS ? `<li><button type="button" class="player-card player-card--new" data-ref="new-player">
               <span class="player-plus" aria-hidden="true">+</span><span class="player-name">New player</span></button></li>` : ""}
           </ul>
+          ${save.players.length < MOST_PLAYERS ? `<div class="code-in" data-ref="code-in">
+            <button type="button" class="link" data-act="ask">Have a progress code from another device?</button>
+          </div>` : ""}
         </section>
         <footer class="title-footer">
           <p>Each grade's adventure follows the Common Core math standards, from kindergarten to 6th grade, in forty short levels. It is free, with nothing to sign up for: everyone's progress is saved in this browser only.</p>
@@ -224,6 +228,31 @@ export function createApp(root, { storage, sound, speech, rng }) {
       map();
     });
     onTap(part("new-player"), () => playerForm(null));
+    part("code-in")?.addEventListener("click", event => {
+      const act = /** @type {HTMLElement} */ (event.target).closest("button")?.dataset.act;
+      if (!act) return;
+      sound.play("click");
+      const box = part("code-in");
+      if (act === "ask") {
+        box.innerHTML = `<label class="card-title" for="code-in">Paste the progress code</label>
+          <textarea id="code-in" class="code-box" data-ref="code-text" rows="4" spellcheck="false" autocomplete="off"></textarea>
+          <p class="code-error" data-ref="code-error" aria-live="polite"></p>
+          <div class="actions"><button type="button" class="primary" data-act="add">Add this player</button>
+          <button type="button" class="quiet" data-act="cancel">Cancel</button></div>`;
+        /** @type {HTMLElement} */ (box.querySelector("textarea")).focus();
+      } else if (act === "cancel") {
+        title();
+      } else {
+        const stored = decodePlayer(/** @type {HTMLTextAreaElement} */ (part("code-text")).value);
+        const added = stored && importPlayer(save, stored);
+        if (!added) {
+          part("code-error").textContent = "That code didn't work. Check that all of it was copied, from NMC1- to the end.";
+          return;
+        }
+        commit(added.save);
+        map();
+      }
+    });
   }
 
   // ------------------------------------------------- a new player, or a change
@@ -273,6 +302,11 @@ export function createApp(root, { storage, sound, speech, rng }) {
           <button type="button" class="primary big" data-ref="save">${player ? "Save" : "Start my adventure!"}</button>
           <button type="button" class="quiet" data-ref="back">Back</button>
         </div>
+        ${player ? `<div class="card" data-ref="code-out">
+          <h2 class="card-title">Move to another device</h2>
+          <p class="field-hint">A progress code carries ${esc(player.name)}'s hero, levels and treasures to another browser. Choose "Have a progress code from another device?" there, and paste it in.</p>
+          <button type="button" class="quiet" data-act="show">Show the progress code</button>
+        </div>` : ""}
         ${player ? `<div class="card remove" data-ref="remove">
           <button type="button" class="quiet danger" data-act="ask">Remove ${esc(player.name)}</button>
         </div>` : ""}
@@ -316,6 +350,28 @@ export function createApp(root, { storage, sound, speech, rng }) {
       map();
     });
     onTap(part("back"), () => (player ? map() : title()));
+    part("code-out")?.addEventListener("click", async event => {
+      const act = /** @type {HTMLElement} */ (event.target).closest("button")?.dataset.act;
+      if (!act || !player) return;
+      sound.play("click");
+      if (act === "show") {
+        const button = /** @type {HTMLElement} */ (event.target).closest("button");
+        button?.insertAdjacentHTML("afterend", `<label class="visually-hidden" for="code-out">${esc(player.name)}'s progress code</label>
+          <textarea id="code-out" class="code-box" data-ref="code-text" rows="4" readonly>${esc(encodePlayer(currentPlayer(save) ?? player))}</textarea>
+          <div class="actions"><button type="button" class="quiet" data-act="copy">Copy the code</button><span class="code-copied" data-ref="code-copied" aria-live="polite"></span></div>`);
+        button?.remove();
+        /** @type {HTMLTextAreaElement} */ (part("code-text")).select();
+      } else if (act === "copy") {
+        const box = /** @type {HTMLTextAreaElement} */ (part("code-text"));
+        box.select();
+        try {
+          await navigator.clipboard.writeText(box.value);
+          part("code-copied").textContent = "Copied!";
+        } catch {
+          part("code-copied").textContent = "Select the code and copy it.";
+        }
+      }
+    });
     // Removing asks first, in place, as leaving a battle does.
     part("remove")?.addEventListener("click", event => {
       const act = /** @type {HTMLElement} */ (event.target).closest("button")?.dataset.act;

@@ -59,7 +59,7 @@ export function newSave() {
  */
 export function addPlayer(save, { name, heroId, grade, readAloud }) {
   if (save.players.length >= MOST_PLAYERS) throw new RangeError(`At most ${MOST_PLAYERS} players`);
-  const number = 1 + Math.max(0, ...save.players.map(p => Number(p.id.slice(1)) || 0));
+  const number = nextNumber(save);
   const year = ADVENTURE_GRADES.includes(grade) ? grade : ADVENTURE_GRADES[0];
   /** @type {Player} */
   const player = {
@@ -75,6 +75,29 @@ export function addPlayer(save, { name, heroId, grade, readAloud }) {
     played: 0,
   };
   return { save: { ...save, players: [...save.players, player], current: player.id }, player };
+}
+
+/**
+ * The save with a player brought from another device (src/progress_code.js),
+ * put right as a stored player is, given the next id, and made the current
+ * one; null if there's no room, or nothing usable came.
+ * @param {Save} save
+ * @param {Record<string, unknown>} stored
+ * @returns {{ save: Save, player: Player } | null}
+ */
+export function importPlayer(save, stored) {
+  if (save.players.length >= MOST_PLAYERS) return null;
+  const player = cleanPlayer({ ...stored, id: `p${nextNumber(save)}` }, new Set());
+  if (!player) return null;
+  return { save: { ...save, players: [...save.players, player], current: player.id }, player };
+}
+
+/**
+ * The number for the next player's id.
+ * @param {Save} save
+ */
+function nextNumber(save) {
+  return 1 + Math.max(0, ...save.players.map(p => Number(p.id.slice(1)) || 0));
 }
 
 /**

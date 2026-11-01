@@ -251,6 +251,22 @@ select {
 .read-aloud { justify-self: start; font-size: 16px; white-space: nowrap; }
 .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .panel-head .read-aloud { flex: none; }
+.code-box {
+  width: 100%;
+  padding: 10px 12px;
+  font: 15px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  word-break: break-all;
+  color: var(--ink);
+  background: #f7f9fc;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  resize: vertical;
+}
+.code-in { display: grid; gap: 10px; }
+.code-in .link { justify-self: start; }
+.code-error { margin: 0; min-height: 1.2em; font-weight: 700; color: var(--wrong); }
+.code-copied { font-weight: 700; color: var(--right); }
+[data-ref="code-out"] .quiet { justify-self: start; }
 .remove { border-color: #f3c7c7; }
 .remove > .danger { justify-self: start; }
 .remove p { margin: 0; }

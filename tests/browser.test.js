@@ -150,8 +150,17 @@ describe("in a real browser", { skip }, () => {
     assert.equal(played.reload.screen, "map");
     assert.equal(played.reload.heading, "Player 2's kindergarten adventure");
     assert.equal(played.reload.cards, 2);
-    assert.equal(played.reload.saved.players.length, 2);
     assert.equal(played.reload.saved.players[0].adventures[2].opened, 4);
+  });
+
+  it("moves a player to another device by progress code, and turns away a bad one", () => {
+    assert.equal(played.second.code, "NMC1-");
+    assert.match(played.reload.badCode, /^That code didn't work/);
+    assert.equal(played.reload.imported, "Sam's 2nd grade adventure");
+    assert.equal(played.reload.importedCount, played.after.count);
+    assert.equal(played.reload.saved.players.length, 3);
+    const [sam, , copy] = played.reload.saved.players;
+    assert.deepEqual([copy.name, copy.heroId, copy.grade, copy.xp, copy.treasures], [sam.name, sam.heroId, sam.grade, sam.xp, sam.treasures]);
   });
 
   it("plays on with reduced motion", () => {

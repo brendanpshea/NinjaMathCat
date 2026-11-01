@@ -245,6 +245,9 @@
       click("[data-ref=edit]");
       await on("player", "Sam's choices");
       report.second.editHeading = $("h1").textContent;
+      click("[data-ref=code-out] [data-act=show]");
+      const code = $("[data-ref=code-text]").value;
+      report.second.code = code.slice(0, 5);
       click("[data-ref=back]");
       await on("map", "the map after the choices");
 
@@ -265,6 +268,17 @@
       click("[data-ref=switch]");
       await on("title", "the title after a reload");
       report.reload.cards = $$("[data-player]").length;
+
+      // Sam comes over from "another device" by progress code; a bad code is turned away first.
+      click("[data-ref=code-in] [data-act=ask]");
+      $("[data-ref=code-text]").value = "not a code";
+      click("[data-ref=code-in] [data-act=add]");
+      report.reload.badCode = text("[data-ref=code-error]");
+      $("[data-ref=code-text]").value = code;
+      click("[data-ref=code-in] [data-act=add]");
+      await on("map", "the map of the player brought over");
+      report.reload.imported = $("h1").textContent;
+      report.reload.importedCount = text(".map-count");
       report.reload.saved = saved();
 
       report.errors = errors;

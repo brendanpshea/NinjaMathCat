@@ -11,7 +11,11 @@
  * @property {string} description
  */
 
-/** @type {readonly Treasure[]} */
+/**
+ * Progress codes (src/progress_code.js) keep treasures by where they come in
+ * this list, so a new treasure goes at the end, and none is taken out.
+ * @type {readonly Treasure[]}
+ */
 export const TREASURES = [
   {
     id: "sparkly_gemstone",

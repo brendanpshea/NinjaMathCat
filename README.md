@@ -25,6 +25,13 @@ they miss comes back a couple of questions later. The training ground builds
 a short battle from the topics that need it most, and a progress report shows
 grown-ups how each topic is going.
 
+For children still learning to read, questions can be read aloud (on to begin
+with up to 2nd grade), and every question and chapter note has a "Read to me"
+button. Graphs come with their numbers for screen readers, everything can be
+played with the keyboard, nothing is timed, and the stage keeps still for
+anyone who asks their device for reduced motion. A progress code moves a
+child's hero, levels and treasures to another device, with no account.
+
 **Play it:** open `index.html` through any web server (see below), or on the
 project's GitHub Pages site. The original version of the game is kept in
 [`legacy/`](legacy/).
@@ -66,6 +73,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasure collection. |
 | `src/save.js` | What the browser remembers: each player, with their hero, grade, experience, treasures and progress in every grade's adventure. A save from before there were players becomes the first player. |
 | `src/adventures.js` | Each grade's adventure: its chapters, with their notes and the question types each brings in; the levels in each chapter, what each asks (pitched by the player's mastery) and which monsters it fights; training levels; and progress, stars and which levels are open. |
+| `src/speech.js` | Reading aloud: math as a child hears it ("3/4" is "3 fourths"), and the browser's speech, where it has any. |
+| `src/progress_code.js` | A player's progress as a code to paste into another browser, and back. |
 | `src/mastery.js` | How well a player knows each kind of question, from their answers: a score that follows recent answers, how much a kind needs review, and how hard to pitch it. |
 | `src/sound.js`, `src/zzfx.js` | Sound effects, made by ZzFX as the game runs. |
 | `src/rng.js` | Seeded random numbers. Pass the same seed and you get the same question, which is how the tests replay a failure. |
