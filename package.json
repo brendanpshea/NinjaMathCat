@@ -1,0 +1,19 @@
+{
+  "name": "ninja-math-cat",
+  "version": "2.0.0-dev",
+  "private": true,
+  "description": "A math battle game for grades K to 6: answer questions to defeat monsters.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\"",
+    "typecheck": "tsc -p .",
+    "check": "npm run typecheck && npm test",
+    "sample": "node tools/sample_questions.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

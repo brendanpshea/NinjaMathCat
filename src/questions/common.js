@@ -1,0 +1,145 @@
+// What every question type shares: the shape of a question, grade tables, and
+// wrong answers built from the mistakes children actually make.
+
+/** @import { Rng } from "../rng.js" */
+
+/**
+ * @typedef {number | string} Answer
+ */
+
+/**
+ * Something to show beside the prompt. It is data, not markup: the UI decides
+ * how a clock or a coin looks.
+ * @typedef {{ kind: "objects", emoji: string, count: number }
+ *   | { kind: "pattern", items: (string | null)[] }
+ *   | { kind: "money", items: string[] }
+ *   | { kind: "clock", hours: number, minutes: number }
+ *   | { kind: "shape", shape: string }} Visual
+ */
+
+/**
+ * What a question type's generate() returns.
+ * @typedef {object} Draft
+ * @property {string} prompt
+ * @property {Visual} [visual]  pattern items use null for the gap
+ * @property {Answer} answer
+ * @property {Answer[]} wrong  wrong answers, best first; the first three distinct ones are used
+ * @property {string} hint  a nudge after a wrong try, which never gives the answer away
+ * @property {number} difficulty  1 (easy) to 3 (hard), within the grade
+ */
+
+/**
+ * A question ready to ask.
+ * @typedef {object} Question
+ * @property {string} type  the id of the QuestionType that made it
+ * @property {string} prompt
+ * @property {Visual} [visual]
+ * @property {Answer} answer
+ * @property {Answer[]} choices  four, shuffled, the answer among them
+ * @property {string} hint
+ * @property {number} difficulty
+ */
+
+/**
+ * @typedef {object} QuestionType
+ * @property {string} id
+ * @property {string} name
+ * @property {(rng: Rng, grade: number) => Draft} generate
+ */
+
+/**
+ * Look a grade up in a table of [up to this grade, value] rows, in rising
+ * order. End the table with an Infinity row so that every grade finds one.
+ * @template T
+ * @param {number} grade
+ * @param {readonly (readonly [number, T])[]} rows
+ * @returns {T}
+ */
+export function atGrade(grade, rows) {
+  const row = rows.find(([upTo]) => grade <= upTo);
+  if (!row) throw new RangeError(`No row for grade ${grade}`);
+  return row[1];
+}
+
+/**
+ * Wrong answers for a numeric question: whole numbers, never below `min`,
+ * never the answer.
+ *
+ * Mistakes like "one too many" fall on both sides of the answer, so if they
+ * were used as they come the answer would nearly always be the middle number
+ * and a child could pick it without doing the sum. Instead, how many wrong
+ * answers fall below the right one is chosen first (none to three, equally
+ * often, where there is room), and each side is filled from `likely` (the
+ * mistakes this kind of question invites) before near misses.
+ * @param {Rng} rng
+ * @param {number} answer
+ * @param {readonly number[]} likely
+ * @param {{ spread?: number, min?: number }} [options]  spread: how far a near miss may stray
+ * @returns {number[]}  three of them
+ */
+export function wrongNumbers(rng, answer, likely, { spread = 3, min = 0 } = {}) {
+  const room = Math.max(0, answer - min);
+  const below = Math.min(rng.int(0, 3), room);
+  const lower = pickSide(rng, answer, likely, below, -1, spread, min);
+  const upper = pickSide(rng, answer, likely, 3 - lower.length, 1, spread, min);
+  return [...lower, ...upper];
+}
+
+/**
+ * Up to `count` wrong answers on one side of the answer.
+ * @param {Rng} rng
+ * @param {number} answer
+ * @param {readonly number[]} likely
+ * @param {number} count
+ * @param {1 | -1} side  1 above the answer, -1 below
+ * @param {number} spread
+ * @param {number} min
+ * @returns {number[]}
+ */
+function pickSide(rng, answer, likely, count, side, spread, min) {
+  /** @param {number} n */
+  const fits = n => Number.isInteger(n) && n >= min && Math.sign(n - answer) === side;
+  const nearMisses = rng.shuffle(Array.from({ length: spread }, (_, i) => answer + side * (i + 1)));
+  /** @type {Set<number>} */
+  const out = new Set();
+  for (const n of [...rng.shuffle(likely), ...nearMisses]) {
+    if (out.size === count) break;
+    if (fits(n)) out.add(n);
+  }
+  for (let n = answer + side * (spread + 1); out.size < count && fits(n); n += side) out.add(n);
+  return [...out];
+}
+
+/**
+ * Make one question of a type for a grade: three distinct wrong answers,
+ * shuffled in with the right one.
+ * @param {Rng} rng
+ * @param {QuestionType} type
+ * @param {number} grade
+ * @returns {Question}
+ */
+export function makeQuestion(rng, type, grade) {
+  const { wrong, ...draft } = type.generate(rng, grade);
+  const seen = new Set([String(draft.answer)]);
+  /** @type {Answer[]} */
+  const kept = [];
+  for (const w of wrong) {
+    if (kept.length === 3) break;
+    if (seen.has(String(w))) continue;
+    seen.add(String(w));
+    kept.push(w);
+  }
+  if (kept.length < 3) {
+    throw new Error(`${type.id} at grade ${grade} made only ${kept.length} wrong answers for "${draft.prompt}"`);
+  }
+  return { type: type.id, ...draft, choices: rng.shuffle([draft.answer, ...kept]) };
+}
+
+/**
+ * Whether a choice answers the question.
+ * @param {Question} question
+ * @param {Answer} choice
+ */
+export function isCorrect(question, choice) {
+  return choice === question.answer;
+}
