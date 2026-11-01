@@ -62,6 +62,15 @@ describe("story problems", () => {
     }
   });
 
+  it("never say one of a plural thing, and tell big numbers as big things", () => {
+    for (const type of [wordAddition, wordSubtraction, wordTwoStep]) {
+      for (const { question: q, at } of questionsOf(type)) {
+        assert.ok(!/(?<![\d,])1 [a-z]+s\b/.test(q.prompt), at);
+        if (Math.max(...numbersIn(q.prompt)) > 100) assert.ok(!/ in a bag| on one shelf| in the morning and \d+ more/.test(q.prompt), at);
+      }
+    }
+  });
+
   it("are about two different people", () => {
     for (const { question: q, at } of questionsOf(wordSubtraction)) {
       const names = q.prompt.match(/\b[A-Z][a-z]+\b/g).filter(w => !["There", "How"].includes(w));

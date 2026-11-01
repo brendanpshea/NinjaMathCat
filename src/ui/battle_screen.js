@@ -19,11 +19,13 @@ import { createStage } from "./stage_view.js";
 /**
  * A choice as markup, the way children write it: big numbers with commas,
  * negatives with a true minus, fractions stacked, and mixed numbers as a
- * whole number beside a stacked fraction.
+ * whole number beside a stacked fraction. A picture on its own, like the 🔴
+ * that comes next in a pattern, is shown as big as the pictures in the question.
  * @param {Answer} choice
  */
 export function choiceHtml(choice) {
   if (typeof choice === "number") return esc(formatNumber(choice));
+  if (!/[\p{L}\p{N}]/u.test(choice)) return `<span class="choice-picture">${esc(choice)}</span>`;
   const fraction = choice.match(/^(-?)(?:(\d+) )?(\d+)\/(\d+)$/);
   if (!fraction) return esc(choice);
   const [, minus, whole, top, bottom] = fraction;
@@ -38,7 +40,7 @@ export function choiceHtml(choice) {
 export function feedbackFor(round) {
   switch (round.then) {
     case "again": return `Not quite. Try again! Hint: ${round.hint}`;
-    case "reveal": return `The answer is ${round.answer}.`;
+    case "reveal": return `The answer is ${typeof round.answer === "number" ? formatNumber(round.answer) : round.answer}.`;
     case "won": return "You beat every monster!";
     default: return round.defeatedFoe ? "Right! The monster is beaten!" : "Right!";
   }

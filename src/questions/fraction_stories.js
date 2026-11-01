@@ -201,7 +201,7 @@ function timesWhole(rng, write) {
     prompt: rng.pick(stories),
     // The bottom multiplied too, or the count added on.
     ...answered(rng, answer, [frac(part.n * count, d * count), frac(part.n + count, d), frac(part.n * (count + 1), d)], write),
-    hint: `${count} groups of ${show(part)}: that is ${count} × ${part.n} parts, each 1/${d}.`,
+    hint: `${count} groups of ${show(part)} make ${count} × ${part.n} = ${count * part.n} pieces, each 1/${d}.`,
     difficulty: 2,
   };
 }

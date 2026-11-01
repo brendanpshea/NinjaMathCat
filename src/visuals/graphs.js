@@ -101,7 +101,7 @@ export function linePlot(v) {
     const at = v.from + i;
     parts.push(
       el("line", { x1: x(i), y1: line - 9, x2: x(i), y2: line + 9, stroke: COLORS.ink, "stroke-width": 2.5, class: "tick", "data-at": at }),
-      text({ x: x(i), y: line + 32, "font-size": 17, "font-weight": 600, "text-anchor": "middle", class: "tick-label" }, rulerText(at, v.den)),
+      text({ x: x(i), y: line + 32, "font-size": 19, "font-weight": 700, "text-anchor": "middle", class: "tick-label" }, rulerText(at, v.den)),
     );
     for (let k = 0; k < count; k++) {
       const [cx, cy] = [x(i), line - 22 - k * stack];

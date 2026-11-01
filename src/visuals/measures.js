@@ -200,8 +200,8 @@ export function coordinates(v) {
       el("line", { x1: X(k), y1: Y(v.min), x2: X(k), y2: Y(v.max), ...look }),
       el("line", { x1: X(v.min), y1: Y(k), x2: X(v.max), y2: Y(k), ...look }),
     );
-    if (k !== 0 || v.min === 0) parts.push(text({ x: X(k), y: numbersY, "font-size": 12, fill: COLORS.muted, "text-anchor": "middle", class: "x-label" }, write(k)));
-    if (k !== 0) parts.push(text({ x: numbersX, y: Y(k), "font-size": 12, fill: COLORS.muted, "text-anchor": "end", "dominant-baseline": "central", class: "y-label" }, write(k)));
+    if (k !== 0 || v.min === 0) parts.push(text({ x: X(k), y: numbersY, "font-size": 14, "font-weight": 600, fill: COLORS.muted, "text-anchor": "middle", class: "x-label" }, write(k)));
+    if (k !== 0) parts.push(text({ x: numbersX, y: Y(k), "font-size": 14, "font-weight": 600, fill: COLORS.muted, "text-anchor": "end", "dominant-baseline": "central", class: "y-label" }, write(k)));
   }
   if (v.shape) {
     // Filled under the grid, so the numbers on the axes still show; outlined over it.
@@ -211,8 +211,8 @@ export function coordinates(v) {
   }
   for (const p of v.points) {
     parts.push(
-      el("circle", { cx: X(p.x), cy: Y(p.y), r: 6, fill: COLORS.point, stroke: COLORS.paper, "stroke-width": 2, class: "point", "data-x": p.x, "data-y": p.y }),
-      text({ x: X(p.x) + 8, y: Y(p.y) - 9, "font-size": 16, "font-weight": 700, class: "point-label" }, p.label),
+      el("circle", { cx: X(p.x), cy: Y(p.y), r: 7, fill: COLORS.point, stroke: COLORS.paper, "stroke-width": 2, class: "point", "data-x": p.x, "data-y": p.y }),
+      text({ x: X(p.x) + 8, y: Y(p.y) - 10, "font-size": 20, "font-weight": 800, stroke: COLORS.paper, "stroke-width": 4, "paint-order": "stroke", class: "point-label" }, p.label),
     );
   }
   const size = span * cell + 2 * pad;

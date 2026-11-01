@@ -322,7 +322,8 @@ function inequality(rng) {
     prompt: `Which number makes x ${sign} ${c} true?`,
     answer: rng.pick(yes),
     wrong: rng.shuffle([...(boundaryWrong ? [c] : []), ...rng.shuffle(no.filter(v => v !== c))]),
-    hint: sign === "<" || sign === ">" ? `${c} itself doesn't count: ${c} is not ${sign === "<" ? "less" : "greater"} than ${c}.` : `The line under the sign means ${c} itself counts too.`,
+    // Says what the sign means without saying which choice it picks out.
+    hint: `x ${sign} ${c} means x is ${{ "<": "less than", ">": "greater than", "≤": "less than or equal to", "≥": "greater than or equal to" }[sign]} ${c}. Try each choice in place of x.`,
     difficulty: 2 + Number(sign === "≤" || sign === "≥"),
   };
 }
