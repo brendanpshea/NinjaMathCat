@@ -103,7 +103,7 @@ same author's quiz game, along with the stage's choreography and animations.
 Each sprite is a strip of three poses (stand, attack, recoil), all facing
 right; the stage mirrors the monster. LotRD's `images/sprites/roster.json`
 and `tools/sprite_prompts.py` and `tools/sprite_sheets.py` make new ones.
-The backdrops are this game's own, from the original version. Sound effects
+The painted backdrops were made for this game with Gemini (see below). Sound effects
 are made with [ZzFX](https://github.com/KilledByAPixel/ZzFX) by Frank Force
 (MIT license).
 
@@ -116,14 +116,14 @@ painted backdrops are made with Gemini, four to a picture:
 1. `assets/backdrops/scenes.json` describes the settings, four to a sheet.
    `npm run backdrop-prompts` turns it into the prompts in
    `assets/backdrops/prompts.md`.
-2. Save each picture Gemini makes as `assets/backdrops/sheets/<sheet>.png`.
+2. Save each picture Gemini makes as `assets/backdrops/sheets/<sheet>.png`
+   (or `.jpg` or `.webp`).
    The sheets are source material and stay out of git.
 3. `python tools/cut_backdrops.py` (it needs Pillow) cuts each sheet into four
    1920 x 800 backdrops in `assets/backdrops/`.
 4. Point the setting's `file` in `src/backdrops.js` at its new backdrop, and
    look at it with `npm run backdrops`. Adjust its `floor` until the fighters
    stand on the ground.
-
 
 ## License
 
