@@ -54,28 +54,41 @@ const BILLS = { dollar: "$1", five: "$5", ten: "$10" };
 const BILL = { width: 112, height: 54 };
 
 /**
- * Coins and bills in a row, wrapping onto more rows if they need to.
+ * Coins and bills in a row, wrapping onto more rows if they need to. The
+ * picture is only as wide as the money in it (but at least 300), so a bill
+ * and a coin fill the space a child sees instead of sitting in one corner of it.
  * @param {Extract<Visual, { kind: "money" }>} v
  */
 export function money(v) {
-  const width = 560;
+  const most = 560;
   const rowHeight = 66;
-  const pieces = [];
-  let x = 8;
+  const gap = 12;
+  /** Where each piece goes, row by row. */
+  const placed = [];
+  let x = 0;
   let row = 0;
   for (const id of v.items) {
     const coin = COINS[/** @type {keyof typeof COINS} */ (id)];
     const w = coin ? 2 * coin.r : BILL.width;
-    if (x + w > width - 8) {
-      x = 8;
+    if (x > 0 && x + w > most - 16) {
+      x = 0;
       row++;
     }
-    const cy = 8 + row * rowHeight + rowHeight / 2;
+    placed.push({ id, coin, x, row });
+    x += w + gap;
+  }
+  const used = Math.max(...placed.map(p => p.x + (p.coin ? 2 * p.coin.r : BILL.width)));
+  const width = Math.max(300, used + 16);
+  const left = (width - used) / 2;
+  const pieces = [];
+  for (const { id, coin, x: at, row: r } of placed) {
+    const x = left + at;
+    const cy = 8 + r * rowHeight + rowHeight / 2;
     if (coin) {
       pieces.push(el("g", { class: "money", "data-id": id },
         el("circle", { cx: x + coin.r, cy, r: coin.r, fill: coin.fill, stroke: coin.stroke, "stroke-width": 2.5 }),
         el("circle", { cx: x + coin.r, cy, r: coin.r - 4, fill: "none", stroke: coin.stroke, "stroke-width": 1, opacity: 0.6 }),
-        text({ x: x + coin.r, y: cy, "font-size": id === "quarter" ? 9 : 8.5, "font-weight": 700, fill: coin.stroke, "text-anchor": "middle", "dominant-baseline": "central" }, id.toUpperCase())));
+        text({ x: x + coin.r, y: cy, "font-size": id === "quarter" ? 10.5 : id === "dime" ? 10 : 10.5, "font-weight": 800, fill: coin.stroke, "text-anchor": "middle", "dominant-baseline": "central", "textLength": id === "dime" ? undefined : 2 * coin.r - 10, lengthAdjust: "spacingAndGlyphs" }, id.toUpperCase())));
     } else {
       const top = cy - BILL.height / 2;
       pieces.push(el("g", { class: "money", "data-id": id },
@@ -83,7 +96,6 @@ export function money(v) {
         el("rect", { x: x + 6, y: top + 6, width: BILL.width - 12, height: BILL.height - 12, rx: 3, fill: "none", stroke: "#15803d", "stroke-width": 1, opacity: 0.6 }),
         text({ x: x + BILL.width / 2, y: cy, "font-size": 24, "font-weight": 700, fill: "#14532d", "text-anchor": "middle", "dominant-baseline": "central" }, BILLS[/** @type {keyof typeof BILLS} */ (id)])));
     }
-    x += w + 12;
   }
   return svg("money", width, 16 + (row + 1) * rowHeight, describeVisual(v), pieces);
 }

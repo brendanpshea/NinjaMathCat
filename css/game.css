@@ -162,6 +162,11 @@ select {
 .picture { display: grid; place-items: center; padding: 8px; background: #f7f9fc; border-radius: 12px; }
 .picture:empty { display: none; }
 .picture svg { width: 100%; max-width: 560px; max-height: 230px; height: auto; }
+/* Graphs, grids and protractors are read by their small print, so they get
+   more room; squeezed to 230 pixels, a coordinate grid's numbers were 7 pixels high. */
+.picture svg:is([data-visual="coordinates"], [data-visual="bar_graph"], [data-visual="picture_graph"], [data-visual="line_plot"], [data-visual="angle"]) {
+  max-height: min(380px, 50vh);
+}
 
 .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .choice {
@@ -191,7 +196,9 @@ select {
   font-size: 15px;
 }
 .choice-text { min-width: 0; overflow-wrap: anywhere; }
-.choice math { font-size: 1.15em; }
+/* Mixed numbers and fractions in the same bold type as the other answers, not a thin serif. */
+.choice math { font-size: 1.35em; font-family: var(--display); font-weight: 800; }
+.choice-picture { font-size: 38px; line-height: 1; }
 .choice.right { border-color: var(--right); background: var(--right-soft); }
 .choice.wrong { border-color: var(--wrong); background: var(--wrong-soft); color: #7f1d1d; }
 .choice.wrong .choice-text { text-decoration: line-through; }
@@ -226,6 +233,9 @@ select {
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 
 @media (max-width: 480px) {
+  /* Every pixel of width goes to the picture, which is as wide as it can be. */
+  .panel { padding: 14px 12px; }
+  .picture { padding: 4px; }
   .choices { grid-template-columns: minmax(0, 1fr); }
   .choice { min-height: 56px; font-size: 20px; }
   .banner .still { height: 110px; }
