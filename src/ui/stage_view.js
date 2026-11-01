@@ -3,22 +3,22 @@
 // src/stage.js plans it. Adapted from the stage in Loop of the Recursive Dragon.
 //
 // Each side is an actor, which is what moves (lunges, recoils, falls), holding
-// a sprite, which is what it looks like: one pose of a strip of three (stand,
-// attack, recoil), picked by data-pose. Strips are drawn facing right, so the
-// monster's is mirrored. The animations are in css/stage.css.
+// a figure: the fighter's size, its shadow on the ground, and its sprite, which
+// is what it looks like: one pose of a strip of three (stand, attack, recoil),
+// picked by data-pose. Strips are drawn facing right, so the monster's is
+// mirrored. The fighters stand on the backdrop's floor line. The animations
+// are in css/stage.css.
 
 import { planRound, narrate, BEAT } from "../stage.js";
 import { heroStats, monsterStats } from "../combat.js";
 import { heroSprite } from "../heroes.js";
 import { monsterSprite } from "../monsters.js";
+import { backdropFor } from "../backdrops.js";
 import { setStrip } from "./sprites.js";
 
 /** @import { Battle, Round } from "../battle.js" */
 /** @import { Hero } from "../heroes.js" */
 /** @import { Beat } from "../stage.js" */
-
-/** The backdrops in assets/backgrounds/, background_01.png onward; each monster gets the next. */
-const BACKDROPS = 10;
 
 /**
  * How big a monster stands, by tier: the first ones are small, the last loom.
@@ -35,7 +35,9 @@ const combatant = side => `
     <div class="hp" role="meter" aria-valuemin="0" aria-label="${side === "hero" ? "Your health" : "Monster's health"}" data-ref="${side}Hp">
       <div class="hp-fill"></div><span class="hp-text"></span>
     </div>
-    <div class="sprite-slot"><div class="actor" data-ref="${side}Actor"><div class="sprite" role="img" data-pose="stand" data-ref="${side}Sprite"></div></div></div>
+    <div class="sprite-slot"><div class="actor" data-ref="${side}Actor"><div class="figure">
+      <span class="shadow"></span><div class="sprite" role="img" data-pose="stand" data-ref="${side}Sprite"></div>
+    </div></div></div>
   </div>`;
 
 /**
@@ -43,9 +45,10 @@ const combatant = side => `
  * @param {HTMLElement} root
  */
 export function createStage(root) {
-  root.classList.add("stage");
-  root.innerHTML = `<div class="stage-backdrop" data-ref="backdrop"></div>${combatant("hero")}${combatant("monster")}
-    <p class="stage-news" aria-live="polite" data-ref="news"></p>`;
+  root.classList.add("stage-frame");
+  root.innerHTML = `<div class="stage"><div class="stage-backdrop" data-ref="backdrop"></div>${combatant("hero")}${combatant("monster")}
+    <p class="stage-news" aria-live="polite" data-ref="news"></p></div>`;
+  const stageEl = /** @type {HTMLElement} */ (root.firstElementChild);
   /** @param {string} name */
   const ref = name => /** @type {HTMLElement} */ (root.querySelector(`[data-ref="${name}"]`));
 
@@ -106,8 +109,10 @@ export function createStage(root) {
     span.className = `float-text float-text--${tone}`;
     span.textContent = text;
     span.setAttribute("aria-hidden", "true");
-    span.style.left = `${sprite.offsetLeft + sprite.offsetWidth / 2}px`;
-    /** @type {HTMLElement} */ (sprite.closest(".sprite-slot")).append(span);
+    const slot = /** @type {HTMLElement} */ (sprite.closest(".sprite-slot"));
+    const [box, frame] = [sprite.getBoundingClientRect(), slot.getBoundingClientRect()];
+    span.style.left = `${box.left - frame.left + box.width / 2}px`;
+    slot.append(span);
     // animationend never comes when animations are off, so a timer backs it up.
     const remove = () => span.remove();
     span.addEventListener("animationend", remove, { once: true });
@@ -152,8 +157,11 @@ export function createStage(root) {
       shownFoe = key;
       actor.classList.remove("is-vanquished");
       sprite.dataset.pose = "stand";
-      const backdrop = String((battle.beaten % BACKDROPS) + 1).padStart(2, "0");
-      ref("backdrop").style.backgroundImage = `url("assets/backgrounds/background_${backdrop}.png")`;
+      const backdrop = backdropFor(foe.monster.setting);
+      ref("backdrop").style.backgroundImage = `url("${backdrop.file}")`;
+      // On the stage itself, which sets its own --floor that would hide one on the frame.
+      stageEl.style.setProperty("--floor", String(backdrop.floor));
+      stageEl.dataset.setting = backdrop.id;
       if (!reducedMotion()) animate(actor, ["is-entering"], 400);
     }
   }

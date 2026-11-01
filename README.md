@@ -25,6 +25,7 @@ npm run simulate -- 2         # how adventures go for children of different accu
 npm run gallery               # out/gallery.html: sample questions with their pictures
 npm run stage                 # out/stage-preview/: try the battle stage with any hero and monster
 npm run screens               # out/screens/: screenshots of every screen, desktop and phone
+npm run backdrops             # out/screens/backdrops.png: every backdrop behind real fighters
 ```
 
 The game loads its files as ES modules, so it needs a web server rather than
@@ -54,6 +55,7 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/battle.js` | A battle as a state machine. `answer(battle, choice, rng)` returns the next state and a `round` saying what happened, for the stage to act out. It has no timers and never touches the page. |
 | `src/combat.js` | The numbers: health, attack, damage, streaks, experience and levels. |
 | `src/monsters.js`, `src/heroes.js`, `src/treasures.js` | Who you fight (four tiers, each with a name and a line for young readers), who you can play as, and what monsters drop. |
+| `src/backdrops.js` | The eight settings battles happen in. Each monster lives in one, and its backdrop goes behind the fight. |
 | `src/stage.js` | A round as a sequence of timed beats (the hero lunges, the monster reels…) and as a sentence for screen readers. |
 | `src/ui/stage_view.js`, `css/stage.css` | The battle stage on the page: plays a round's beats with CSS animations, and does nothing at all under reduced motion. |
 | `assets/` | Sprite strips for the heroes and monsters, and the backdrops. |
@@ -101,6 +103,25 @@ and `tools/sprite_prompts.py` and `tools/sprite_sheets.py` make new ones.
 The backdrops are this game's own, from the original version. Sound effects
 are made with [ZzFX](https://github.com/KilledByAPixel/ZzFX) by Frank Force
 (MIT license).
+
+### Backdrops
+
+Each monster lives in one of eight settings, and the stage puts that setting's
+backdrop behind the fight, with the fighters standing on its floor line. The
+painted backdrops are made with Gemini, four to a picture:
+
+1. `assets/backdrops/scenes.json` describes the settings, four to a sheet.
+   `npm run backdrop-prompts` turns it into the prompts in
+   `assets/backdrops/prompts.md`.
+2. Save each picture Gemini makes as `assets/backdrops/sheets/<sheet>.png`.
+   The sheets are source material and stay out of git.
+3. `python tools/cut_backdrops.py` (it needs Pillow) cuts each sheet into four
+   1920 x 800 backdrops in `assets/backdrops/`.
+4. Point the setting's `file` in `src/backdrops.js` at its new backdrop, and
+   look at it with `npm run backdrops`. Adjust its `floor` until the fighters
+   stand on the ground.
+
+Until a setting has its own, it borrows one of the original game's backgrounds.
 
 ## License
 

@@ -12,7 +12,9 @@
     "simulate": "node tools/simulate_battle.js",
     "gallery": "node tools/build_gallery.js",
     "stage": "node tools/build_stage_preview.js",
-    "screens": "node tools/screenshots.js"
+    "screens": "node tools/screenshots.js",
+    "backdrop-prompts": "node tools/backdrop_prompts.js",
+    "backdrops": "node tools/backdrop_review.js"
   },
   "engines": {
     "node": ">=22"

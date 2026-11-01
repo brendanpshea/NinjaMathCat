@@ -1,0 +1,95 @@
+{
+  "about": "The painted backdrops, four to a generated sheet. tools/backdrop_prompts.js turns this into prompts.md; tools/cut_backdrops.py cuts each sheet into <id>.webp. The ids match src/backdrops.js.",
+  "sheets": [
+    {
+      "id": "a",
+      "scenes": [
+        {
+          "id": "meadow",
+          "name": "Sunny Meadow",
+          "scene": "a sunny meadow on a spring morning",
+          "ground": "short green grass with a worn dirt path",
+          "behind": "rolling green hills, wildflowers, a small pond and a few round trees in the middle distance, soft clouds in a pale blue sky",
+          "left": "a flowering bush",
+          "right": "the trunk and low branches of a leafy tree",
+          "avoid": "ducks or birds on the pond"
+        },
+        {
+          "id": "kitchen",
+          "name": "Cottage Kitchen",
+          "scene": "a big, cozy cottage kitchen, seen from floor level",
+          "ground": "warm wooden floorboards",
+          "behind": "a long wooden counter with jars and a bowl of tomatoes, copper pots hanging on the wall, a window with checked curtains looking onto a garden",
+          "left": "an old iron stove",
+          "right": "a tall painted cupboard",
+          "avoid": "teapots, spoons or ladles"
+        },
+        {
+          "id": "attic",
+          "name": "Toy Attic",
+          "scene": "a tidy attic playroom under a sloping wooden roof",
+          "ground": "wide wooden boards with a round woven rug",
+          "behind": "shelves of building blocks and picture books, baskets of folded blankets, a round window letting in soft sunlight",
+          "left": "a wooden toy chest",
+          "right": "a coat rack with a scarf",
+          "avoid": "brooms, balls of yarn, jigsaw puzzles or dolls"
+        },
+        {
+          "id": "hilltop",
+          "name": "Windy Hilltop",
+          "scene": "a grassy hilltop high above the clouds on a breezy day",
+          "ground": "the flat grassy top of the hill, with a few smooth stones",
+          "behind": "a sea of fluffy white clouds below, distant blue mountain peaks, a few kites far away in a clear sky",
+          "left": "a lone windswept tree",
+          "right": "a wooden fence post with a fluttering ribbon",
+          "avoid": "swords, dragons or paper birds"
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "scenes": [
+        {
+          "id": "farm",
+          "name": "Pumpkin Farm",
+          "scene": "a pumpkin farm in the golden light of late afternoon",
+          "ground": "soft brown earth between the rows",
+          "behind": "rows of pumpkins and tall corn, a red barn and a windmill in the middle distance, a warm hazy sky",
+          "left": "a stack of hay bales",
+          "right": "a wooden fence with a gate",
+          "avoid": "scarecrows, goblins or wheels of cheese"
+        },
+        {
+          "id": "castle",
+          "name": "Castle Hall",
+          "scene": "the great hall of a friendly castle",
+          "ground": "smooth gray flagstones with a long red carpet running across",
+          "behind": "tall arched windows letting in soft daylight, colorful banners, a throne on steps far back",
+          "left": "a stone pillar with a hanging shield",
+          "right": "a tall potted plant beside a pillar",
+          "avoid": "suits of armor, knights, treasure chests or dragons"
+        },
+        {
+          "id": "swamp",
+          "name": "Swamp Bridge",
+          "scene": "an old stone bridge at the edge of a misty swamp",
+          "ground": "the flat, mossy stone deck of the bridge, seen from the side, with a low stone railing",
+          "behind": "still green water with lily pads, reeds, drooping willow trees, soft mist",
+          "left": "a tall clump of reeds",
+          "right": "a gnarled willow trunk",
+          "avoid": "trolls, crocodiles, frogs or slime"
+        },
+        {
+          "id": "temple",
+          "name": "Crystal Temple",
+          "scene": "inside an ancient temple built into a crystal cave",
+          "ground": "smooth, sandy stone tiles",
+          "behind": "carved sandstone columns, a wide doorway up a few steps, purple and blue crystals growing from the cave walls, a glimpse of desert sky through an opening above",
+          "left": "a cluster of crystals",
+          "right": "a weathered sandstone pillar",
+          "avoid": "statues, sphinxes, dragons or bright glowing crystals"
+        }
+      ]
+    }
+  ]
+}
