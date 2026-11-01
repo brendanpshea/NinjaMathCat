@@ -52,6 +52,8 @@ describe("rounding", () => {
         assert.ok([10, 100].includes(step), at);
         assert.deepEqual(q.visual.points, [value], at);
       }
+      // Every choice is a rounded number, so none can be ruled out without rounding.
+      for (const c of q.choices) assert.equal(c % 10, 0, `${at} → ${c}`);
     }
   });
 
@@ -80,6 +82,8 @@ describe("place value", () => {
         const expected = at1 >= 0 ? String(Number(digit) * 10 ** (whole.length - 1 - at1))
           : formatDecimal(Number(digit), part.indexOf(digit) + 1);
         assert.ok(sameValue(String(q.answer), expected), `${at} → ${q.answer}`);
+        // Wrong whole-number values are the digit or round numbers, never a near miss like 59.
+        if (typeof q.answer === "number") for (const c of q.choices) assert.ok(c < 10 || c % 10 === 0, `${at} → ${c}`);
         continue;
       }
       const sum = q.prompt.match(/^Which number is (.+)\?$/);

@@ -48,8 +48,8 @@ function roundWhole(rng, grade) {
     // all rounded numbers, so none can be ruled out without rounding.
     wrong: wrongNumbers(rng, answer, [
       other, roundedTo(place * 10), ...(place > 10 ? [roundedTo(place / 10)] : []),
-      answer + place, answer - place, answer + 2 * place, answer - 2 * place, answer + 3 * place,
-    ], { spread: place }),
+      answer + place, answer - place, answer + 2 * place, answer - 2 * place, answer + 3 * place, answer - 3 * place,
+    ], { step: place, min: 1 }),
     hint: grade < 4 ? `Is ${fmt(n)} closer to ${fmt(down)} or to ${fmt(up)}?` : `Look at the digit just right of the ${name}s place: 5 or more rounds up.`,
     difficulty: 1 + Number(n - down === place / 2) + Number(place >= 1000),
   };
@@ -144,8 +144,9 @@ function digitValue(rng) {
   return {
     prompt: `What is the value of the ${digit} in ${fmt(n)}?`,
     answer,
-    // The digit itself, or the right digit in the wrong place.
-    wrong: wrongNumbers(rng, answer, [digit, digit * 10 ** (power - 1), digit * 10 ** (power + 1), digit * 10 ** (power + 2), digit * 10 ** (power - 2)].filter(Number.isInteger), { min: 1 }),
+    // The digit itself, the value of its place, or the right digit in the
+    // wrong place; near misses are whole numbers of that place, never 59 for 60.
+    wrong: wrongNumbers(rng, answer, [digit, 10 ** power, digit * 10 ** (power - 1), digit * 10 ** (power + 1), digit * 10 ** (power + 2), digit * 10 ** (power - 2)].filter(Number.isInteger), { min: 1, step: 10 ** power }),
     hint: "Name the place the digit is in: ones, tens, hundreds, thousands…",
     difficulty: 1 + Number(power >= 3) + Number(power >= 5),
   };

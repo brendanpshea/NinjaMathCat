@@ -70,6 +70,30 @@ const JOINING = [
 ];
 
 /**
+ * Putting together, with numbers too big for bags and shelves: from third
+ * grade, stories add hundreds and thousands.
+ * @type {readonly Story[]}
+ */
+const JOINING_BIG = [
+  {
+    text: (_, a, b) => `A school collected ${a} cans for a food drive in the first week and ${b} in the second week. How many cans did it collect in all?`,
+    hint: () => "Put the two weeks together.",
+  },
+  {
+    text: (_, a, b) => `A farm picked ${a} apples on Monday and ${b} on Tuesday. How many apples did the farm pick altogether?`,
+    hint: () => "Add the two days.",
+  },
+  {
+    text: (_, a, b) => `A library has ${a} storybooks and ${b} science books. How many books is that in all?`,
+    hint: () => "Add the two kinds of books.",
+  },
+  {
+    text: (c, a, b) => `${c.name} walked ${a} steps in the morning and ${b} steps in the afternoon. How many steps is that altogether?`,
+    hint: () => "Put the two walks together.",
+  },
+];
+
+/**
  * Taking apart and comparing: a − b.
  * @type {readonly Story[]}
  */
@@ -91,6 +115,33 @@ const SEPARATING = [
     text: (c, a, b) => `${c.name} has ${b} ${c.thing} but wants ${a}. How many more ${c.thing} does ${c.name} need?`,
     hint: (c, _, b) => `Count on from ${b}, the number ${c.name} has.`,
     from: 1.5,
+  },
+];
+
+/**
+ * Taking apart and comparing, with big numbers.
+ * @type {readonly Story[]}
+ */
+const SEPARATING_BIG = [
+  {
+    text: (_, a, b) => `A library had ${a} books and lent out ${b} of them. How many books are still on the shelves?`,
+    hint: () => "Take away the books that were lent out.",
+  },
+  {
+    text: (_, a, b) => `A stadium has ${a} seats, and ${b} of them are filled. How many seats are empty?`,
+    hint: () => "Take the filled seats away from all the seats.",
+  },
+  {
+    text: (_, a, b) => `A bakery made ${a} cookies and sold ${b} of them. How many cookies are left?`,
+    hint: () => "Take away the cookies that were sold.",
+  },
+  {
+    text: (c, a, b) => `${c.name}'s school has ${a} students and ${c.friend}'s school has ${b}. How many more students does ${c.name}'s school have than ${c.friend}'s?`,
+    hint: () => "Find the difference: take the smaller number from the bigger one.",
+  },
+  {
+    text: (c, a, b) => `${c.name} wants to read ${a} pages this year and has read ${b} so far. How many more pages are there to read?`,
+    hint: (_, a, b) => `Count on from ${b}, or take ${b} away from ${a}.`,
   },
 ];
 
@@ -148,7 +199,7 @@ export const wordAddition = {
     const b = rng.int(2, max - a);
     const sum = a + b;
     const c = cast(rng);
-    const story = storyFor(rng, grade, JOINING);
+    const story = storyFor(rng, grade, sum > 100 ? JOINING_BIG : JOINING);
     return {
       prompt: story.text(c, a, b),
       answer: sum,
@@ -166,10 +217,11 @@ export const wordSubtraction = {
   generate(rng, grade) {
     const max = atGrade(grade, STORY_WITHIN);
     const a = rng.int(3, max);
-    const b = rng.int(1, a - 1);
+    // From 2, so no story has "1 books".
+    const b = rng.int(2, a - 1);
     const difference = a - b;
     const c = cast(rng);
-    const story = storyFor(rng, grade, SEPARATING);
+    const story = storyFor(rng, grade, a > 100 ? SEPARATING_BIG : SEPARATING);
     return {
       prompt: story.text(c, a, b),
       answer: difference,
@@ -305,7 +357,7 @@ const TWO_STEPS = [
   {
     numbers: (rng, big) => {
       const [n, each] = [rng.int(2, 9), rng.int(2, big ? 30 : 9)];
-      const a = rng.int(1, n * each - 1);
+      const a = rng.int(2, n * each - 2);
       return [a, n * each - a, n];
     },
     text: (c, a, b, n) => `${c.name} has ${a} ${c.thing} and ${c.friend} has ${b}. They put them together and share them equally among ${n} friends. How many does each friend get?`,

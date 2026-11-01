@@ -548,7 +548,8 @@ function toBigDecimal(rng) {
   // number of the bigger unit.
   const whole = rng.chance(0.3) ? 0 : rng.int(1, 9);
   const rest = rng.chance(0.5) ? rng.int(1, 9) * (c.times / 10) : rng.int(1, c.times - 1);
-  const n = whole * c.times + rest;
+  // Never 1 of the smaller unit, which would read "1 millimeters".
+  const n = Math.max(2, whole * c.times + rest);
   const answer = formatDecimal(n, places);
   // Writing 305 cm as 3.5 m, dropping the zero that holds the tenths place.
   const dropped = rest < c.times / 10 && whole > 0 ? [`${whole}.${rest}`] : [];

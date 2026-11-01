@@ -188,17 +188,21 @@ export function atGrade(grade, rows) {
  * answers fall below the right one is chosen first (none to three, equally
  * often, where there is room), and each side is filled from `likely` (the
  * mistakes this kind of question invites) before near misses.
+ *
+ * Near misses go in steps of `step`: where every sensible answer is a whole
+ * number of hundreds, as in rounding to the nearest hundred, a near miss of
+ * 707,181 would give itself away, and 707,100 does not.
  * @param {Rng} rng
  * @param {number} answer
  * @param {readonly number[]} likely
- * @param {{ spread?: number, min?: number }} [options]  spread: how far a near miss may stray
+ * @param {{ spread?: number, min?: number, step?: number }} [options]  spread: how many steps a near miss may stray
  * @returns {number[]}  three of them
  */
-export function wrongNumbers(rng, answer, likely, { spread = 3, min = 0 } = {}) {
-  const room = Math.max(0, answer - min);
+export function wrongNumbers(rng, answer, likely, { spread = 3, min = 0, step = 1 } = {}) {
+  const room = Math.max(0, Math.floor((answer - min) / step));
   const below = Math.min(rng.int(0, 3), room);
-  const lower = pickSide(rng, answer, likely, below, -1, spread, min);
-  const upper = pickSide(rng, answer, likely, 3 - lower.length, 1, spread, min);
+  const lower = pickSide(rng, answer, likely, below, -1, spread, min, step);
+  const upper = pickSide(rng, answer, likely, 3 - lower.length, 1, spread, min, step);
   return [...lower, ...upper];
 }
 
@@ -211,19 +215,20 @@ export function wrongNumbers(rng, answer, likely, { spread = 3, min = 0 } = {}) 
  * @param {1 | -1} side  1 above the answer, -1 below
  * @param {number} spread
  * @param {number} min
+ * @param {number} step
  * @returns {number[]}
  */
-function pickSide(rng, answer, likely, count, side, spread, min) {
+function pickSide(rng, answer, likely, count, side, spread, min, step) {
   /** @param {number} n */
   const fits = n => Number.isInteger(n) && n >= min && Math.sign(n - answer) === side;
-  const nearMisses = rng.shuffle(Array.from({ length: spread }, (_, i) => answer + side * (i + 1)));
+  const nearMisses = rng.shuffle(Array.from({ length: spread }, (_, i) => answer + side * step * (i + 1)));
   /** @type {Set<number>} */
   const out = new Set();
   for (const n of [...rng.shuffle(likely), ...nearMisses]) {
     if (out.size === count) break;
     if (fits(n)) out.add(n);
   }
-  for (let n = answer + side * (spread + 1); out.size < count && fits(n); n += side) out.add(n);
+  for (let n = answer + side * step * (spread + 1); out.size < count && fits(n); n += side * step) out.add(n);
   return [...out];
 }
 

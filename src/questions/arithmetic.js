@@ -127,7 +127,9 @@ export const subtraction = {
   generate(rng, grade) {
     const max = atGrade(grade, WITHIN);
     const a = rng.int(2, max);
-    const b = rng.int(1, a);
+    // Now and then all of it, so 4 − 4 = 0 comes up, but not a third of the
+    // time, as drawing b from 1 to a would make it in kindergarten.
+    const b = rng.chance(0.06) ? a : rng.int(1, a - 1);
     const difference = a - b;
     const regroups = smallerFromLarger(a, b) !== difference;
     return {

@@ -36,6 +36,12 @@ describe("subtraction", () => {
     }
   });
 
+  it("only now and then takes a number from itself", () => {
+    const asked = [...questionsOf(subtraction)].filter(({ grade }) => grade < 1);
+    const zero = asked.filter(({ question: q }) => q.answer === 0).length;
+    assert.ok(zero > 0 && zero < asked.length * 0.12, `${zero} of ${asked.length} kindergarten differences are 0`);
+  });
+
   it("offers the smaller-from-larger slip as a wrong answer", () => {
     assert.equal(smallerFromLarger(52, 17), 45);
     assert.equal(smallerFromLarger(300, 158), 258);

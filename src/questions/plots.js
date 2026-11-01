@@ -292,7 +292,8 @@ function dotPlot(rng) {
       difficulty: 1,
     };
     default: {
-      const cut = data.from + rng.int(1, data.positions - 3);
+      // At least 2, so the question never asks about "more than 1 pets".
+      const cut = Math.max(2, data.from + rng.int(1, data.positions - 3));
       const answer = values.filter(v => v > cut).length;
       return {
         prompt: `How many ${data.who} ${data.did(`more than ${cut}`)}?`,
