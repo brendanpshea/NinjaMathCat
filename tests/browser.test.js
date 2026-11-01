@@ -47,6 +47,7 @@ describe("in a real browser", { skip }, () => {
     assert.equal(played.form.heroes, 6);
     assert.equal(played.form.grades, ADVENTURE_GRADES.length);
     assert.deepEqual(played.form.chapters, chaptersFor(2).map(c => c.title));
+    assert.equal(played.form.readAloud, true, "questions are read aloud for a 2nd grader to begin with");
   });
 
   it("shows the player's map, with only the first level to play", () => {
@@ -60,6 +61,7 @@ describe("in a real browser", { skip }, () => {
     assert.equal(played.note.heading, chaptersFor(2)[0].title);
     assert.equal(played.note.text, chaptersFor(2)[0].note);
     assert.ok(played.note.example);
+    assert.equal(played.note.read, true);
   });
 
   it("plays a level as a short battle with the chosen hero, both on stage", () => {
@@ -68,6 +70,7 @@ describe("in a real browser", { skip }, () => {
     assert.match(played.battle.arrival, /^Here comes /);
     assert.equal(played.battle.heroName, "Owl Wizard");
     assert.equal(played.battle.choices, 4);
+    assert.equal(played.battle.read, true, "a Read to me button on every question");
     assert.ok(played.battle.answered < 25, `the level took ${played.battle.answered} answers`);
   });
 

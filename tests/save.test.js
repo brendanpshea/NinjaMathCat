@@ -24,9 +24,12 @@ describe("the save", () => {
 
   it("adds players, each new one the current one, and names a blank one by number", () => {
     let { save, player } = addPlayer(newSave(), owl);
-    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, xp: 0, treasures: [], adventures: {}, mastery: {}, played: 0 });
+    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, readAloud: false, xp: 0, treasures: [], adventures: {}, mastery: {}, played: 0 });
     ({ save, player } = addPlayer(save, { name: "   ", heroId: "dragon_king", grade: 9 }));
     assert.deepEqual([player.name, player.heroId, player.grade], ["Player 2", "cat_ninja", 0]);
+    // Questions are read aloud for the youngest, unless chosen otherwise.
+    assert.equal(player.readAloud, true);
+    assert.equal(addPlayer(save, { name: "Kim", heroId: "owl_wizard", grade: 1, readAloud: false }).player.readAloud, false);
     assert.equal(currentPlayer(save), player);
     assert.equal(addPlayer(save, { name: "A name much too long to fit on a card", heroId: "owl_wizard", grade: 1 }).player.name.length, LONGEST_NAME);
   });
@@ -78,7 +81,7 @@ describe("the save", () => {
     const save = loadSave(storage);
     assert.equal(save.players.length, 1);
     assert.deepEqual(save.players[0], {
-      id: "p1", name: "Player 1", heroId: "cat_ninja", grade: 0, xp: 0, treasures: [TREASURES[1].id],
+      id: "p1", name: "Player 1", heroId: "cat_ninja", grade: 0, readAloud: true, xp: 0, treasures: [TREASURES[1].id],
       adventures: { 2: { done: { [level]: { stars: 2, firstTry: 6, asked: 8 } }, opened: 7 } },
       // A kind's last time can't be after the battles played; a score outside 0 to 1, a kind
       // the game no longer has, or one never seen, is dropped.
@@ -94,7 +97,7 @@ describe("the save", () => {
     });
     const save = loadSave(storage);
     assert.deepEqual(save, {
-      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, xp: 730, treasures: [TREASURES[3].id], adventures: {}, mastery: {}, played: 0 }],
+      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, readAloud: true, xp: 730, treasures: [TREASURES[3].id], adventures: {}, mastery: {}, played: 0 }],
       current: "p1",
       muted: true,
     });

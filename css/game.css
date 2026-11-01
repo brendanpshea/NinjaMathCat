@@ -244,6 +244,12 @@ select {
 }
 .name-input:focus-visible { border-color: var(--indigo); }
 .field-hint { margin: 0; font-size: 15px; color: var(--muted); }
+.check { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; }
+.check input { width: 24px; height: 24px; margin: 0; accent-color: var(--orange); }
+/* Read to me: at the top of the question, out of the way of the answers. */
+.read-aloud { justify-self: start; font-size: 16px; white-space: nowrap; }
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.panel-head .read-aloud { flex: none; }
 .remove { border-color: #f3c7c7; }
 .remove > .danger { justify-self: start; }
 .remove p { margin: 0; }

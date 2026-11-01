@@ -32,7 +32,11 @@ export const LONGEST_NAME = 20;
  * @property {Record<string, AdventureProgress>} adventures  progress in each grade's adventure, by grade
  * @property {Mastery} mastery  how well they know each kind of question
  * @property {number} played  battles started, the clock that review is timed by
+ * @property {boolean} readAloud  read each question aloud as it comes
  */
+
+/** Up to this grade, questions are read aloud unless a grown-up turns it off. */
+export const READ_ALOUD_UP_TO = 2;
 
 /**
  * @typedef {object} Save
@@ -50,18 +54,20 @@ export function newSave() {
  * The save with a new player in it, who becomes the current one. A name left
  * blank becomes "Player 2", or whichever number is next.
  * @param {Save} save
- * @param {{ name: string, heroId: string, grade: number }} choices
+ * @param {{ name: string, heroId: string, grade: number, readAloud?: boolean }} choices
  * @returns {{ save: Save, player: Player }}
  */
-export function addPlayer(save, { name, heroId, grade }) {
+export function addPlayer(save, { name, heroId, grade, readAloud }) {
   if (save.players.length >= MOST_PLAYERS) throw new RangeError(`At most ${MOST_PLAYERS} players`);
   const number = 1 + Math.max(0, ...save.players.map(p => Number(p.id.slice(1)) || 0));
+  const year = ADVENTURE_GRADES.includes(grade) ? grade : ADVENTURE_GRADES[0];
   /** @type {Player} */
   const player = {
     id: `p${number}`,
     name: cleanName(name) || `Player ${number}`,
     heroId: HEROES.some(h => h.id === heroId) ? heroId : DEFAULT_HERO.id,
-    grade: ADVENTURE_GRADES.includes(grade) ? grade : ADVENTURE_GRADES[0],
+    grade: year,
+    readAloud: readAloud ?? year <= READ_ALOUD_UP_TO,
     xp: 0,
     treasures: [],
     adventures: {},
@@ -180,11 +186,13 @@ function cleanPlayer(stored, seen) {
       mastery[type.id] = { score: m.score, seen: m.seen, last: Math.min(m.last, played) };
     }
   }
+  const grade = ADVENTURE_GRADES.includes(stored.grade) ? stored.grade : ADVENTURE_GRADES[0];
   return {
     id: stored.id,
     name: cleanName(stored.name) || `Player ${stored.id.slice(1)}`,
     heroId: HEROES.some(h => h.id === stored.heroId) ? stored.heroId : DEFAULT_HERO.id,
-    grade: ADVENTURE_GRADES.includes(stored.grade) ? stored.grade : ADVENTURE_GRADES[0],
+    grade,
+    readAloud: typeof stored.readAloud === "boolean" ? stored.readAloud : grade <= READ_ALOUD_UP_TO,
     xp: Number.isInteger(stored.xp) && stored.xp >= 0 ? stored.xp : 0,
     treasures: Array.isArray(stored.treasures) ? [...new Set(stored.treasures.filter((/** @type {unknown} */ id) => typeof id === "string" && known.has(id)))] : [],
     adventures,

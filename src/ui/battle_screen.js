@@ -9,12 +9,14 @@ import { renderVisual } from "../visuals/index.js";
 import { escapeXml as esc } from "../visuals/svg.js";
 import { formatNumber } from "../questions/common.js";
 import { createStage } from "./stage_view.js";
+import { questionSpeech } from "../speech.js";
 
 /** @import { Battle, Round } from "../battle.js" */
 /** @import { Answer } from "../questions/common.js" */
 /** @import { Hero } from "../heroes.js" */
 /** @import { Rng } from "../rng.js" */
 /** @import { SoundSystem } from "../sound.js" */
+/** @import { Speaker } from "../speech.js" */
 
 /**
  * A choice as markup, the way children write it: big numbers with commas,
@@ -55,11 +57,13 @@ export function feedbackFor(round) {
  * @param {Rng} options.rng
  * @param {SoundSystem} options.sound
  * @param {string} [options.title]  what the battle is, such as "Level 7: Practice"; by default, which monster of how many
+ * @param {Speaker} [options.speaker]  to read questions aloud: on the "Read to me" button, and by itself if `readAloud`
+ * @param {boolean} [options.readAloud]  read each question, and each hint, as it comes
  * @param {(battle: Battle) => void} options.onProgress  after every answer, to save what was earned
  * @param {(battle: Battle) => void} options.onWin
  * @param {() => void} options.onLeave
  */
-export function createBattleScreen(root, { battle: start, hero, rng, sound, title, onProgress, onWin, onLeave }) {
+export function createBattleScreen(root, { battle: start, hero, rng, sound, title, speaker, readAloud = false, onProgress, onWin, onLeave }) {
   let battle = start;
   let busy = false;
   let arrivedAt = -1; // which monster the arrival line is about
@@ -75,7 +79,10 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
       </div>
       <div data-ref="stage"></div>
       <div class="panel">
-        <p class="arrival" data-ref="arrival"></p>
+        <div class="panel-head">
+          <p class="arrival" data-ref="arrival"></p>
+          ${speaker?.available ? `<button type="button" class="quiet read-aloud" data-ref="read"><span aria-hidden="true">🔈</span> Read to me</button>` : ""}
+        </div>
         <div class="ask" aria-live="polite" data-ref="ask">
           <p class="prompt" data-ref="prompt"></p>
           <div class="picture" data-ref="picture"></div>
@@ -89,6 +96,12 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
   const ref = name => /** @type {HTMLElement} */ (root.querySelector(`[data-ref="${name}"]`));
   const stage = createStage(ref("stage"));
   stage.show(battle, hero);
+
+  /** Read the question out, with its choices; for ratios, "5:13" is "5 to 13". */
+  function readQuestion() {
+    const q = battle.question;
+    if (q) speaker?.say(questionSpeech(q.prompt, q.choices.filter(c => !battle.ruledOut.includes(c))), { ratios: q.type === "ratios" });
+  }
 
   function showJourney() {
     const { adventure, beaten } = battle;
@@ -118,6 +131,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     }).join("");
     ref("next").hidden = true;
     busy = false;
+    if (readAloud) readQuestion();
   }
 
   /** @param {number} index */
@@ -137,6 +151,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     onProgress(battle);
     // Said at once, while the stage acts it out: children should know straight away.
     ref("feedback").textContent = feedbackFor(result.round);
+    if (readAloud && result.round.then !== "next") speaker?.say(feedbackFor(result.round));
     await stage.play(result.round, before, battle, hero, { onBeat: beat => sound.play(sfxFor(beat)) });
     showJourney();
 
@@ -165,6 +180,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     const button = /** @type {HTMLElement} */ (event.target).closest(".choice");
     if (button instanceof HTMLButtonElement) choose(Number(button.dataset.index));
   });
+  ref("read")?.addEventListener("click", () => readQuestion());
   ref("next").addEventListener("click", () => {
     sound.play("click");
     ref("feedback").textContent = "";
@@ -201,7 +217,10 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
   showQuestion();
 
   return {
-    destroy() { listening.abort(); },
+    destroy() {
+      listening.abort();
+      speaker?.stop();
+    },
     get battle() { return battle; },
   };
 }

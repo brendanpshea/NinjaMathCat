@@ -109,6 +109,7 @@
       click(".hero-choice[data-hero=owl_wizard]");
       click("input[name=grade][value='2']");
       report.form.chapters = $$("[data-ref=practice] li").map(li => li.textContent);
+      report.form.readAloud = $("[data-ref=read-aloud]")?.checked ?? null;
       click("[data-ref=save]");
 
       await on("map");
@@ -122,6 +123,8 @@
       report.note.heading = $("h1").textContent;
       report.note.text = text(".note-text");
       report.note.example = text(".example-answer strong");
+      report.note.read = Boolean($("[data-ref=read]"));
+      $("[data-ref=read]")?.click();
       click("[data-ref=start]");
 
       await on("battle");
@@ -132,6 +135,8 @@
       report.battle.heroName = $("[data-ref=heroName]").textContent;
       await readyToAnswer();
       report.battle.choices = $$(".choice").length;
+      report.battle.read = Boolean($("[data-ref=read]"));
+      $("[data-ref=read]")?.click();
       // Wrong twice: a hint, then the answer shown and a button to go on.
       await answer(false);
       await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint, and the choices back");

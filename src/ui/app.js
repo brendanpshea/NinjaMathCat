@@ -19,7 +19,7 @@ import {
   recordLevel, levelStates, nextLevel, openChapter, starsFor,
 } from "../adventures.js";
 import { learn, strength } from "../mastery.js";
-import { loadSave, writeSave, addPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME } from "../save.js";
+import { loadSave, writeSave, addPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME, READ_ALOUD_UP_TO } from "../save.js";
 import { renderVisual } from "../visuals/index.js";
 import { escapeXml as esc } from "../visuals/svg.js";
 import { createBattleScreen, choiceHtml } from "./battle_screen.js";
@@ -30,6 +30,7 @@ import { still } from "./sprites.js";
 /** @import { Rng } from "../rng.js" */
 /** @import { Save, Player } from "../save.js" */
 /** @import { SoundSystem } from "../sound.js" */
+/** @import { Speaker } from "../speech.js" */
 
 /** @typedef {"title" | "player" | "map" | "note" | "battle" | "level-done" | "training-done" | "victory" | "treasures" | "report"} ScreenName */
 /** @import { Outcome } from "../mastery.js" */
@@ -94,9 +95,10 @@ function starsHtml(stars) {
  * @param {object} options
  * @param {Storage | null} options.storage
  * @param {SoundSystem} options.sound
+ * @param {Speaker} [options.speech]  to read aloud, where the browser can
  * @param {Rng} options.rng
  */
-export function createApp(root, { storage, sound, rng }) {
+export function createApp(root, { storage, sound, speech, rng }) {
   /** @type {Save} */
   let save = loadSave(storage);
   sound.enabled = !save.muted;
@@ -263,6 +265,11 @@ export function createApp(root, { storage, sound, rng }) {
           </div>
           <div class="practice" data-ref="practice" aria-live="polite"></div>
         </fieldset>
+        ${speech?.available ? `<div class="card">
+          <label class="check"><input type="checkbox" data-ref="read-aloud"${(player ? player.readAloud : grade <= READ_ALOUD_UP_TO) ? " checked" : ""}>
+            Read questions aloud</label>
+          <p class="field-hint">Good for children still learning to read. There is also a "Read to me" button on every question.</p>
+        </div>` : ""}
         <div class="start-bar">
           <button type="button" class="primary big" data-ref="save">${player ? "Save" : "Start my adventure!"}</button>
           <button type="button" class="quiet" data-ref="back">Back</button>
@@ -284,13 +291,26 @@ export function createApp(root, { storage, sound, rng }) {
         <ol class="topics">${chaptersFor(year).map(c => `<li>${esc(c.title)}</li>`).join("")}</ol>`;
     };
     showChapters();
-    part("grade").addEventListener("change", showChapters);
+    // Reading aloud starts on for the youngest, until a grown-up chooses.
+    let readChosen = Boolean(player);
+    part("read-aloud")?.addEventListener("change", () => { readChosen = true; });
+    part("grade").addEventListener("change", () => {
+      showChapters();
+      const box = /** @type {HTMLInputElement | null} */ (part("read-aloud"));
+      if (box && !readChosen) box.checked = Number(chosen("grade") ?? 0) <= READ_ALOUD_UP_TO;
+    });
 
     onTap(part("save"), () => {
-      const choices = { name: /** @type {HTMLInputElement} */ (part("name")).value, heroId: chosen("hero") ?? HEROES[0].id, grade: Number(chosen("grade") ?? 0) };
+      const box = /** @type {HTMLInputElement | null} */ (part("read-aloud"));
+      const choices = {
+        name: /** @type {HTMLInputElement} */ (part("name")).value,
+        heroId: chosen("hero") ?? HEROES[0].id,
+        grade: Number(chosen("grade") ?? 0),
+        ...(box ? { readAloud: box.checked } : {}),
+      };
       if (player) {
         const name = choices.name.replace(/\s+/g, " ").trim().slice(0, LONGEST_NAME);
-        change({ heroId: choices.heroId, grade: choices.grade, ...(name ? { name } : {}) });
+        change({ heroId: choices.heroId, grade: choices.grade, ...(box ? { readAloud: box.checked } : {}), ...(name ? { name } : {}) });
       } else {
         commit(addPlayer(save, choices).save);
       }
@@ -448,6 +468,7 @@ export function createApp(root, { storage, sound, rng }) {
         <div class="note-art" aria-hidden="true" style="background-image: url('${backdropFor(settingFor(level.grade, level.chapter)).file}')"></div>
         <p class="note-kicker">Chapter ${level.chapter + 1}</p>
         <h1 tabindex="-1">${esc(chapter.title)}</h1>
+        ${speech?.available ? `<button type="button" class="quiet read-aloud" data-ref="read"><span aria-hidden="true">🔈</span> Read to me</button>` : ""}
         <p class="note-text">${esc(chapter.note)}</p>
         <div class="card example">
           <h2 class="card-title">For example</h2>
@@ -461,8 +482,10 @@ export function createApp(root, { storage, sound, rng }) {
           <button type="button" class="quiet" data-ref="map">Back to the map</button>
         </div>
       </section>`);
-    onTap(part("start"), () => play(level));
-    onTap(part("map"), () => map());
+    const answerText = typeof example.answer === "number" ? String(example.answer) : example.answer;
+    part("read")?.addEventListener("click", () => speech?.say(`${chapter.title}. ${chapter.note} For example: ${example.prompt} The answer: ${answerText}. Tip: ${example.hint}`));
+    onTap(part("start"), () => { speech?.stop(); play(level); });
+    onTap(part("map"), () => { speech?.stop(); map(); });
   }
 
   // ------------------------------------------------------------ the battles
@@ -543,6 +566,8 @@ export function createApp(root, { storage, sound, rng }) {
       rng,
       sound,
       title: name,
+      speaker: speech,
+      readAloud: me().readAloud && !save.muted,
       onProgress: b => {
         let mastery = me().mastery;
         for (const { type, outcome } of b.tally.answers.slice(learned)) {
