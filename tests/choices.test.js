@@ -3,7 +3,7 @@
 // questions give.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { choiceHtml } from "../src/ui/battle_screen.js";
+import { choiceHtml, feedbackFor } from "../src/ui/battle_screen.js";
 import { CURRICULUM } from "../src/curriculum.js";
 import { questionsOf, wellFormed } from "./helpers.js";
 
@@ -35,5 +35,12 @@ describe("answer choices", () => {
         for (const c of q.choices) assert.ok(wellFormed(choiceHtml(c)), `${at} → ${c}`);
       }
     }
+  });
+
+  it("name a revealed answer the way the choice showed it", () => {
+    const round = answer => ({ then: "reveal", answer, hint: null, defeatedFoe: false });
+    assert.equal(feedbackFor(round(45210)), "The answer is 45,210.");
+    assert.equal(feedbackFor(round(-8)), "The answer is −8.");
+    assert.equal(feedbackFor(round("2 1/2")), "The answer is 2 1/2.");
   });
 });

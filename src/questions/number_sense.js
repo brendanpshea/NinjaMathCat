@@ -89,7 +89,8 @@ export const skipCounting = {
       prompt: `What comes next? ${shown.map(fmt).join(", ")}, ?`,
       answer,
       // One step too far, the last number again, counting by ones, or a ten off.
-      wrong: wrongNumbers(rng, answer, [answer + step, answer - step, answer + Math.sign(step), answer + 10, answer - 10]),
+      // Near misses go in steps of the count, so counting by tens never offers 28.
+      wrong: wrongNumbers(rng, answer, [answer + step, answer - step, answer + Math.sign(step), answer + 10, answer - 10], { step: size }),
       hint: grade >= 4 ? "Find the rule: how much does each number go up or down by?" : `Count ${step > 0 ? "up" : "back"} by ${size}s.`,
       difficulty: 1 + Number(step < 0) + Number(![2, 5, 10, 100].includes(size)),
     };

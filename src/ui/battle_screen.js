@@ -40,7 +40,7 @@ export function choiceHtml(choice) {
 export function feedbackFor(round) {
   switch (round.then) {
     case "again": return `Not quite. Try again! Hint: ${round.hint}`;
-    case "reveal": return `The answer is ${round.answer}.`;
+    case "reveal": return `The answer is ${typeof round.answer === "number" ? formatNumber(round.answer) : round.answer}.`;
     case "won": return "You beat every monster!";
     default: return round.defeatedFoe ? "Right! The monster is beaten!" : "Right!";
   }
