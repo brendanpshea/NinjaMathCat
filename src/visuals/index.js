@@ -9,23 +9,24 @@ import { area, cubes, angle, coordinates } from "./measures.js";
 
 /** @import { Visual } from "../questions/common.js" */
 
-export { describeVisual } from "./describe.js";
+export { describeVisual, dataTable } from "./describe.js";
 
 /**
  * @param {Visual} v
+ * @param {{ narrow?: boolean }} [options]  narrow: drawn for a phone's width, where that helps the numbers be read
  * @returns {string}  an <svg> element, as markup
  */
-export function renderVisual(v) {
+export function renderVisual(v, options = {}) {
   switch (v.kind) {
     case "objects": return objects(v);
     case "pattern": return pattern(v);
     case "money": return money(v);
     case "clock": return clock(v);
     case "shape": return shape(v);
-    case "number_line": return numberLine(v);
+    case "number_line": return numberLine(v, options);
     case "picture_graph": return pictureGraph(v);
     case "bar_graph": return barGraph(v);
-    case "line_plot": return linePlot(v);
+    case "line_plot": return linePlot(v, options);
     case "fraction": return fraction(v);
     case "area": return area(v);
     case "cubes": return cubes(v);

@@ -10,6 +10,9 @@ import { describeVisual, positionLabel } from "./describe.js";
 export const LINE_LEFT = 40;
 export const LINE_RIGHT = 560;
 
+/** Where it runs in a narrow picture, for a phone: 440 wide, so its numbers come out larger. */
+export const NARROW_RIGHT = 400;
+
 /**
  * An arrowhead at the end of a line.
  * @param {number} x  its tip
@@ -22,14 +25,16 @@ function arrowhead(x, y, way) {
 
 /**
  * @param {NumberLine} v
+ * @param {{ narrow?: boolean }} [options]
  */
-export function numberLine(v) {
+export function numberLine(v, { narrow = false } = {}) {
+  const right = narrow ? NARROW_RIGHT : LINE_RIGHT;
   const y = v.jumps.length > 0 ? 110 : 40;
-  const x = linear([v.from, v.to], [LINE_LEFT, LINE_RIGHT]);
+  const x = linear([v.from, v.to], [LINE_LEFT, right]);
   const parts = [
-    el("line", { x1: LINE_LEFT - 20, y1: y, x2: LINE_RIGHT + 20, y2: y, stroke: COLORS.ink, "stroke-width": 3 }),
+    el("line", { x1: LINE_LEFT - 20, y1: y, x2: right + 20, y2: y, stroke: COLORS.ink, "stroke-width": 3 }),
     arrowhead(LINE_LEFT - 28, y, -1),
-    arrowhead(LINE_RIGHT + 28, y, 1),
+    arrowhead(right + 28, y, 1),
   ];
 
   for (let at = v.from; at <= v.to; at += v.tick) {
@@ -58,5 +63,5 @@ export function numberLine(v) {
     parts.push(el("circle", { cx: x(at), cy: y, r: 8, fill: COLORS.point, stroke: COLORS.paper, "stroke-width": 2, class: "point", "data-at": at }));
   }
 
-  return svg("number_line", LINE_RIGHT + LINE_LEFT, y + 52, describeVisual(v), parts);
+  return svg("number_line", right + LINE_LEFT, y + 52, describeVisual(v), parts);
 }

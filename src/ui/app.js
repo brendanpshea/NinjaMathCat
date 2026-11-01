@@ -20,9 +20,8 @@ import {
 } from "../adventures.js";
 import { learn, strength } from "../mastery.js";
 import { loadSave, writeSave, addPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME, READ_ALOUD_UP_TO } from "../save.js";
-import { renderVisual } from "../visuals/index.js";
 import { escapeXml as esc } from "../visuals/svg.js";
-import { createBattleScreen, choiceHtml } from "./battle_screen.js";
+import { createBattleScreen, choiceHtml, pictureHtml } from "./battle_screen.js";
 import { still } from "./sprites.js";
 
 /** @import { Battle } from "../battle.js" */
@@ -131,7 +130,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
   const heroOf = player => HEROES.find(h => h.id === player?.heroId) ?? HEROES[0];
 
   function showSound() {
-    soundButton.textContent = save.muted ? "🔇 Sound off" : "🔊 Sound on";
+    soundButton.innerHTML = `<span aria-hidden="true">${save.muted ? "🔇" : "🔊"}</span><span class="sound-word"> Sound ${save.muted ? "off" : "on"}</span>`;
     soundButton.setAttribute("aria-pressed", String(!save.muted));
   }
   soundButton.addEventListener("click", () => {
@@ -473,7 +472,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
         <div class="card example">
           <h2 class="card-title">For example</h2>
           <p class="example-prompt">${esc(example.prompt)}</p>
-          ${example.visual ? `<div class="picture">${renderVisual(example.visual)}</div>` : ""}
+          ${example.visual ? `<div class="picture">${pictureHtml(example.visual)}</div>` : ""}
           <p class="example-answer">The answer: <strong class="choice-text">${choiceHtml(example.answer)}</strong></p>
           <p class="example-tip"><strong>Tip:</strong> ${esc(example.hint)}</p>
         </div>

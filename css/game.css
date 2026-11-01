@@ -34,6 +34,7 @@ body {
   background: linear-gradient(180deg, var(--sky), var(--sky-low)) fixed;
 }
 .game {
+  position: relative;
   max-width: 960px;
   margin: 0 auto;
   padding-block: 10px 48px;
@@ -516,6 +517,12 @@ select {
   .levels { gap: 6px; }
   .level-button { width: 56px; height: 60px; }
   .note-text { font-size: 20px; }
+  /* In battle the top bar steps aside, so the stage starts higher: the sound
+     button, as an icon, sits at the top right beside the level's name. */
+  .game[data-screen="battle"] .top { position: absolute; top: 10px; right: max(16px, env(safe-area-inset-right, 0px)); padding: 0; }
+  .game[data-screen="battle"] .brand { display: none; }
+  .game[data-screen="battle"] .sound-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .game[data-screen="battle"] .battle-bar { padding-right: 56px; }
   /* The report's rows become cards: the topic, then each cell after its label. */
   .report-table table, .report-table caption, .report-table tbody, .report-table tr, .report-table th, .report-table td { display: block; }
   .report-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

@@ -1,6 +1,6 @@
 // Picture graphs, bar graphs, histograms and line plots.
 
-import { svg, el, text, COLORS } from "./svg.js";
+import { svg, el, text, COLORS, FONT, escapeXml } from "./svg.js";
 import { linear, niceStep } from "./scale.js";
 import { describeVisual } from "./describe.js";
 import { rulerText } from "../questions/rational.js";
@@ -84,29 +84,50 @@ export function barGraph(v) {
 }
 
 /**
- * A line plot: a number line with a tick for every position, each labelled,
- * and a stack of Xs above it for every thing measured there.
- * @param {LinePlot} v
+ * A position's label under a line plot. In a narrow plot a mixed number goes
+ * on two lines, the whole number over its fraction, so neighbours don't run
+ * into each other.
+ * @param {number} x
+ * @param {number} y
+ * @param {string} label
+ * @param {boolean} narrow
  */
-export function linePlot(v) {
+function plotLabel(x, y, label, narrow) {
+  const [whole, part] = label.split(" ");
+  const look = { x, y, "font-size": 19, "font-weight": 700, "text-anchor": "middle", class: "tick-label" };
+  if (!narrow || !part) return text(look, label);
+  return el("text", { "font-family": FONT, fill: COLORS.ink, ...look, "aria-label": label },
+    el("tspan", { x }, escapeXml(whole)),
+    el("tspan", { x, dy: 19, "font-size": 16 }, escapeXml(part)));
+}
+
+/**
+ * A line plot: a number line with a tick for every position, each labelled,
+ * and a stack of Xs above it for every thing measured there. A narrow one,
+ * for a phone, is 480 wide, so its numbers come out larger.
+ * @param {LinePlot} v
+ * @param {{ narrow?: boolean }} [options]
+ */
+export function linePlot(v, { narrow = false } = {}) {
+  const width = narrow ? 480 : WIDTH;
   const stack = 26;
   const tallest = Math.max(...v.counts);
   const line = 66 + tallest * stack;
-  const x = linear([0, v.counts.length - 1], [60, WIDTH - 60]);
+  const x = linear([0, v.counts.length - 1], [50, width - 50]);
   const parts = [
-    text({ x: WIDTH / 2, y: 30, "font-size": 21, "font-weight": 700, "text-anchor": "middle" }, v.title),
-    el("line", { x1: 30, y1: line, x2: WIDTH - 30, y2: line, stroke: COLORS.ink, "stroke-width": 3 }),
+    text({ x: width / 2, y: 30, "font-size": 21, "font-weight": 700, "text-anchor": "middle" }, v.title),
+    el("line", { x1: 24, y1: line, x2: width - 24, y2: line, stroke: COLORS.ink, "stroke-width": 3 }),
   ];
   v.counts.forEach((count, i) => {
     const at = v.from + i;
     parts.push(
       el("line", { x1: x(i), y1: line - 9, x2: x(i), y2: line + 9, stroke: COLORS.ink, "stroke-width": 2.5, class: "tick", "data-at": at }),
-      text({ x: x(i), y: line + 32, "font-size": 19, "font-weight": 700, "text-anchor": "middle", class: "tick-label" }, rulerText(at, v.den)),
+      plotLabel(x(i), line + 32, rulerText(at, v.den), narrow),
     );
     for (let k = 0; k < count; k++) {
       const [cx, cy] = [x(i), line - 22 - k * stack];
       parts.push(el("path", { d: `M ${cx - 8} ${cy - 8} L ${cx + 8} ${cy + 8} M ${cx + 8} ${cy - 8} L ${cx - 8} ${cy + 8}`, stroke: COLORS.accent, "stroke-width": 3.5, "stroke-linecap": "round", class: "mark", "data-at": at }));
     }
   });
-  return svg("line_plot", WIDTH, line + 46, describeVisual(v), parts);
+  return svg("line_plot", width, line + (narrow ? 66 : 46), describeVisual(v), parts);
 }

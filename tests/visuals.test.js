@@ -2,9 +2,9 @@
 // question makes renders cleanly, and what is drawn matches the data.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { renderVisual, describeVisual } from "../src/visuals/index.js";
+import { renderVisual, describeVisual, dataTable } from "../src/visuals/index.js";
 import { SHAPE_CORNERS } from "../src/visuals/pictures.js";
-import { LINE_LEFT, LINE_RIGHT } from "../src/visuals/number_line.js";
+import { LINE_LEFT, LINE_RIGHT, NARROW_RIGHT } from "../src/visuals/number_line.js";
 import { linear, niceStep } from "../src/visuals/scale.js";
 import { escapeXml } from "../src/visuals/svg.js";
 import { rulerText } from "../src/questions/rational.js";
@@ -208,6 +208,41 @@ describe("drawing", () => {
       assert.deepEqual([...svg.matchAll(/class="tick-label"[^>]*>([^<]+)</g)].map(m => m[1]), v.counts.map((_, i) => rulerText(v.from + i, v.den)), at);
       const marks = elementsIn(svg, "path", "mark");
       v.counts.forEach((count, i) => assert.equal(marks.filter(m => Number(m["data-at"]) === v.from + i).length, count, at));
+    }
+  });
+
+  it("narrow number lines and line plots, for phones, keep every tick, label and point", () => {
+    for (const kind of ["number_line", "line_plot"]) {
+      for (const { v, svg, at } of rendered(kind)) {
+        const narrow = renderVisual(v, { narrow: true });
+        assert.ok(wellFormed(narrow), at);
+        const width = Number(narrow.match(/viewBox="0 0 ([\d.]+)/)[1]);
+        assert.ok(width < Number(svg.match(/viewBox="0 0 ([\d.]+)/)[1]), `${at}: no narrower`);
+        assert.equal(elementsIn(narrow, "line", "tick").length, elementsIn(svg, "line", "tick").length, at);
+        assert.equal(elementsIn(narrow, "text", "tick-label").length, elementsIn(svg, "text", "tick-label").length, at);
+        if (kind === "number_line") {
+          for (const point of elementsIn(narrow, "circle", "point")) {
+            const where = (Number(point.cx) - LINE_LEFT) / (NARROW_RIGHT - LINE_LEFT);
+            close(where * 100, ((Number(point["data-at"]) - v.from) / (v.to - v.from)) * 100, at);
+          }
+        }
+      }
+    }
+  });
+
+  it("graphs and line plots come with their numbers, in a table for a screen reader", () => {
+    for (const { question: q, at } of visuals()) {
+      const v = q.visual;
+      const table = dataTable(v);
+      if (!["picture_graph", "bar_graph", "line_plot"].includes(v.kind)) {
+        assert.equal(table, "", at);
+        continue;
+      }
+      assert.ok(wellFormed(table), at);
+      const rows = [...table.matchAll(/<tr><th scope="row">([^<]*)<\/th><td>([^<]*)<\/td><\/tr>/g)].map(m => [m[1], Number(m[2])]);
+      const expected = v.kind === "picture_graph" ? v.rows.map(r => r.value) : v.kind === "bar_graph" ? v.bars.map(b => b.value) : v.counts;
+      assert.deepEqual(rows.map(r => r[1]), expected, at);
+      assert.ok(table.includes(`<caption>${escapeXml(v.title)}</caption>`), at);
     }
   });
 

@@ -5,7 +5,7 @@
 import { answer } from "../battle.js";
 import { isCorrect } from "../questions/common.js";
 import { sfxFor } from "../stage.js";
-import { renderVisual } from "../visuals/index.js";
+import { renderVisual, dataTable } from "../visuals/index.js";
 import { escapeXml as esc } from "../visuals/svg.js";
 import { formatNumber } from "../questions/common.js";
 import { createStage } from "./stage_view.js";
@@ -33,6 +33,18 @@ export function choiceHtml(choice) {
   const [, minus, whole, top, bottom] = fraction;
   const stacked = `<mfrac><mn>${top}</mn><mn>${bottom}</mn></mfrac>`;
   return `<math aria-label="${esc(choice)}">${minus ? "<mo>−</mo>" : ""}${whole ? `<mn>${whole}</mn>` : ""}${stacked}</math>`;
+}
+
+/**
+ * A question's picture as markup: drawn narrow on a phone, where that makes
+ * its numbers bigger, and followed, for a screen reader, by the numbers a
+ * graph shows.
+ * @param {import("../questions/common.js").Visual} visual
+ */
+export function pictureHtml(visual) {
+  const narrow = globalThis.matchMedia?.("(max-width: 520px)").matches ?? false;
+  const data = dataTable(visual);
+  return `${renderVisual(visual, { narrow })}${data ? `<div class="visually-hidden">${data}</div>` : ""}`;
 }
 
 /**
@@ -123,7 +135,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
       ref("arrival").textContent = `Here comes ${battle.foe.monster.name}! ${battle.foe.monster.description}`;
     }
     ref("prompt").textContent = q.prompt;
-    ref("picture").innerHTML = q.visual ? renderVisual(q.visual) : "";
+    ref("picture").innerHTML = q.visual ? pictureHtml(q.visual) : "";
     ref("choices").innerHTML = q.choices.map((c, i) => {
       const out = battle.ruledOut.includes(c);
       return `<button type="button" class="choice${out ? " wrong" : ""}" data-index="${i}"${out ? " disabled" : ""}>

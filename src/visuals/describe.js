@@ -3,6 +3,8 @@
 // about: "a clock face", not "a clock showing 2:50".
 
 import { moneyById } from "../questions/money.js";
+import { rulerText } from "../questions/rational.js";
+import { escapeXml as esc } from "./svg.js";
 
 /** @import { Visual } from "../questions/common.js" */
 
@@ -24,6 +26,34 @@ export function positionLabel(units, den) {
  */
 function list(items) {
   return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+/**
+ * The numbers a graph or line plot shows, as a table for a screen reader to
+ * read row by row: what a sighted child reads off the bars, the pictures or
+ * the stacks of Xs. Empty for every other kind of picture.
+ * @param {Visual} v
+ * @returns {string}  a <table>, as markup, or ""
+ */
+export function dataTable(v) {
+  /**
+   * @param {string} title
+   * @param {[string, string]} heads
+   * @param {[string, string | number][]} rows
+   */
+  const table = (title, heads, rows) => `<table class="data-table"><caption>${esc(title)}</caption>
+    <thead><tr><th scope="col">${esc(heads[0])}</th><th scope="col">${esc(heads[1])}</th></tr></thead>
+    <tbody>${rows.map(([a, b]) => `<tr><th scope="row">${esc(a)}</th><td>${esc(b)}</td></tr>`).join("")}</tbody></table>`;
+  switch (v.kind) {
+    case "picture_graph":
+      return table(v.title, ["", `Number of ${v.unit[1]}`], v.rows.map(r => [r.label, r.value]));
+    case "bar_graph":
+      return table(v.title, [v.histogram ? "Interval" : "", v.axis], v.bars.map(b => [b.label, b.value]));
+    case "line_plot":
+      return table(v.title, [v.den === 1 ? "Value" : "Length", "How many"], v.counts.map((c, i) => [rulerText(v.from + i, v.den), c]));
+    default:
+      return "";
+  }
 }
 
 /**
