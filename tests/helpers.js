@@ -28,9 +28,12 @@ export function* questionsOf(type, seeds = SEEDS) {
   }
 }
 
-/** The whole numbers in a piece of text, in order. */
+/**
+ * The whole numbers in a piece of text, in order. Commas group digits
+ * (452,318), and a minus sign right before the digits makes one negative.
+ */
 export function numbersIn(text) {
-  return (text.match(/\d+/g) ?? []).map(Number);
+  return (text.match(/[−-]?\d+(?:,\d{3})*/g) ?? []).map(n => Number(n.replace(/,/g, "").replace("−", "-")));
 }
 
 /**

@@ -7,6 +7,7 @@ import { SHAPE_CORNERS } from "../src/visuals/pictures.js";
 import { LINE_LEFT, LINE_RIGHT } from "../src/visuals/number_line.js";
 import { linear, niceStep } from "../src/visuals/scale.js";
 import { escapeXml } from "../src/visuals/svg.js";
+import { rulerText } from "../src/questions/rational.js";
 import { CURRICULUM } from "../src/curriculum.js";
 import { SHAPES } from "../src/questions/shapes.js";
 import { questionsOf, elementsIn, wellFormed } from "./helpers.js";
@@ -128,6 +129,85 @@ describe("drawing", () => {
         close(Number(bar.y) + Number(bar.height), axis, at);
         close(Number(bar.height), (Number(bar["data-value"]) / v.max) * (axis - top), at);
       }
+    }
+  });
+
+  /** The corners of a polygon, as [x, y] pairs. */
+  const corners = polygon => polygon.points.split(" ").map(p => p.split(",").map(Number));
+
+  it("areas: drawn to scale, with a unit square for every square unit, and the height square to the base", () => {
+    for (const { v, svg, at } of rendered("area")) {
+      const [figure] = elementsIn(svg, v.shape === "rectangle" ? "rect" : "polygon", "figure");
+      assert.equal(Number(figure["data-width"]), v.width, at);
+      assert.equal(Number(figure["data-height"]), v.height, at);
+      assert.equal(elementsIn(svg, "rect", "cell").length, v.grid ? v.width * v.height : 0, at);
+      assert.equal(elementsIn(svg, "text", "label").length, v.labels ? 2 : 0, at);
+      if (v.shape === "rectangle") {
+        close(Number(figure.width) / v.width, Number(figure.height) / v.height, at);
+        continue;
+      }
+      const points = corners(figure);
+      const [left, right] = [points[0], points[1]];
+      const top = points[points.length - 1];
+      const [height] = elementsIn(svg, "line", "height");
+      close(right[1], left[1], at);
+      close((right[0] - left[0]) / v.width, (left[1] - top[1]) / v.height, at);
+      close(Number(height.x1), Number(height.x2), at);
+      close(Number(height.x1), top[0], at);
+    }
+  });
+
+  it("boxes: drawn to scale, with every cube that shows", () => {
+    for (const { v, svg, at } of rendered("cubes")) {
+      const cubes = elementsIn(svg, "polygon", "cube");
+      assert.equal(cubes.length, v.cubes ? v.length * v.height + v.length * v.width + v.width * v.height : 0, at);
+      const [front] = elementsIn(svg, "polygon", "face--front");
+      const xs = corners(front).map(p => p[0]);
+      const ys = corners(front).map(p => p[1]);
+      close((Math.max(...xs) - Math.min(...xs)) / v.length, (Math.max(...ys) - Math.min(...ys)) / v.height, at);
+      assert.equal(elementsIn(svg, "text", "label").length, v.labels ? 3 : 0, at);
+    }
+  });
+
+  it("angles: the rays are as far apart as the angle, and point where they say", () => {
+    for (const { v, svg, at } of rendered("angle")) {
+      const rays = elementsIn(svg, "line", "ray");
+      assert.equal(rays.length, 2, at);
+      for (const ray of rays) {
+        const turn = (Math.atan2(Number(ray.y1) - Number(ray.y2), Number(ray.x2) - Number(ray.x1)) * 180) / Math.PI;
+        close((turn + 360) % 360, Number(ray["data-angle"]) % 360, at);
+      }
+      assert.equal(Math.abs(rays[0]["data-angle"] - rays[1]["data-angle"]), v.degrees, at);
+      assert.equal(Number(rays[0]["data-angle"]), v.base === "right" ? 0 : 180, at);
+      // Both scales of a protractor, numbered every 10 degrees.
+      assert.equal(elementsIn(svg, "text", "outer").length, v.protractor ? 19 : 0, at);
+      assert.equal(elementsIn(svg, "text", "inner").length, v.protractor ? 19 : 0, at);
+    }
+  });
+
+  it("coordinate grids: every point where its numbers say", () => {
+    for (const { v, svg, at } of rendered("coordinates")) {
+      const xLabels = elementsIn(svg, "text", "x-label");
+      // The grid's left edge and the size of a square, from where 0 and 1 (or min and min + 1) are written.
+      const first = Number(xLabels[0].x);
+      const cell = Number(xLabels[1].x) - first;
+      const points = elementsIn(svg, "circle", "point");
+      assert.equal(points.length, v.points.length, at);
+      const bottom = Math.max(...points.map(p => Number(p.cy) + (Number(p["data-y"]) - v.min) * cell));
+      for (const p of points) {
+        close(Number(p.cx), first + (Number(p["data-x"]) - v.min) * cell, at);
+        close(Number(p.cy) + (Number(p["data-y"]) - v.min) * cell, bottom, at);
+      }
+    }
+  });
+
+  it("line plots: a labelled tick at every position, and an X for every thing measured there", () => {
+    for (const { v, svg, at } of rendered("line_plot")) {
+      const ticks = elementsIn(svg, "line", "tick");
+      assert.deepEqual(ticks.map(t => Number(t["data-at"])), v.counts.map((_, i) => v.from + i), at);
+      assert.deepEqual([...svg.matchAll(/class="tick-label"[^>]*>([^<]+)</g)].map(m => m[1]), v.counts.map((_, i) => rulerText(v.from + i, v.den)), at);
+      const marks = elementsIn(svg, "path", "mark");
+      v.counts.forEach((count, i) => assert.equal(marks.filter(m => Number(m["data-at"]) === v.from + i).length, count, at));
     }
   });
 

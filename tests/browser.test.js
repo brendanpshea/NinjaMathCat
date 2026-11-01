@@ -9,6 +9,7 @@ import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { startServer, findBrowser, runScenario } from "./helpers/browser.js";
 import { TREASURES } from "../src/treasures.js";
+import { GRADES } from "../src/curriculum.js";
 
 const browser = findBrowser();
 if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
@@ -37,7 +38,7 @@ describe("in a real browser", { skip }, () => {
   it("opens on a title with every hero and grade, and no record for a new player", () => {
     assert.equal(played.title.heading, "Ninja Math Cat");
     assert.equal(played.title.heroes, 6);
-    assert.equal(played.title.grades, 7);
+    assert.equal(played.title.grades, GRADES.length);
     assert.equal(played.title.returningRecord, false);
   });
 

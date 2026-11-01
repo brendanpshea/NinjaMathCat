@@ -10,8 +10,10 @@ import { moneyById } from "../questions/money.js";
  * A position on a number line, written as a child would read it: 3, or 3/4.
  * @param {number} units  how many 1/den steps from zero
  * @param {number} den
+ * @returns {string}
  */
 export function positionLabel(units, den) {
+  if (units < 0) return `−${positionLabel(-units, den)}`;
   if (den === 1) return String(units);
   return units % den === 0 ? String(units / den) : `${units}/${den}`;
 }
@@ -48,8 +50,25 @@ export function describeVisual(v) {
     case "picture_graph":
       return `A picture graph, "${v.title}", with rows for ${list(v.rows.map(r => r.label))}`;
     case "bar_graph":
-      return `A bar graph, "${v.title}", with bars for ${list(v.bars.map(b => b.label))}`;
+      // A histogram's bars are numbers, which could match an answer by chance.
+      return v.histogram
+        ? `A histogram, "${v.title}", with a bar for each interval`
+        : `A bar graph, "${v.title}", with bars for ${list(v.bars.map(b => b.label))}`;
+    case "line_plot":
+      return `A line plot, "${v.title}", with an X for each one measured`;
     case "fraction":
       return `A ${v.model} cut into equal parts, some of them shaded`;
+    case "area":
+      if (v.grid) return `A ${v.shape} on a grid of squares`;
+      if (!v.labels) return `A ${v.shape}`;
+      return v.shape === "rectangle"
+        ? `A rectangle with sides labelled ${v.labels.base} and ${v.labels.height}`
+        : `A ${v.shape} with its base labelled ${v.labels.base} and its height labelled ${v.labels.height}`;
+    case "cubes":
+      return v.labels ? `A box with edges labelled ${list([v.labels.length, v.labels.width, v.labels.height])}` : "A box built of small cubes";
+    case "angle":
+      return v.protractor ? "An angle on a protractor" : "An angle";
+    case "coordinates":
+      return `A coordinate grid with ${v.shape ? "a shape with corners" : "points"} ${list(v.points.map(p => p.label))}`;
   }
 }

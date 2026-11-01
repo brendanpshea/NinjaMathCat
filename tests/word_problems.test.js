@@ -1,7 +1,7 @@
 // tests/word_problems.test.js — story problems (src/questions/word_problems.js).
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { wordAddition, wordSubtraction, wordMultiplication, wordDivision } from "../src/questions/word_problems.js";
+import { wordAddition, wordSubtraction, wordMultiplication, wordDivision, wordTwoStep } from "../src/questions/word_problems.js";
 import { questionsOf, numbersIn } from "./helpers.js";
 
 describe("story problems", () => {
@@ -33,10 +33,32 @@ describe("story problems", () => {
     }
   });
 
-  it("sharing stories: the answer is the quotient, and it comes out even", () => {
-    for (const { question: q, at } of questionsOf(wordDivision)) {
+  it("equal-groups stories compare by 'times as many' only from fourth grade", () => {
+    for (const { grade, question: q, at } of questionsOf(wordMultiplication)) {
+      if (/times as many/.test(q.prompt)) assert.ok(grade >= 4, at);
+    }
+  });
+
+  it("sharing stories: the answer is the quotient, or what the question makes of the remainder", () => {
+    for (const { grade, question: q, at } of questionsOf(wordDivision)) {
       const [total, size] = numbersIn(q.prompt);
-      assert.equal(q.answer, total / size, at);
+      if (/fill all the way/.test(q.prompt)) assert.equal(q.answer, Math.floor(total / size), at);
+      else if (/fit them all/.test(q.prompt)) assert.equal(q.answer, Math.ceil(total / size), at);
+      else if (/left over/.test(q.prompt)) assert.equal(q.answer, total % size, at);
+      else assert.equal(q.answer, total / size, at);
+      if (total % size !== 0) assert.ok(grade >= 4, `${at}: remainders wait for fourth grade`);
+    }
+  });
+
+  it("two-step stories: the answer takes both steps", () => {
+    for (const { question: q, at } of questionsOf(wordTwoStep)) {
+      const [a, b, n] = numbersIn(q.prompt);
+      const expected = /more besides/.test(q.prompt) ? a * b + n
+        : /packs of/.test(q.prompt) ? a * b - n
+        : /to each of/.test(q.prompt) ? a - b * n
+        : (a + b) / n;
+      assert.equal(q.answer, expected, at);
+      assert.ok(Number.isInteger(q.answer) && q.answer > 0, at);
     }
   });
 

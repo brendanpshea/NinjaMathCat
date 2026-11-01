@@ -40,6 +40,20 @@
  * @property {number} scale  the step between gridlines
  * @property {number} max  the top of the scale
  * @property {{ label: string, value: number }[]} bars
+ * @property {boolean} [histogram]  bars for intervals, touching (6.SP.4)
+ */
+
+/**
+ * Data as X marks above a number line, one for each thing measured: a line
+ * plot of lengths in fourths of an inch (3.MD.4), or a dot plot of whole
+ * numbers (6.SP.4). As on a NumberLine, positions are whole numbers of 1/den
+ * steps; `counts[i]` Xs stand at position from + i.
+ * @typedef {object} LinePlot
+ * @property {"line_plot"} kind
+ * @property {string} title
+ * @property {number} den
+ * @property {number} from
+ * @property {number[]} counts
  */
 
 /**
@@ -52,6 +66,52 @@
  */
 
 /**
+ * A flat figure to measure: a rectangle, perhaps on a grid of unit squares,
+ * or a triangle or parallelogram with its height dashed in. It is drawn to
+ * scale, `width` (the base) by `height`; `labels` are what is written beside
+ * the base and the height, such as "8 cm" or "?".
+ * @typedef {object} AreaFigure
+ * @property {"area"} kind
+ * @property {"rectangle" | "triangle" | "parallelogram"} shape
+ * @property {number} width
+ * @property {number} height
+ * @property {boolean} grid
+ * @property {{ base: string, height: string }} [labels]
+ */
+
+/**
+ * A box, drawn to scale: built of unit cubes, or with its edges labelled.
+ * @typedef {object} CubeBox
+ * @property {"cubes"} kind
+ * @property {number} length
+ * @property {number} width
+ * @property {number} height
+ * @property {boolean} cubes
+ * @property {{ length: string, width: string, height: string }} [labels]
+ */
+
+/**
+ * An angle `degrees` wide, between a base ray pointing left or right and a
+ * ray turned up from it, perhaps laid on a protractor.
+ * @typedef {object} AngleFigure
+ * @property {"angle"} kind
+ * @property {number} degrees
+ * @property {"right" | "left"} base
+ * @property {boolean} protractor
+ */
+
+/**
+ * Labelled points on a coordinate grid running from min to max both ways,
+ * joined in order into a shape if `shape` is set.
+ * @typedef {object} CoordinateGrid
+ * @property {"coordinates"} kind
+ * @property {number} min
+ * @property {number} max
+ * @property {{ x: number, y: number, label: string }[]} points
+ * @property {boolean} [shape]
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -59,7 +119,8 @@
  *   | { kind: "money", items: string[] }
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
- *   | NumberLine | PictureGraph | BarGraph | FractionModel} Visual
+ *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid} Visual
  */
 
 /**
@@ -91,6 +152,17 @@
  * @property {string} name
  * @property {(rng: Rng, grade: number) => Draft} generate
  */
+
+/**
+ * A whole number as children read it: with commas from 10,000 up (4.NBT.2),
+ * and a true minus sign for negatives (6.NS.5).
+ * @param {number} n
+ */
+export function formatNumber(n) {
+  const size = Math.abs(n);
+  const digits = size >= 10000 ? size.toLocaleString("en-US") : String(size);
+  return n < 0 ? `−${digits}` : digits;
+}
 
 /**
  * Look a grade up in a table of [up to this grade, value] rows, in rising
