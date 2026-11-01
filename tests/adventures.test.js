@@ -3,7 +3,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-  ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, pitchFor, residents, settingFor,
+  ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, pitchFor, residents, settingFor, exampleFor,
   newProgress, recordLevel, levelStates, nextLevel, openChapter, starsFor,
 } from "../src/adventures.js";
 import { CURRICULUM, GRADES, typesForGrade, pickQuestion, mixForGrade } from "../src/curriculum.js";
@@ -44,6 +44,17 @@ describe("adventures", () => {
       const asked = new Set([...typesForGrade(grade), ...typesForGrade(grade + 0.5)].map(t => t.id));
       const covered = new Set(chaptersFor(grade).flatMap(c => [...c.learn, ...(c.warmup ?? [])]));
       for (const type of asked) assert.ok(covered.has(type), `grade ${grade} never asks ${type}`);
+    }
+  });
+
+  it("open each chapter with a worked example of its topic, the same every time", () => {
+    for (const grade of ADVENTURE_GRADES) {
+      for (const chapter of chaptersFor(grade)) {
+        const example = exampleFor(chapter);
+        assert.equal(example.type, chapter.learn[0], chapter.id);
+        assert.ok(!["0", "1"].includes(String(example.answer)), `${chapter.id}: an example whose answer is ${example.answer}`);
+        assert.deepEqual(exampleFor(chapter), example, chapter.id);
+      }
     }
   });
 

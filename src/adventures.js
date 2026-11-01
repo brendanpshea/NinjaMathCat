@@ -8,10 +8,12 @@
 // chapters before, and a boss asks everything so far. Each level also keeps
 // up some review of earlier chapters.
 
-import { CURRICULUM } from "./curriculum.js";
+import { CURRICULUM, pickQuestion } from "./curriculum.js";
 import { MONSTERS } from "./monsters.js";
+import { createRng } from "./rng.js";
 
 /** @import { Mix } from "./curriculum.js" */
+/** @import { Question } from "./questions/common.js" */
 /** @import { Monster } from "./monsters.js" */
 /** @import { Tally } from "./battle.js" */
 
@@ -197,6 +199,30 @@ export function pitchFor(type, at) {
   const row = CURRICULUM.find(r => r.type.id === type);
   if (!row) throw new RangeError(`No question type "${type}"`);
   return Math.min(row.to, Math.max(row.from, at));
+}
+
+/**
+ * A worked example for a chapter's note: an easy question of the first type
+ * it brings in, the same every time, and not one whose answer is 0 or 1,
+ * which would show too little. Where every easy one would (taking away
+ * within 5 starts from 1 or 2), a harder one.
+ * @param {Chapter} chapter
+ * @returns {Question}
+ */
+export function exampleFor(chapter) {
+  const type = chapter.learn[0];
+  let seed = 7;
+  for (const c of chapter.id) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
+  /** @type {Question | undefined} */
+  let example;
+  for (const most of [1, 2, 3]) {
+    const mix = [{ type, grade: pitchFor(type, chapter.at), weight: 1, most }];
+    for (let k = 0; k < 10; k++) {
+      example = pickQuestion(createRng(seed + k), mix);
+      if (!["0", "1"].includes(String(example.answer))) return example;
+    }
+  }
+  return /** @type {Question} */ (example);
 }
 
 /**

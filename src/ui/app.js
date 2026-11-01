@@ -5,7 +5,7 @@
 // choices are a tap away from the map. Progress is saved after every answer
 // and every level, so leaving loses nothing but the level being played.
 
-import { GRADES, pickQuestion } from "../curriculum.js";
+import { GRADES } from "../curriculum.js";
 import { HEROES, heroSprite } from "../heroes.js";
 import { MONSTERS, buildAdventure, monsterSprite } from "../monsters.js";
 import { backdropFor } from "../backdrops.js";
@@ -13,11 +13,10 @@ import { startBattle } from "../battle.js";
 import { levelForXp } from "../combat.js";
 import { TREASURES } from "../treasures.js";
 import {
-  ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, settingFor, pitchFor,
+  ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, settingFor, exampleFor,
   recordLevel, levelStates, nextLevel, openChapter, starsFor,
 } from "../adventures.js";
 import { loadSave, writeSave, addPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME } from "../save.js";
-import { createRng } from "../rng.js";
 import { renderVisual } from "../visuals/index.js";
 import { escapeXml as esc } from "../visuals/svg.js";
 import { createBattleScreen, choiceHtml } from "./battle_screen.js";
@@ -48,16 +47,6 @@ export function gradeWords(grade) {
  */
 function starsHtml(stars) {
   return `<span class="stars" role="img" aria-label="${stars} of 3 stars">${"★".repeat(stars)}<span class="stars-off">${"★".repeat(3 - stars)}</span></span>`;
-}
-
-/**
- * A number from a string, so a chapter's worked example is the same every time.
- * @param {string} text
- */
-function seedFrom(text) {
-  let n = 7;
-  for (const c of text) n = (n * 31 + c.charCodeAt(0)) >>> 0;
-  return n;
 }
 
 /**
@@ -407,8 +396,7 @@ export function createApp(root, { storage, sound, rng }) {
    */
   function note(level) {
     const chapter = chaptersFor(level.grade)[level.chapter];
-    const type = chapter.learn[0];
-    const example = pickQuestion(createRng(seedFrom(chapter.id)), [{ type, grade: pitchFor(type, chapter.at), weight: 1, most: 1 }]);
+    const example = exampleFor(chapter);
     show("note", `
       <section class="note-screen">
         <div class="note-art" aria-hidden="true" style="background-image: url('${backdropFor(settingFor(level.grade, level.chapter)).file}')"></div>
