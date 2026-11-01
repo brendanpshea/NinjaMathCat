@@ -149,7 +149,7 @@ export function createStage(root) {
     ref("monsterName").textContent = foe.monster.name;
     ref("monsterLevel").textContent = `Level ${foe.level}`;
     setStrip(sprite, monsterSprite(foe.monster), foe.monster.name);
-    setHp("monster", foe.hp, monsterStats(foe.level).maxHp);
+    setHp("monster", foe.hp, monsterStats(foe.level, foe.toughness).maxHp);
     actor.style.setProperty("--size", monsterSize(foe.monster.tier).toFixed(2));
 
     const key = `${battle.beaten}:${foe.monster.id}`;
@@ -178,7 +178,7 @@ export function createStage(root) {
     const actor = ref(isHero ? "heroActor" : "monsterActor");
     const sprite = ref(isHero ? "heroSprite" : "monsterSprite");
     const heroMax = heroStats(before.hero.level).maxHp;
-    const foeMax = before.foe ? monsterStats(before.foe.level).maxHp : 0;
+    const foeMax = before.foe ? monsterStats(before.foe.level, before.foe.toughness).maxHp : 0;
     if (beat.text) floatText(sprite, beat.text, beat.tone ?? "hit");
     switch (beat.act) {
       case "attack":

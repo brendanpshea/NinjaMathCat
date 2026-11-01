@@ -4,13 +4,14 @@
 // round and asks for the next answer when it is ready. (The old game ran its
 // rules on timers, which is where its races came from.)
 
-import { generateQuestion } from "./curriculum.js";
+import { mixForGrade, pickQuestion } from "./curriculum.js";
 import { isCorrect } from "./questions/common.js";
 import { heroStats, monsterStats, monsterLevel, hitDamage, streakMultiplier, XP, levelForXp, victoryHeal } from "./combat.js";
 import { pickTreasure } from "./treasures.js";
 
 /** @import { Rng } from "./rng.js" */
 /** @import { Answer, Question } from "./questions/common.js" */
+/** @import { Mix } from "./curriculum.js" */
 /** @import { Monster } from "./monsters.js" */
 /** @import { Treasure } from "./treasures.js" */
 
@@ -27,8 +28,9 @@ export const TRIES = 2;
 /**
  * @typedef {object} Foe
  * @property {Monster} monster
- * @property {number} level  set by its tier and the level the hero started the adventure at
+ * @property {number} level  set by its tier, or the level's pitch, and the level the hero started at
  * @property {number} hp
+ * @property {number} toughness  how much its health is scaled
  * @property {boolean} dropsTreasure  whether beating it still earns a treasure; knocking the hero out costs that
  */
 
@@ -45,6 +47,9 @@ export const TRIES = 2;
 /**
  * @typedef {object} Battle
  * @property {number} grade
+ * @property {Mix} mix  which questions it asks
+ * @property {number[]} pitch  how many levels above the hero each monster fights at
+ * @property {number[]} toughness  how much each monster's health is scaled
  * @property {Hero} hero
  * @property {number} startLevel  the hero's level when the battle began, which the monsters are pitched at
  * @property {readonly Monster[]} adventure  the monsters to beat, in order
@@ -79,25 +84,36 @@ export const TRIES = 2;
  */
 
 /**
- * Start a battle.
+ * Start a battle. Unless told otherwise, it asks every question type of its
+ * grade, and each monster fights as many levels above the hero as its tier
+ * is above 1, at its usual toughness.
  * @param {Rng} rng
  * @param {object} setup
  * @param {number} setup.grade
  * @param {readonly Monster[]} setup.adventure
+ * @param {Mix} [setup.mix]
+ * @param {number[]} [setup.pitch]  for each monster
+ * @param {number[]} [setup.toughness]  for each monster
  * @param {{ level: number, xp: number }} [setup.hero]  carried over from earlier battles; a new player starts at level 1
  * @param {string[]} [setup.treasures]  collected in earlier battles
  * @returns {Battle}
  */
-export function startBattle(rng, { grade, adventure, hero = { level: 1, xp: 0 }, treasures = [] }) {
+export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), pitch, toughness, hero = { level: 1, xp: 0 }, treasures = [] }) {
   if (adventure.length === 0) throw new RangeError("An adventure needs at least one monster");
+  const setup = {
+    pitch: adventure.map((m, i) => pitch?.[i] ?? m.tier - 1),
+    toughness: adventure.map((_, i) => toughness?.[i] ?? 1),
+  };
   return {
     grade,
+    mix,
+    ...setup,
     hero: { ...hero, hp: heroStats(hero.level).maxHp },
     startLevel: hero.level,
     adventure,
     beaten: 0,
-    foe: meet(adventure[0], hero.level),
-    question: generateQuestion(rng, grade),
+    foe: meet(setup, adventure, 0, hero.level),
+    question: pickQuestion(rng, mix),
     ruledOut: [],
     streak: 0,
     treasures: [...treasures],
@@ -124,13 +140,16 @@ export function answer(battle, choice, rng) {
 }
 
 /**
- * @param {Monster} monster
+ * The next monster to fight.
+ * @param {{ pitch: number[], toughness: number[] }} setup
+ * @param {readonly Monster[]} adventure
+ * @param {number} index
  * @param {number} startLevel
  * @returns {Foe}
  */
-function meet(monster, startLevel) {
-  const level = monsterLevel(monster.tier, startLevel);
-  return { monster, level, hp: monsterStats(level).maxHp, dropsTreasure: true };
+function meet({ pitch, toughness }, adventure, index, startLevel) {
+  const level = monsterLevel(pitch[index] + 1, startLevel);
+  return { monster: adventure[index], level, toughness: toughness[index], hp: monsterStats(level, toughness[index]).maxHp, dropsTreasure: true };
 }
 
 /**
@@ -162,7 +181,7 @@ function strike(battle, question, foe, rng) {
   const beaten = battle.beaten + Number(defeatedFoe);
   const won = beaten === battle.adventure.length;
   const drop = defeatedFoe && foe.dropsTreasure ? pickTreasure(rng, battle.treasures) : null;
-  const nextFoe = !defeatedFoe ? { ...foe, hp: foeHp } : won ? null : meet(battle.adventure[beaten], battle.startLevel);
+  const nextFoe = !defeatedFoe ? { ...foe, hp: foeHp } : won ? null : meet(battle, battle.adventure, beaten, battle.startLevel);
 
   return {
     battle: {
@@ -170,7 +189,7 @@ function strike(battle, question, foe, rng) {
       hero: { level, xp, hp },
       beaten,
       foe: nextFoe,
-      question: won ? null : generateQuestion(rng, battle.grade, question.type),
+      question: won ? null : pickQuestion(rng, battle.mix, question.type),
       ruledOut: [],
       streak,
       treasures: drop && !battle.treasures.includes(drop.id) ? [...battle.treasures, drop.id] : battle.treasures,
@@ -218,7 +237,7 @@ function takeHit(battle, question, foe, choice, rng) {
       ...battle,
       hero: { ...battle.hero, hp },
       foe: knockedOut ? { ...foe, dropsTreasure: false } : foe,
-      question: again ? question : generateQuestion(rng, battle.grade, question.type),
+      question: again ? question : pickQuestion(rng, battle.mix, question.type),
       ruledOut: again ? ruledOut : [],
       streak: 0,
       tally: again ? tally : record(tally, question, "missed"),

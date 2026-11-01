@@ -31,11 +31,13 @@ export function heroStats(level) {
 }
 
 /**
- * A monster's health and attack at a level.
+ * A monster's health and attack at a level. `toughness` scales its health:
+ * a boss has more, and a short level's monsters less.
  * @param {number} level
+ * @param {number} [toughness]
  */
-export function monsterStats(level) {
-  return { maxHp: friendly(80 * growth(level)), attack: friendly(15 * growth(level)) };
+export function monsterStats(level, toughness = 1) {
+  return { maxHp: friendly(80 * growth(level) * toughness), attack: friendly(15 * growth(level)) };
 }
 
 /**

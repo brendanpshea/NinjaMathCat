@@ -129,8 +129,63 @@ export function gradeOutline(grade) {
  * @returns {Question}
  */
 export function generateQuestion(rng, grade, avoid) {
+  return pickQuestion(rng, mixForGrade(grade), avoid);
+}
+
+/**
+ * Which questions to ask, and how often: each part is a question type, the
+ * grade to pitch it at, how much of the time to ask it, and the hardest
+ * difficulty (1 to 3) to give.
+ * @typedef {{ type: string, grade: number, weight: number, most: number }[]} Mix
+ */
+
+/**
+ * Every type a grade asks, equally often, at any difficulty.
+ * @param {number} grade
+ * @returns {Mix}
+ */
+export function mixForGrade(grade) {
   const types = typesForGrade(grade);
   if (types.length === 0) throw new RangeError(`No question types for grade ${grade}`);
-  const others = types.filter(t => t.id !== avoid);
-  return makeQuestion(rng, rng.pick(others.length > 0 ? others : types), grade);
+  return types.map(type => ({ type: type.id, grade, weight: 1, most: 3 }));
+}
+
+/**
+ * The question type with this id.
+ * @param {string} id
+ */
+export function typeById(id) {
+  const row = CURRICULUM.find(r => r.type.id === id);
+  if (!row) throw new RangeError(`No question type "${id}"`);
+  return row.type;
+}
+
+/**
+ * How many tries at a question no harder than a part allows, before taking
+ * the easiest one made. Easy questions of some types are rare at some grades,
+ * and some types have none, so a part's limit is how easy to try for.
+ */
+const TRIES_FOR_DIFFICULTY = 24;
+
+/**
+ * A question from a mix: a part picked by weight, then a question of its type
+ * no harder than the part allows, where one comes up in a few tries.
+ * @param {Rng} rng
+ * @param {Mix} mix
+ * @param {string} [avoid]  a type not to ask, usually the last one
+ * @returns {Question}
+ */
+export function pickQuestion(rng, mix, avoid) {
+  const others = mix.filter(p => p.type !== avoid && p.weight > 0);
+  const parts = others.length > 0 ? others : mix;
+  if (parts.length === 0) throw new RangeError("A mix needs at least one part");
+  let roll = rng.next() * parts.reduce((sum, p) => sum + p.weight, 0);
+  const part = parts.find(p => (roll -= p.weight) < 0) ?? parts[parts.length - 1];
+  const type = typeById(part.type);
+  let easiest = makeQuestion(rng, type, part.grade);
+  for (let i = 1; i < TRIES_FOR_DIFFICULTY && easiest.difficulty > part.most; i++) {
+    const another = makeQuestion(rng, type, part.grade);
+    if (another.difficulty < easiest.difficulty) easiest = another;
+  }
+  return easiest;
 }

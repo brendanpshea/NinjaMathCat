@@ -46,6 +46,18 @@ describe("starting a battle", () => {
     assert.equal(battle.foe.level, 5);
   });
 
+  it("asks only the questions it is given, and pitches each monster as told", () => {
+    const mix = [{ type: "shapes", grade: 2, weight: 1, most: 3 }];
+    let { rng, battle } = begin({ mix, pitch: [0, 3], toughness: [0.5, 2], hero: { level: 2, xp: xpToReach(2) } });
+    assert.equal(battle.question.type, "shapes");
+    assert.equal(battle.foe.level, 2);
+    assert.equal(battle.foe.hp, monsterStats(2, 0.5).maxHp);
+    while (battle.foe.monster === duck) battle = answer(battle, right(battle), rng).battle;
+    assert.equal(battle.question.type, "shapes", "the one type, even straight after itself");
+    assert.equal(battle.foe.level, battle.startLevel + 3);
+    assert.equal(battle.foe.hp, monsterStats(battle.startLevel + 3, 2).maxHp);
+  });
+
   it("needs at least one monster", () => {
     assert.throws(() => begin({ adventure: [] }), RangeError);
   });
