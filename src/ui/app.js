@@ -182,6 +182,37 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
 
   // ---------------------------------------------------------------- the title
 
+  /**
+   * The browser's offer to install the game as an app, once it makes one
+   * (Chrome and Edge do, as beforeinstallprompt), kept to make on the title.
+   * @type {{ prompt(): Promise<unknown> } | null}
+   */
+  let installOffer = null;
+  window.addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    installOffer = /** @type {any} */ (event);
+    if (screen === "title") showInstall();
+  });
+  window.addEventListener("appinstalled", () => {
+    installOffer = null;
+    if (screen === "title") showInstall();
+  });
+
+  /**
+   * On the title, how to install the game, where it isn't already: the
+   * browser's own offer, or on an iPhone or iPad, where to find it.
+   */
+  function showInstall() {
+    const box = part("install");
+    if (!box) return;
+    const installed = globalThis.matchMedia?.("(display-mode: standalone)").matches || /** @type {any} */ (navigator).standalone === true;
+    const apple = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    box.innerHTML = installed ? ""
+      : installOffer ? `<button type="button" class="link" data-act="install">Install the game on this device</button>. It opens like an app, and plays with no internet.`
+      : apple ? "To keep the game on your home screen, tap Share, then Add to Home Screen. It plays with no internet." : "";
+    box.hidden = box.innerHTML === "";
+  }
+
   function title() {
     // A monster from somewhere in the game, at home in front of its own backdrop.
     const foe = rng.pick(MONSTERS);
@@ -225,6 +256,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         </section>
         <footer class="title-footer">
           <p>Each grade's adventure follows the Common Core math standards, from kindergarten to 6th grade, in forty short levels. It is free, with nothing to sign up for: everyone's progress is saved in this browser only.</p>
+          <p class="install" data-ref="install" hidden></p>
           <p><button type="button" class="link" data-ref="class">For teachers: the class view</button></p>
           <p><a href="https://github.com/brendanpshea/NinjaMathCat">Source code</a> · <a href="legacy/">The original game</a> · Free software (GPL-3.0)</p>
         </footer>
@@ -244,6 +276,15 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     });
     onTap(part("new-player"), () => playerForm(null));
     onTap(part("class"), () => grownUp(() => classPage()));
+    showInstall();
+    part("install").addEventListener("click", async event => {
+      if (!(/** @type {HTMLElement} */ (event.target).closest("[data-act=install]")) || !installOffer) return;
+      sound.play("click");
+      const offer = installOffer;
+      installOffer = null;
+      await offer.prompt();
+      showInstall();
+    });
     part("code-in")?.addEventListener("click", event => {
       const act = /** @type {HTMLElement} */ (event.target).closest("button")?.dataset.act;
       if (!act) return;

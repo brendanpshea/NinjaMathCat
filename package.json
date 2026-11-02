@@ -17,7 +17,8 @@
     "playthrough": "node tools/playthrough.js",
     "scene-sheet": "node tools/scene_sheet.js",
     "backdrop-prompts": "node tools/backdrop_prompts.js",
-    "backdrops": "node tools/backdrop_review.js"
+    "backdrops": "node tools/backdrop_review.js",
+    "pwa": "node tools/pwa.js"
   },
   "engines": {
     "node": ">=22"

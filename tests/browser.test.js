@@ -8,9 +8,10 @@
 // missing browser fails there instead of quietly skipping.
 import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { startServer, findBrowser, runScenario } from "./helpers/browser.js";
+import { startServer, findBrowser, runScenario, runScenarioLive } from "./helpers/browser.js";
 import { TREASURES } from "../src/treasures.js";
 import { ADVENTURE_GRADES, chaptersFor, levelsFor } from "../src/adventures.js";
+import { offlineFiles } from "../tools/offline_files.js";
 
 const browser = findBrowser();
 if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
@@ -19,11 +20,13 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, played, still, marathon, showHow, grownUps, challenge, classView;
+  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline;
 
   before(async () => {
     server = await startServer();
-    [played, still, marathon, showHow, grownUps, challenge, classView] = await Promise.all([
+    // The offline test takes its server offline, so it has one to itself.
+    lonely = await startServer();
+    [played, still, marathon, showHow, grownUps, challenge, classView, offline] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
@@ -31,10 +34,11 @@ describe("in a real browser", { skip }, () => {
       runScenario(browser, server.origin, "grownUps"),
       runScenario(browser, server.origin, "challenge"),
       runScenario(browser, server.origin, "classView"),
+      runScenarioLive(browser, lonely.origin, "offline"),
     ]);
   });
 
-  after(async () => { await server?.close(); });
+  after(async () => { await Promise.all([server?.close(), lonely?.close()]); });
 
   it("runs without a single error", () => {
     assert.deepEqual(played.errors, []);
@@ -44,6 +48,20 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(grownUps.errors, []);
     assert.deepEqual(challenge.errors, []);
     assert.deepEqual(classView.errors, []);
+    assert.deepEqual(offline.errors, []);
+  });
+
+  it("installs a service worker that keeps every file, and plays with the network gone", () => {
+    assert.equal(offline.manifest, "manifest.webmanifest");
+    assert.equal(offline.scope, "/");
+    assert.deepEqual([...offline.kept].sort(), offlineFiles().map(f => new URL(f, "http://x/").pathname).sort());
+    assert.ok(offline.controlled, "the page is served by the worker");
+    assert.equal(offline.title, "Ninja Math Cat");
+    assert.ok(offline.installBefore, "no install button until the browser offers");
+    assert.match(offline.installOffer, /^Install the game on this device\. It opens like an app, and plays with no internet\.$/);
+    assert.ok(offline.installAfter, "once the browser has asked, the button goes");
+    assert.ok(offline.sprites && offline.backdrop, "the hero, the monster and the backdrop all come from the copies");
+    assert.ok(offline.played, "a question answered, offline");
   });
 
   it("gives teachers a class view: this device's players, students added by code, and the topics to work on", () => {

@@ -45,6 +45,10 @@ is kept off the adventure's path, and the stage keeps still for
 anyone who asks their device for reduced motion. A progress code moves a
 child's hero, levels and treasures to another device, with no account.
 
+It installs as an app, on a phone, a tablet, a Chromebook or a computer, and
+once opened it plays with no internet: a service worker keeps a copy of every
+file it needs.
+
 **Play it:** open `index.html` through any web server (see below), or on the
 project's GitHub Pages site. The original version of the game is kept in
 [`legacy/`](legacy/).
@@ -66,6 +70,8 @@ npm run gallery               # out/gallery.html: sample questions with their pi
 npm run stage                 # out/stage-preview/: try the battle stage with any hero and monster
 npm run screens               # out/screens/: screenshots of every screen, desktop and phone
 npm run backdrops             # out/screens/backdrops.png: every backdrop behind real fighters
+npm run pwa                   # after adding or removing a file: update the list sw.js keeps for offline play
+python tools/make_icons.py    # remake the app's icons in assets/icons/ (needs Pillow)
 ```
 
 The game loads its files as ES modules, so it needs a web server rather than
@@ -85,6 +91,7 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | Path | What it holds |
 | --- | --- |
 | `index.html`, `src/main.js` | The page, and what starts the game on it. |
+| `manifest.webmanifest`, `sw.js`, `assets/icons/` | Installing it as an app: its name and icons, and the service worker that keeps a copy of every file for offline play. `tools/offline_files.js` says which files; `npm run pwa` writes them into `sw.js`, and a test fails until it has. |
 | `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasure collection. |
 | `src/save.js` | What the browser remembers: each player, with their hero, grade, experience, treasures and progress in every grade's adventure. A save from before there were players becomes the first player. |
 | `src/adventures.js` | Each grade's adventure: its chapters, with their notes and the question types each brings in; the levels in each chapter, what each asks (pitched by the player's mastery) and which monsters it fights; training levels; and progress, stars and which levels are open. |

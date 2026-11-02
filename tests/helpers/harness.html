@@ -576,6 +576,69 @@
       return report;
     },
 
+    /**
+     * Installable and offline (sw.js): the service worker keeps every file,
+     * and with the network gone, the game still opens, makes a player and
+     * plays a battle, pictures and all. Run on a server of its own, since it
+     * takes the server offline, and in real time (runScenarioLive), since
+     * virtual time leaves a service worker behind.
+     */
+    async offline() {
+      localStorage.clear();
+      await load("?test&sw");
+      const win = frame.contentWindow;
+      const report = {};
+      report.manifest = doc().querySelector("link[rel=manifest]")?.getAttribute("href");
+      // A worker is active once it has installed, and installing keeps every file.
+      let registration;
+      for (let i = 0; i < 300 && !registration?.active; i++) {
+        registration = await win.navigator.serviceWorker.getRegistration();
+        await wait(100);
+      }
+      if (!registration?.active) throw new Error("the service worker never became active");
+      report.scope = new URL(registration.scope).pathname;
+      const cache = await win.caches.open("ninja-math-cat");
+      report.kept = (await cache.keys()).map(r => new URL(r.url).pathname);
+      // The network goes; the game opens anyway.
+      await fetch("/__offline?on=1");
+      try {
+        await load("?test&sw");
+        report.controlled = Boolean(frame.contentWindow.navigator.serviceWorker.controller);
+        report.title = $("h1")?.textContent;
+        // The browser offers to install it (Chrome's beforeinstallprompt): the title offers it on, once.
+        report.installBefore = $("[data-ref=install]").hidden;
+        let prompted = false;
+        const offer = new frame.contentWindow.Event("beforeinstallprompt", { cancelable: true });
+        offer.prompt = async () => { prompted = true; };
+        frame.contentWindow.dispatchEvent(offer);
+        report.installOffer = text("[data-ref=install]");
+        click("[data-ref=install] [data-act=install]");
+        await until(() => prompted, "the browser's install prompt");
+        await wait(50);
+        report.installAfter = $("[data-ref=install]").hidden;
+        click("[data-ref=new-player]");
+        await on("player", "the new player form, offline");
+        click("input[name=grade][value='3']");
+        click("[data-ref=save]");
+        await on("map", "the map, offline");
+        click("[data-ref=continue]");
+        await on("scene", "the opening scene, offline");
+        click("[data-ref=skip]");
+        await on("battle", "a battle, offline");
+        await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load, offline", 15000);
+        report.sprites = true;
+        report.backdrop = Boolean($(".stage-backdrop")?.style.backgroundImage);
+        await readyToAnswer();
+        await answer(true);
+        await wait(800);
+        report.played = game().battle?.tally.firstTry === 1;
+      } finally {
+        await fetch("/__offline?on=0");
+      }
+      report.errors = errors;
+      return report;
+    },
+
     /** The class view: the players on this device, students added by pasting their codes, a code updated, a reload, and clearing them. */
     async classView() {
       const { save, zoe } = await classSave();

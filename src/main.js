@@ -20,3 +20,11 @@ const app = createApp(/** @type {HTMLElement} */ (document.getElementById("game"
 
 // The browser tests (tests/browser.test.js) watch the game through this.
 if (params.has("test")) /** @type {any} */ (globalThis).ninjaMathCat = app;
+
+// Offline play, and installing as an app (sw.js), where the browser can: not
+// in the tests, unless one asks with ?sw.
+if ("serviceWorker" in navigator && (!params.has("test") || params.has("sw"))) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+// Installed as an app, ask the browser to keep the save even when space runs low.
+if (globalThis.matchMedia?.("(display-mode: standalone)").matches) navigator.storage?.persist?.().catch(() => {});

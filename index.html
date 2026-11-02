@@ -6,7 +6,11 @@
   <title>Ninja Math Cat</title>
   <meta name="description" content="A free math battle game for kindergarten to 6th grade, following the Common Core standards. Answer questions to power up your hero and beat eight monsters.">
   <meta name="theme-color" content="#dfeaff">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B1%3C/text%3E%3C/svg%3E">
+  <!-- Installable as an app, and playable offline once opened (sw.js). -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Math Cat">
   <link rel="stylesheet" href="css/game.css">
   <link rel="stylesheet" href="css/stage.css">
   <script type="module" src="src/main.js"></script>

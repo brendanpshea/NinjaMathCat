@@ -8,7 +8,7 @@
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
-import { execFile, spawnSync } from "node:child_process";
+import { execFile, spawn, spawnSync } from "node:child_process";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { join, extname, normalize, sep } from "node:path";
@@ -24,12 +24,28 @@ const TYPES = {
   ".png": "image/png",
   ".svg": "image/svg+xml",
   ".json": "application/json",
+  ".webmanifest": "application/manifest+json",
 };
 
-/** Serve the repository, and the harness at /__harness.html. */
+/**
+ * Serve the repository, and the harness at /__harness.html. /__offline?on=1
+ * makes the server drop every other request, as if the network were gone,
+ * until /__offline?on=0: for the test that the game plays offline.
+ */
 export async function startServer() {
+  let offline = false;
   const server = http.createServer(async (req, res) => {
-    const path = decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname);
+    const url = new URL(req.url ?? "/", "http://x");
+    const path = decodeURIComponent(url.pathname);
+    if (path === "/__offline") {
+      offline = url.searchParams.get("on") === "1";
+      res.writeHead(204, { "cache-control": "no-store" }).end();
+      return;
+    }
+    if (offline && path !== "/__harness.html") {
+      req.socket.destroy();
+      return;
+    }
     const file = path === "/__harness.html" ? HARNESS : normalize(join(ROOT, path === "/" ? "index.html" : path));
     if (file !== HARNESS && !file.startsWith(ROOT.endsWith(sep) ? ROOT : ROOT + sep)) {
       res.writeHead(403).end();
@@ -91,6 +107,72 @@ export async function runScenario(browser, origin, scenario, flags = []) {
     if (report.error) throw new Error(`in the browser: ${report.error}`);
     return report;
   } finally {
+    try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch { /* the OS will tidy it */ }
+  }
+}
+
+/**
+ * Run one scenario as runScenario does, but in real time, watching the page
+ * through the DevTools protocol until its report is in. For a scenario that
+ * waits on a service worker, which virtual time leaves behind.
+ * @param {string} browser
+ * @param {string} origin
+ * @param {string} scenario
+ * @param {number} [ms]  how long to give it
+ */
+export async function runScenarioLive(browser, origin, scenario, ms = 120000) {
+  const profile = mkdtempSync(join(tmpdir(), "ninja-browser-"));
+  const child = spawn(browser, [
+    "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", "--mute-audio",
+    ...(process.env.CI ? ["--no-sandbox"] : []), `--user-data-dir=${profile}`, "--remote-debugging-port=0", "about:blank",
+  ]);
+  /** @type {WebSocket | null} */
+  let socket = null;
+  try {
+    const endpoint = await new Promise((resolve, reject) => {
+      let said = "";
+      child.stderr.on("data", chunk => {
+        said += chunk;
+        const found = /DevTools listening on (ws:\/\/\S+)/.exec(said);
+        if (found) resolve(found[1]);
+      });
+      child.on("exit", () => reject(new Error("the browser closed before it could be watched")));
+      setTimeout(() => reject(new Error("the browser never offered DevTools")), 20000);
+    });
+    const ws = new WebSocket(endpoint);
+    socket = ws;
+    await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
+    let sent = 0;
+    /** @type {Map<number, (message: any) => void>} */
+    const waiting = new Map();
+    ws.onmessage = event => {
+      const message = JSON.parse(String(event.data));
+      waiting.get(message.id)?.(message);
+      waiting.delete(message.id);
+    };
+    /** @param {string} method @param {object} [params] @param {string} [sessionId] @returns {Promise<any>} */
+    const send = (method, params = {}, sessionId) => new Promise(resolve => {
+      waiting.set(++sent, resolve);
+      ws.send(JSON.stringify({ id: sent, method, params, sessionId }));
+    });
+    const { result: { targetId } } = await send("Target.createTarget", { url: `${origin}/__harness.html?scenario=${scenario}` });
+    const { result: { sessionId } } = await send("Target.attachToTarget", { targetId, flatten: true });
+    const started = Date.now();
+    for (;;) {
+      const answer = await send("Runtime.evaluate", { expression: `document.getElementById("out")?.textContent ?? "pending"`, returnByValue: true }, sessionId);
+      const text = answer.result?.result?.value ?? "pending";
+      if (text !== "pending") {
+        const report = JSON.parse(text);
+        if (report.error) throw new Error(`in the browser: ${report.error}`);
+        return report;
+      }
+      if (Date.now() - started > ms) throw new Error("the scenario did not finish in time");
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+  } finally {
+    socket?.close();
+    child.kill();
+    await new Promise(resolve => setTimeout(resolve, 200));
     try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch { /* the OS will tidy it */ }
   }
 }
