@@ -27,7 +27,8 @@ try {
       const kinds = Object.entries(r.kinds).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(", ");
       console.log(`Grade ${grade}: ${r.levels} levels (${r.saved} saved), ${r.questions} questions, ${r.wrongOnce} wrong once, ${r.wrongTwice} wrong twice, ${r.notes.length} notes, ended on ${r.finalScreen}, ${((Date.now() - started) / 1000).toFixed(0)} s`);
       console.log(`  pictures: ${kinds || "none"}`);
-      for (const s of r.scenes) console.log(`  scene "${s.title}": ${s.steps} steps, ${s.checks} checks, ${s.wrongTries} wrong tries`);
+      for (const s of r.scenes) console.log(`  scene "${s.title}": ${s.steps} steps, ${s.checks} checks, ${s.wrongTries} wrong tries, ${s.rings} rings`);
+      if (r.replays.length) console.log(`  shown how again, after a miss: ${r.replays.join(", ")}`);
       for (const p of r.problems) console.log(`  problem: ${p}`);
       for (const e of r.errors) console.log(`  page error: ${e}`);
       if (r.problems.length || r.errors.length) failed = true;

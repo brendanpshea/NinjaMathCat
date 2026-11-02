@@ -1,6 +1,6 @@
 // Number lines: ticks, some of them labelled, with points and jumps.
 
-import { svg, el, text, COLORS } from "./svg.js";
+import { svg, el, text, hit, COLORS } from "./svg.js";
 import { linear } from "./scale.js";
 import { describeVisual, positionLabel } from "./describe.js";
 
@@ -37,7 +37,11 @@ export function numberLine(v, { narrow = false } = {}) {
     arrowhead(right + 28, y, 1),
   ];
 
+  const reach = Math.min(30, x(v.from + v.tick) - x(v.from));
+  /** Taps for every tick, laid over the line at the end, so nothing covers them. */
+  const taps = [];
   for (let at = v.from; at <= v.to; at += v.tick) {
+    taps.push(hit(`tick-${at}`, positionLabel(at, v.den), { x: x(at) - reach / 2, y: y - 22, width: reach, height: 44 }));
     const labelled = at % v.label === 0;
     const half = labelled ? 13 : 8;
     parts.push(el("line", { x1: x(at), y1: y - half, x2: x(at), y2: y + half, stroke: COLORS.ink, "stroke-width": labelled ? 3 : 2, class: "tick", "data-at": at }));
@@ -46,13 +50,13 @@ export function numberLine(v, { narrow = false } = {}) {
     }
   }
 
-  for (const [from, to] of v.jumps) {
+  for (const [j, [from, to]] of v.jumps.entries()) {
     const [x1, x2] = [x(from), x(to)];
     const rise = Math.min(70, Math.abs(x2 - x1) / 2 + 12);
     const top = y - 6 - rise;
     const way = to > from ? 1 : -1;
     parts.push(
-      el("path", { d: `M ${x1} ${y - 6} Q ${(x1 + x2) / 2} ${y - 6 - 2 * rise} ${x2} ${y - 6}`, fill: "none", stroke: COLORS.accent, "stroke-width": 3.5, class: "jump", "data-from": from, "data-to": to }),
+      el("path", { d: `M ${x1} ${y - 6} Q ${(x1 + x2) / 2} ${y - 6 - 2 * rise} ${x2} ${y - 6}`, fill: "none", stroke: COLORS.accent, "stroke-width": 3.5, class: "jump", "data-from": from, "data-to": to, "data-marks": `jump-${j}` }),
       el("path", { d: `M ${x2} ${y - 4} l ${-way * 3} -13 l ${way * 11} 5 z`, fill: COLORS.accent }),
       text({ x: (x1 + x2) / 2, y: top - 10, "font-size": 20, "font-weight": 700, fill: COLORS.accent, "text-anchor": "middle" },
         `${way > 0 ? "+" : "−"}${positionLabel(Math.abs(to - from), v.den)}`),
@@ -60,8 +64,9 @@ export function numberLine(v, { narrow = false } = {}) {
   }
 
   for (const at of v.points) {
-    parts.push(el("circle", { cx: x(at), cy: y, r: 8, fill: COLORS.point, stroke: COLORS.paper, "stroke-width": 2, class: "point", "data-at": at }));
+    parts.push(el("circle", { cx: x(at), cy: y, r: 8, fill: COLORS.point, stroke: COLORS.paper, "stroke-width": 2, class: "point", "data-at": at, "data-marks": `point-${at}` }));
   }
+  parts.push(...taps);
 
   return svg("number_line", right + LINE_LEFT, y + 52, describeVisual(v), parts);
 }

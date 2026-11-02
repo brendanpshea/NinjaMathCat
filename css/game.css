@@ -388,6 +388,8 @@ select {
 .scene-line:focus { outline: none; } /* focused only so a check is read out */
 .scene-picture[hidden], .scene-choices[hidden] { display: none; }
 .scene-picture .tappable { cursor: pointer; }
+.scene-picture .focus { animation: ring-in 0.35s ease-out; }
+@keyframes ring-in { from { opacity: 0; stroke-width: 12; } }
 .scene-picture .tappable:hover, .scene-picture .tappable:focus-visible { outline: none; stroke: var(--indigo); stroke-width: 6; }
 .scene-picture .tappable:focus:not(:focus-visible) { outline: none; }
 /* Waiting on a check: plainly not ready yet. */
@@ -398,6 +400,10 @@ select {
 .scene-steps li { width: 12px; height: 12px; border-radius: 50%; background: var(--line); }
 .scene-steps li.is-done { background: var(--indigo); }
 .scene-more { justify-content: center; }
+/* The same scene over a battle, after a miss. */
+.scene-dialog { width: min(940px, calc(100vw - 24px)); max-height: calc(100vh - 24px); padding: 18px 22px; border: 0; border-radius: 18px; background: var(--surface); color: var(--ink); }
+.scene-dialog::backdrop { background: rgba(20, 28, 48, 0.6); }
+.after-reveal { justify-content: flex-start; }
 
 /* Stars for a level: gold, with the ones not earned faint. */
 .stars-big { margin: 0; font-size: 52px; line-height: 1; }
@@ -609,4 +615,5 @@ select {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
   .scene-actor.is-speaking { transform: none; } /* the bubble and the brighter speaker still say who it is */
+  .scene-picture .focus { animation: none; }
 }

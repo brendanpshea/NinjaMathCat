@@ -12,7 +12,7 @@ const SHADE = "#60a5fa";
  */
 export function fraction(v) {
   /** @param {number} i */
-  const look = i => ({ fill: i < v.shaded ? SHADE : COLORS.paper, stroke: COLORS.ink, "stroke-width": 3, "stroke-linejoin": "round", class: "part", "data-shaded": String(i < v.shaded) });
+  const look = i => ({ fill: i < v.shaded ? SHADE : COLORS.paper, stroke: COLORS.ink, "stroke-width": 3, "stroke-linejoin": "round", class: "part", "data-shaded": String(i < v.shaded), "data-part": `part-${i}`, "aria-label": `part ${i + 1}`, ...(i < v.shaded ? { "data-marks": "shaded" } : {}) });
   const parts = [];
 
   if (v.model === "bar") {
@@ -53,6 +53,7 @@ export function fractionBars(v) {
       x: x0 + (i * width) / bar.parts, y, width: width / bar.parts, height,
       fill: i < bar.shaded ? SHADE : COLORS.paper, stroke: COLORS.ink, "stroke-width": 2.5,
       class: "part", "data-bar": j, "data-shaded": String(i < bar.shaded),
+      "data-part": `bar-${j}-part-${i}`, "aria-label": `bar ${j + 1}, part ${i + 1}`, "data-marks": `bar-${j}${i < bar.shaded ? ` bar-${j}-shaded` : ""}`,
     }));
     const label = bar.label ? [text({ x: x0 - 14, y: y + height / 2, "font-size": 24, "font-weight": 700, "text-anchor": "end", "dominant-baseline": "central", fill: COLORS.ink }, bar.label)] : [];
     return [...cells, ...label];
@@ -75,18 +76,15 @@ export function hundredths(v) {
       x: x0 + Math.floor(i / 10) * cell, y: 10 + (i % 10) * cell, width: cell, height: cell,
       fill: i < shaded ? SHADE : COLORS.paper, stroke: COLORS.line, "stroke-width": 1,
       class: "square", "data-grid": g, "data-shaded": String(i < shaded),
+      // Marks to ring: the square itself, and the full columns or the blocks left over, when shaded.
+      "data-marks": `${v.grids.length === 1 ? "" : `grid${g}-`}square-${i}${i < shaded ? (Math.floor(i / 10) < Math.floor(shaded / 10) ? " full" : " extra") : ""}`,
     }));
     const frame = el("rect", { x: x0, y: 10, width: size, height: size, fill: "none", stroke: COLORS.ink, "stroke-width": 2.5, "pointer-events": "none" });
     const label = v.labels ? [text({ x: x0 + size / 2, y: 10 + size + 26, "font-size": 22, "font-weight": 700, "text-anchor": "middle", fill: COLORS.ink }, v.labels[g])] : [];
     // Each column as a whole, to tap in a teaching scene: a tenth.
     const prefix = v.grids.length === 1 ? "" : `grid${g}-`;
     const columns = Array.from({ length: 10 }, (_, c) => el("rect", { x: x0 + c * cell, y: 10, width: cell, height: size, fill: "transparent", class: "column", "data-part": `${prefix}column-${c}`, "aria-label": `column ${c + 1}` }));
-    const ring = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ w, /** @type {number} */ h) => el("rect", { x: x - 3, y: y - 3, width: w + 6, height: h + 6, fill: "none", stroke: COLORS.accent, "stroke-width": 5, class: "focus", "pointer-events": "none" });
-    const focus = g > 0 || !v.focus ? []
-      : v.focus.column !== undefined ? [ring(x0 + v.focus.column * cell, 10, cell, size)]
-      : v.focus.square !== undefined ? [ring(x0 + Math.floor(v.focus.square / 10) * cell, 10 + (v.focus.square % 10) * cell, cell, cell)]
-      : [];
-    return [...squares, ...columns, frame, ...label, ...focus];
+    return [...squares, ...columns, frame, ...label];
   });
   return svg("hundredths", 20 + v.grids.length * size + (v.grids.length - 1) * gap, size + 20 + below, describeVisual(v), body);
 }

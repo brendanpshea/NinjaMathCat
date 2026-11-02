@@ -21,6 +21,40 @@ import { still } from "./sprites.js";
 const PITCH = { hero: 1.15, monster: 0.75 };
 
 /**
+ * Ring the parts of a picture a scene points at: every element whose
+ * data-part, or one of whose data-marks, is named, in one box round them
+ * all. It is measured in the page, so it fits whatever the renderer drew,
+ * wherever it was moved or turned.
+ * @param {Element} svg
+ * @param {string | string[] | undefined} focus
+ */
+export function ringFocus(svg, focus) {
+  svg.querySelectorAll(".focus").forEach(ring => ring.remove());
+  if (!focus || !(svg instanceof SVGSVGElement)) return;
+  const names = [focus].flat();
+  const named = [...svg.querySelectorAll("[data-part], [data-marks]")].filter(e =>
+    names.includes(e.getAttribute("data-part") ?? "") || (e.getAttribute("data-marks") ?? "").split(" ").some(m => names.includes(m)));
+  if (named.length === 0) return;
+  const toPicture = svg.getScreenCTM()?.inverse();
+  let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const e of /** @type {SVGGraphicsElement[]} */ (named)) {
+    const box = e.getBBox();
+    const ctm = e.getScreenCTM();
+    const matrix = toPicture && ctm ? toPicture.multiply(ctm) : null;
+    for (const [x, y] of [[box.x, box.y], [box.x + box.width, box.y], [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]]) {
+      const p = matrix ? new DOMPoint(x, y).matrixTransform(matrix) : { x, y };
+      [left, top, right, bottom] = [Math.min(left, p.x), Math.min(top, p.y), Math.max(right, p.x), Math.max(bottom, p.y)];
+    }
+  }
+  const pad = 6;
+  const ring = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  for (const [name, value] of Object.entries({ x: left - pad, y: top - pad, width: right - left + 2 * pad, height: bottom - top + 2 * pad, rx: 10, fill: "none", stroke: "#2563eb", "stroke-width": 5, "pointer-events": "none", class: "focus" })) {
+    ring.setAttribute(name, String(value));
+  }
+  svg.append(ring);
+}
+
+/**
  * Play a scene inside an element, which it fills.
  * @param {HTMLElement} root
  * @param {object} setup
@@ -32,12 +66,13 @@ const PITCH = { hero: 1.15, monster: 0.75 };
  * @param {Speaker} [setup.speech]
  * @param {{ play: (name: string) => void }} setup.sound
  * @param {boolean} setup.readAloud  say each line as it comes
- * @param {string} setup.startLabel  the last button, into the battle
+ * @param {string} setup.startLabel  the last button, into the battle, or back to it
  * @param {() => void} setup.onStart
- * @param {() => void} setup.onNote  the chapter's note instead, for a grown-up
- * @param {() => void} setup.onMap
+ * @param {() => void} [setup.onNote]  the chapter's note instead, for a grown-up
+ * @param {() => void} [setup.onMap]
+ * @param {boolean} [setup.replay]  shown over a battle, after a miss: no skipping, note or map, only back to the battle
  */
-export function runScene(root, { kicker, title, steps, hero, monster, speech, sound, readAloud, startLabel, onStart, onNote, onMap }) {
+export function runScene(root, { kicker, title, steps, hero, monster, speech, sound, readAloud, startLabel, onStart, onNote, onMap, replay = false }) {
   root.innerHTML = `
     <section class="scene-screen">
       <p class="note-kicker">${esc(kicker)}</p>
@@ -57,11 +92,11 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
         ${speech?.available ? `<button type="button" class="quiet read-aloud" data-ref="again"><span aria-hidden="true">🔈</span> ${readAloud ? "Say it again" : "Read to me"}</button>` : ""}
       </div>
       <ol class="scene-steps" aria-label="Steps">${steps.map((_, i) => `<li data-step="${i}"><span class="visually-hidden">Step ${i + 1}</span></li>`).join("")}</ol>
-      <div class="actions scene-more">
+      ${replay ? "" : `<div class="actions scene-more">
         <button type="button" class="link" data-ref="skip">Skip to the battle</button>
         <button type="button" class="link" data-ref="note">Read the chapter note</button>
         <button type="button" class="link" data-ref="map">Back to the map</button>
-      </div>
+      </div>`}
     </section>`;
   /** @param {string} name */
   const ref = name => /** @type {HTMLElement} */ (root.querySelector(`[data-ref="${name}"]`));
@@ -72,6 +107,8 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
   let index = 0;
   /** Whether the step's check has been answered rightly, or it has none. */
   let cleared = true;
+  /** The picture showing, which stays from step to step until one brings a new one. */
+  let picture = /** @type {import("../scenes.js").ScenePicture | undefined} */ (undefined);
   /** What was last said, to say again. */
   let said = { text: "", who: /** @type {"hero" | "monster"} */ ("hero") };
 
@@ -88,8 +125,15 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
 
   function show() {
     const step = steps[index];
-    if (step.picture) ref("picture").innerHTML = pictureHtml(step.picture);
+    if (step.picture) {
+      picture = step.picture;
+      ref("picture").innerHTML = pictureHtml(picture);
+    }
     ref("picture").hidden = !root.querySelector(".scene-picture svg");
+    const drawn = root.querySelector(".scene-picture svg");
+    if (drawn) ringFocus(drawn, step.picture?.focus); // a ring lasts only for the step that sets it
+    // For tests and tools: what the step points at.
+    ref("picture").dataset.focus = [step.picture?.focus ?? []].flat().join(" ");
     root.querySelectorAll(".scene-steps li").forEach((li, i) => li.classList.toggle("is-done", i <= index));
     speak(step.who, step.say);
     const check = step.check;
@@ -171,8 +215,8 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
     show();
   });
   ref("again")?.addEventListener("click", () => speech?.say(said.text, { pitch: PITCH[said.who] }));
-  ref("skip").addEventListener("click", () => { sound.play("click"); speech?.stop(); onStart(); });
-  ref("note").addEventListener("click", () => { sound.play("click"); speech?.stop(); onNote(); });
-  ref("map").addEventListener("click", () => { sound.play("click"); speech?.stop(); onMap(); });
+  ref("skip")?.addEventListener("click", () => { sound.play("click"); speech?.stop(); onStart(); });
+  ref("note")?.addEventListener("click", () => { sound.play("click"); speech?.stop(); onNote?.(); });
+  ref("map")?.addEventListener("click", () => { sound.play("click"); speech?.stop(); onMap?.(); });
   show();
 }

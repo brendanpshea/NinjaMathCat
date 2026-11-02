@@ -55,6 +55,7 @@ for (let i = 0; i < Number(countArg); i++) {
     : v.kind === "box_plot" ? `box plot ${v.five.join(", ")} on ${v.from} to ${v.to}`
     : v.kind === "double_line" ? `double line: ${v.top.values.map(n => n ?? "?").join(", ")} / ${v.bottom.values.map(n => n ?? "?").join(", ")}`
     : v.kind === "compose" ? `made of ${v.figure}`
+    : v.kind === "math" ? `math: ${v.lines.map(line => line.join(" ")).join(" / ")}`
     : v.kind === "objects" && v.crossed ? `${v.count} ${v.emoji}, ${v.crossed} crossed out`
     : v.kind === "groups" ? `groups: ${v.rows.map(r => `${r.count} ${r.name}`).join(", ")}`
     : v.kind === "scene" ? `a ${v.thing} ${v.place} a ${v.landmark}`

@@ -407,23 +407,51 @@ describe("drawing", () => {
     }
   });
 
-  it("for teaching scenes: a ring round the part pointed at, and every part to tap marked", () => {
-    const frames = renderVisual({ kind: "ten_frame", frames: 2, filled: 14, focus: 1 });
-    assert.deepEqual(elementsIn(frames, "rect", "frame").map(f => f["data-part"]), ["frame-0", "frame-1"]);
-    const [ring] = elementsIn(frames, "rect", "focus");
-    const second = elementsIn(frames, "rect", "frame")[1];
-    assert.ok(Number(ring.x) < Number(second.x) && Number(ring.x) + Number(ring.width) > Number(second.x) + Number(second.width), "the ring goes round the second frame");
-    assert.equal(elementsIn(renderVisual({ kind: "ten_frame", frames: 2, filled: 14 }), "rect", "focus").length, 0);
+  it("for teaching scenes: names every part to tap or ring, and says each one to tap", () => {
+    /** A picture of each kind a scene can point at, with some of the names it should have. */
+    const FIXTURES = [
+      [{ kind: "objects", emoji: "🍎", count: 7, crossed: 2 }, ["item-0", "item-6"], ["crossed"]],
+      [{ kind: "pattern", items: ["🍎", "🍌", null, "🍎"] }, ["item-0", "gap"], []],
+      [{ kind: "groups", rows: [{ name: "cats", emoji: "🐱", count: 3 }, { name: "dogs", emoji: "🐶", count: 2 }] }, ["row-0", "row-1"], []],
+      [{ kind: "ten_frame", frames: 2, filled: 14 }, ["frame-0", "frame-1"], []],
+      [{ kind: "base_ten", hundreds: 1, tens: 2, ones: 3 }, ["flat-0", "rod-1", "unit-2"], ["flats", "rods", "units"]],
+      [{ kind: "money", items: ["quarter", "dime", "dollar"] }, ["item-0", "item-2"], []],
+      [{ kind: "clock", hours: 3, minutes: 30 }, ["hour-hand", "minute-hand"], ["number-12"]],
+      [{ kind: "number_line", den: 1, from: 0, to: 10, tick: 1, label: 5, points: [3], jumps: [[3, 7]] }, ["tick-0", "tick-10"], ["point-3", "jump-0"]],
+      [{ kind: "fraction", model: "circle", parts: 4, shaded: 3 }, ["part-0", "part-3"], ["shaded"]],
+      [{ kind: "fraction_bars", bars: [{ parts: 2, shaded: 1 }, { parts: 4, shaded: 2 }] }, ["bar-0-part-0", "bar-1-part-3"], ["bar-0", "bar-1-shaded"]],
+      [{ kind: "hundredths", grids: [37] }, ["column-0", "column-9"], ["square-36", "full", "extra"]],
+      [{ kind: "area", shape: "rectangle", width: 4, height: 3, grid: true }, ["row-0", "row-2"], ["column-3", "cell-0-0"]],
+      [{ kind: "area", shape: "rectangle", width: 5, height: 3, grid: false, labels: { base: "5 cm", height: "3 cm" } }, ["side-top", "side-left"], []],
+      [{ kind: "bar_graph", title: "Pets", axis: "Children", scale: 2, max: 10, bars: [{ label: "Cats", value: 6 }, { label: "Dogs", value: 4 }] }, ["bar-0", "bar-1"], []],
+      [{ kind: "picture_graph", title: "Pets", unit: ["child", "children"], each: 2, rows: [{ label: "Cats", icon: "🐱", value: 6 }] }, ["row-0"], []],
+      [{ kind: "line_plot", title: "Lengths", den: 2, from: 2, counts: [1, 3, 2] }, ["position-0", "position-2"], []],
+      [{ kind: "coordinates", min: 0, max: 10, points: [{ x: 2, y: 3, label: "A" }] }, ["point-A"], []],
+      [{ kind: "lengths", ribbons: [{ color: "red", from: 0, length: 5 }], ruler: "inches", cubes: false, span: 8 }, ["ribbon-red"], ["ruler"]],
+      [{ kind: "box_plot", title: "Minutes", from: 0, to: 60, step: 5, five: [10, 20, 30, 40, 55] }, ["box", "median", "whisker-low", "whisker-high"], []],
+      [{ kind: "double_line", top: { label: "cups", values: [0, 2, null, 6] }, bottom: { label: "eggs", values: [0, 3, 6, 9] } }, ["pair-0", "pair-3"], ["top-1", "bottom-3"]],
+      [{ kind: "math", lines: [["3", "×", "(", "4", "+", "2", ")"], ["3", "×", "6"]] }, ["t0-0", "t1-2"], ["line-0", "line-1"]],
+    ];
+    for (const [v, parts, marks] of FIXTURES) {
+      const svg = renderVisual(v);
+      assert.ok(wellFormed(svg), v.kind);
+      const elements = elementsIn(svg, "[a-z]+");
+      const tappable = elements.filter(e => e["data-part"]);
+      const named = tappable.map(e => e["data-part"]);
+      const marked = new Set(elements.flatMap(e => (e["data-marks"] ?? "").split(" ")).filter(Boolean));
+      for (const p of parts) assert.ok(named.includes(p), `${v.kind}: no part ${p}`);
+      for (const m of marks) assert.ok(marked.has(m), `${v.kind}: no mark ${m}`);
+      assert.equal(new Set(named).size, named.length, `${v.kind}: two parts with one name`);
+      for (const e of tappable) assert.ok(e["aria-label"]?.trim(), `${v.kind}: ${e["data-part"]} has nothing to say`);
+    }
+  });
 
-    const grid = renderVisual({ kind: "hundredths", grids: [37], focus: { column: 3 } });
-    const columns = elementsIn(grid, "rect", "column");
-    assert.deepEqual(columns.map(c => c["data-part"]), Array.from({ length: 10 }, (_, c) => `column-${c}`));
-    const [around] = elementsIn(grid, "rect", "focus");
-    close(Number(around.x) + 3, Number(columns[3].x), "the ring goes round the fourth column");
-    const square = elementsIn(renderVisual({ kind: "hundredths", grids: [37], focus: { square: 36 } }), "rect", "focus")[0];
-    const last = elementsIn(grid, "rect", "square").filter(s => s["data-shaded"] === "true").pop();
-    close(Number(square.x) + 3, Number(last.x), "the ring goes round the last square shaded");
-    close(Number(square.y) + 3, Number(last.y), "the ring goes round the last square shaded");
+  it("for teaching scenes: every part in every question's picture has a name to say, and one name each", () => {
+    for (const { question: q, at } of visuals()) {
+      const tappable = elementsIn(renderVisual(q.visual), "[a-z]+").filter(e => e["data-part"]);
+      assert.equal(new Set(tappable.map(e => e["data-part"])).size, tappable.length, `${at}: two parts with one name`);
+      for (const e of tappable) assert.ok(e["aria-label"]?.trim(), `${at}: ${e["data-part"]} has nothing to say`);
+    }
   });
 
   it("ten frames: a counter for each one counted, filling the first frame first", () => {

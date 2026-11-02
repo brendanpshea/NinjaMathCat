@@ -19,14 +19,15 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, played, still, marathon;
+  let server, played, still, marathon, showHow;
 
   before(async () => {
     server = await startServer();
-    [played, still, marathon] = await Promise.all([
+    [played, still, marathon, showHow] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
+      runScenario(browser, server.origin, "showHow"),
     ]);
   });
 
@@ -36,6 +37,20 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(played.errors, []);
     assert.deepEqual(still.errors, []);
     assert.deepEqual(marathon.errors, []);
+    assert.deepEqual(showHow.errors, []);
+  });
+
+  it("offers to show how, with the chapter's teaching scene, once a question is missed twice, then plays on", () => {
+    assert.equal(showHow.type, "tens_and_ones", "the level opens with its chapter's topic");
+    assert.ok(showHow.hiddenBefore && showHow.hiddenAfterOneMiss, "not offered before the answer is shown");
+    assert.ok(showHow.offered);
+    assert.equal(showHow.kicker, "Show me how");
+    assert.ok(showHow.onlyBack, "over a battle, the scene has no skipping, note or map");
+    assert.deepEqual(showHow.scene.problems, []);
+    assert.equal(showHow.scene.title, "Teen numbers");
+    assert.equal(showHow.last, "Back to the battle");
+    assert.ok(showHow.closed && showHow.backInBattle && showHow.focusOnNext, "closed, back in the battle, ready to go on");
+    assert.ok(showHow.goesOn, "the next question comes as usual");
   });
 
   it("plays kindergarten's whole adventure through the screens, every note and picture as it should be", () => {

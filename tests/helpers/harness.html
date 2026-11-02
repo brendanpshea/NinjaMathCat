@@ -90,20 +90,59 @@
   }
 
   /**
-   * A save with one player, Sam, who has done every level before the first
-   * chapter of the grade that opens with a teaching scene.
-   * @param {number} grade
+   * A save with one player, Sam, who has done every level before a chapter,
+   * so its first level, and its opening, are next.
+   * @param {string} id  the chapter's id
    */
-  async function sceneSave(grade) {
-    const { levelsFor, chaptersFor } = await import("/src/adventures.js");
-    const { sceneFor } = await import("/src/scenes.js");
-    const chapter = chaptersFor(grade).findIndex(c => sceneFor(c.id));
+  async function sceneSave(id) {
+    const { ADVENTURE_GRADES, levelsFor, chaptersFor } = await import("/src/adventures.js");
+    const grade = ADVENTURE_GRADES.find(g => chaptersFor(g).some(c => c.id === id));
+    if (grade === undefined) throw new Error(`no chapter ${id}`);
+    const chapter = chaptersFor(grade).findIndex(c => c.id === id);
     const done = Object.fromEntries(levelsFor(grade).filter(l => l.chapter < chapter).map(l => [l.id, { stars: 3, firstTry: 7, asked: 8 }]));
     return {
       players: [{ id: "p1", name: "Sam", heroId: "cat_ninja", grade, readAloud: false, xp: grade ? 2600 : 900, treasures: [], adventures: { [grade]: { done, opened: 0 } } }],
       current: "p1",
       muted: false,
     };
+  }
+
+  /**
+   * Play a teaching scene inside a container through to its end: every
+   * step, and each check tried a part or a choice at a time, last first,
+   * until one is right.
+   * @param {Element} box
+   * @param {() => boolean} going  whether the scene is still showing
+   */
+  async function playScene(box, going) {
+    const inBox = selector => box.querySelector(selector);
+    const allInBox = selector => [...box.querySelectorAll(selector)];
+    const lineText = () => inBox(".scene-line")?.textContent.trim() ?? "";
+    const seen = { title: inBox("h1")?.textContent ?? "", steps: allInBox(".scene-steps li").length, checks: 0, wrongTries: 0, rings: 0, lines: [], problems: [] };
+    for (let i = 0; i < 20 && going(); i++) {
+      seen.lines.push(lineText());
+      if (!lineText()) seen.problems.push(`scene "${seen.title}": a step with no line`);
+      const shown = inBox("[data-ref=picture]");
+      if (shown?.dataset.focus && !shown.querySelector(".focus")) seen.problems.push(`scene "${seen.title}": step ${i + 1} points at ${shown.dataset.focus}, but nothing is ringed`);
+      seen.rings += shown?.querySelector(".focus") ? 1 : 0;
+      const next = inBox("[data-ref=next]");
+      if (next.disabled) {
+        seen.checks++;
+        const tries = allInBox(".scene-picture .tappable").length ? allInBox(".scene-picture .tappable") : allInBox(".scene-choices .choice");
+        if (tries.length === 0) { seen.problems.push(`scene "${seen.title}": a check with nothing to tap or choose`); break; }
+        for (const t of tries.reverse()) {
+          t.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+          await wait(20);
+          if (!next.disabled) break;
+          seen.wrongTries++;
+          if (!lineText()) seen.problems.push(`scene "${seen.title}": no pointer after a wrong try`);
+        }
+        if (next.disabled) { seen.problems.push(`scene "${seen.title}": no right answer to its check`); break; }
+      }
+      next.click();
+      await wait(20);
+    }
+    return seen;
   }
 
   const scenarios = {
@@ -316,24 +355,46 @@
       frame.style.width = `${params.get("width") ?? 1000}px`;
       frame.style.height = `${params.get("height") ?? 900}px`;
       localStorage.clear();
-      // A teaching scene: kindergarten's or 4th grade's, at a step pointing at the picture, or at a check.
-      const sceneShot = screen.match(/^scene-(k|4)(-check)?$/);
-      if (sceneShot) localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(sceneShot[1] === "k" ? 0 : 4)));
+      // A chapter's teaching scene (?chapter=), at a step (?step=, from 0), perhaps tried wrong once (?wrong).
+      const sceneShot = screen === "scene";
+      if (sceneShot || screen === "how") localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "0-teens")));
       else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify(await maya()));
       await load("?test&seed=11");
+      if (screen === "how") {
+        // "Show me how", open over the battle after the first question is missed twice.
+        click("[data-ref=continue]");
+        await on("scene");
+        click("[data-ref=skip]");
+        await on("battle");
+        await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load");
+        await readyToAnswer();
+        await answer(false);
+        await until(() => $(".choice:not(:disabled)") && /Not quite/.test($(".feedback").textContent), "the hint");
+        await answer(false);
+        await until(() => !$("[data-ref=next]").hidden, "the Next button");
+        click("[data-ref=how]");
+        await until(() => doc().querySelector("dialog.scene-dialog .still.is-ready"), "the scene to show how");
+        await wait(400);
+        return {};
+      }
       if (sceneShot) {
         click("[data-ref=continue]");
         await on("scene");
         await until(() => $$(".scene-actor .still.is-ready").length === 2, "both stills to load");
-        const checking = Boolean(sceneShot[2]);
-        for (let i = 0; i < 10; i++) {
-          if (checking ? $("[data-ref=next]").disabled : $(".scene-picture .focus")) break;
+        const tries = () => [...$$(".scene-picture .tappable"), ...$$(".scene-choices .choice:not(:disabled)")];
+        for (let step = 0; step < Number(params.get("step") ?? 0); step++) {
+          // A check on the way is answered, a part or choice at a time, until the scene can go on.
+          for (const t of tries()) {
+            if (!$("[data-ref=next]").disabled) break;
+            t.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+            await wait(20);
+          }
           click("[data-ref=next]");
           await wait(30);
         }
-        // One wrong try, or a right one if the last choice happens to be right.
-        if (checking) [...$$(".scene-picture .tappable"), ...$$(".scene-choices .choice")].pop()?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-        await wait(200);
+        // A wrong try, or a right one if the last part or choice happens to be right.
+        if (params.has("wrong")) tries().pop()?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await wait(400);
         return {};
       }
       await wait(300);
@@ -407,6 +468,47 @@
       return report;
     },
 
+    /** "Show me how": a question missed twice, in a chapter with a teaching scene, and the scene over the battle. */
+    async showHow() {
+      localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave("0-teens")));
+      await load("?test&seed=5");
+      const report = {};
+      click("[data-ref=continue]");
+      await on("scene");
+      click("[data-ref=skip]");
+      await on("battle");
+      await readyToAnswer();
+      report.type = game().battle.question.type;
+      report.hiddenBefore = $("[data-ref=how]").hidden;
+      await answer(false);
+      await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint");
+      report.hiddenAfterOneMiss = $("[data-ref=how]").hidden;
+      await answer(false);
+      await until(() => !$("[data-ref=next]").hidden, "the Next button");
+      report.offered = !$("[data-ref=how]").hidden;
+      click("[data-ref=how]");
+      await until(() => doc().querySelector("dialog.scene-dialog[open]"), "the scene to show how");
+      const dialog = doc().querySelector("dialog.scene-dialog");
+      report.kicker = dialog.querySelector(".note-kicker")?.textContent;
+      report.onlyBack = !dialog.querySelector("[data-ref=skip], [data-ref=note], [data-ref=map]");
+      report.last = "";
+      const seen = await playScene(dialog, () => {
+        if (dialog.isConnected) report.last = dialog.querySelector("[data-ref=next]")?.textContent ?? "";
+        return dialog.isConnected;
+      });
+      report.scene = seen;
+      report.closed = !dialog.isConnected;
+      report.backInBattle = game().screen === "battle";
+      report.focusOnNext = doc().activeElement === $("[data-ref=next]");
+      const before = game().battle.question;
+      click("[data-ref=next]");
+      await readyToAnswer();
+      report.goesOn = game().battle.question === before && $(".prompt").textContent === before.prompt && $("[data-ref=how]").hidden;
+      report.errors = errors;
+      return report;
+    },
+
     /**
      * A whole grade's adventure played through the screens, for
      * tools/playthrough.js: every note read, most answers right, some wrong
@@ -432,31 +534,13 @@
       await on("map");
       click("[data-ref=continue]");
       report.scenes = [];
+      report.replays = [];
+
       while (report.levels < most) {
         await until(() => ["note", "scene", "battle"].includes(game().screen), "a note, a scene or a battle");
         if (game().screen === "scene") {
-          // Every step, and each check tried a part or a choice at a time, last first, until one is right.
-          const seen = { title: $("h1").textContent, steps: $$(".scene-steps li").length, checks: 0, wrongTries: 0, lines: [] };
-          for (let i = 0; i < 20 && game().screen === "scene"; i++) {
-            seen.lines.push(text(".scene-line"));
-            if (!text(".scene-line")) problem(`scene "${seen.title}": a step with no line`);
-            const next = $("[data-ref=next]");
-            if (next.disabled) {
-              seen.checks++;
-              const tries = $$(".scene-picture .tappable").length ? $$(".scene-picture .tappable") : $$(".scene-choices .choice");
-              if (tries.length === 0) { problem(`scene "${seen.title}": a check with nothing to tap or choose`); break; }
-              for (const t of tries.reverse()) {
-                t.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-                await wait(20);
-                if (!next.disabled) break;
-                seen.wrongTries++;
-                if (!text(".scene-line")) problem(`scene "${seen.title}": no pointer after a wrong try`);
-              }
-              if (next.disabled) { problem(`scene "${seen.title}": no right answer to its check`); break; }
-            }
-            next.click();
-            await wait(20);
-          }
+          const seen = await playScene(doc().querySelector(".scene-screen"), () => game().screen === "scene");
+          seen.problems.forEach(problem);
           if (game().screen !== "battle") problem(`scene "${seen.title}" did not lead into the battle`);
           report.scenes.push(seen);
         }
@@ -498,6 +582,18 @@
             await answer(false);
             await until(() => !$("[data-ref=next]").hidden, "the Next button");
             if ($$(".choice.right").length !== 1) problem(`${where}: the right answer is not shown`);
+            // Where a teaching scene can show how, watch it, over the battle, and come back.
+            const how = $("[data-ref=how]");
+            if (how && !how.hidden) {
+              how.click();
+              await until(() => doc().querySelector("dialog.scene-dialog[open]"), "the scene to show how");
+              const dialog = doc().querySelector("dialog.scene-dialog");
+              const seen = await playScene(dialog, () => dialog.isConnected);
+              seen.problems.forEach(problem);
+              if (dialog.isConnected) problem(`${where}: the scene that shows how did not close`);
+              if (game().screen !== "battle") problem(`${where}: showing how left the battle`);
+              report.replays.push(seen.title);
+            }
             click("[data-ref=next]");
           }
           await wait(20);

@@ -1,7 +1,7 @@
 // Things to read numbers off: a measuring jug or a kitchen scale's dial
 // (3.MD.2), a box plot (6.SP.4), and a double number line (6.RP.3).
 
-import { svg, el, text, COLORS, num } from "./svg.js";
+import { svg, el, text, hit, COLORS, num } from "./svg.js";
 import { linear } from "./scale.js";
 import { describeVisual } from "./describe.js";
 
@@ -90,6 +90,11 @@ export function boxPlot(v) {
     el("line", { x1: num(high), y1: mid - 14, x2: num(high), y2: mid + 14, ...ink, class: "end" }),
     el("rect", { x: num(q1), y: mid - half, width: num(q3 - q1), height: 2 * half, fill: COLORS.fill, ...ink, class: "box" }),
     el("line", { x1: num(median), y1: mid - half, x2: num(median), y2: mid + half, stroke: COLORS.ink, "stroke-width": 4, class: "median" }),
+    // To tap in a teaching scene: each whisker, the box, and the median line in it, last so it is on top.
+    hit("whisker-low", "the lower whisker", { x: low, y: mid - 16, width: q1 - low, height: 32 }),
+    hit("whisker-high", "the upper whisker", { x: q3, y: mid - 16, width: high - q3, height: 32 }),
+    hit("box", "the box", { x: q1, y: mid - half, width: q3 - q1, height: 2 * half }),
+    hit("median", "the median line", { x: median - 9, y: mid - half - 6, width: 18, height: 2 * half + 12 }),
   );
   return svg("box_plot", 500, 178, describeVisual(v), body);
 }
@@ -112,16 +117,19 @@ export function doubleLine(v) {
   for (const [line, y, dy] of /** @type {const} */ ([[v.top, upper, -22], [v.bottom, lower, 26]])) {
     body.push(el("line", { x1: left - 8, y1: y, x2: right + 8, y2: y, stroke: COLORS.ink, "stroke-width": 2.5 }));
     line.values.forEach((value, i) => {
-      body.push(el("line", { x1: num(X(i)), y1: y - 9, x2: num(X(i)), y2: y + 9, stroke: COLORS.ink, "stroke-width": 2.5, class: "tick", "data-at": i }));
+      body.push(el("line", { x1: num(X(i)), y1: y - 9, x2: num(X(i)), y2: y + 9, stroke: COLORS.ink, "stroke-width": 2.5, class: "tick", "data-at": i, "data-marks": `${line === v.top ? "top" : "bottom"}-${i}` }));
       if (value === null) {
         body.push(
           el("rect", { x: num(X(i) - 18), y: y + dy - 15, width: 36, height: 30, rx: 6, fill: COLORS.paper, stroke: COLORS.accent, "stroke-width": 2.5, "stroke-dasharray": "5 4", class: "missing" }),
           text({ x: num(X(i)), y: y + dy, "font-size": 18, "font-weight": 800, fill: COLORS.accent, "text-anchor": "middle", "dominant-baseline": "central" }, "?"),
         );
       } else {
-        body.push(text({ x: num(X(i)), y: y + dy, "font-size": 17, "font-weight": 700, fill: COLORS.ink, "text-anchor": "middle", "dominant-baseline": "central", class: "value" }, String(value)));
+        body.push(text({ x: num(X(i)), y: y + dy, "font-size": 17, "font-weight": 700, fill: COLORS.ink, "text-anchor": "middle", "dominant-baseline": "central", class: "value", "data-marks": `${line === v.top ? "top" : "bottom"}-${i}` }, String(value)));
       }
     });
   }
+  // Each pair of marks, one above the other, to tap in a teaching scene.
+  const reach = Math.min(44, X(1) - X(0));
+  for (let i = 0; i < n; i++) body.push(hit(`pair-${i}`, `${v.top.values[i] ?? "the box"} and ${v.bottom.values[i] ?? "the box"}`, { x: X(i) - reach / 2, y: upper - 40, width: reach, height: lower - upper + 82 }));
   return svg("double_line", 490, 190, describeVisual(v), body);
 }

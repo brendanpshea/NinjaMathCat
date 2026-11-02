@@ -74,8 +74,10 @@ export function feedbackFor(round) {
  * @param {(battle: Battle) => void} options.onProgress  after every answer, to save what was earned
  * @param {(battle: Battle) => void} options.onWin
  * @param {() => void} options.onLeave
+ * @param {(type: string) => ((done: () => void) => void) | null} [options.showMeHow]  for a kind of question,
+ *   a way to show how it's done, with a teaching scene, if there is one; it calls `done` once the scene is closed
  */
-export function createBattleScreen(root, { battle: start, hero, rng, sound, title, speaker, readAloud = false, onProgress, onWin, onLeave }) {
+export function createBattleScreen(root, { battle: start, hero, rng, sound, title, speaker, readAloud = false, onProgress, onWin, onLeave, showMeHow }) {
   let battle = start;
   let busy = false;
   let arrivedAt = -1; // which monster the arrival line is about
@@ -101,7 +103,10 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
         </div>
         <div class="choices" role="group" aria-label="Answers" data-ref="choices"></div>
         <p class="feedback" aria-live="polite" data-ref="feedback"></p>
-        <button type="button" class="primary next" data-ref="next" hidden>Next question</button>
+        <div class="actions after-reveal">
+          <button type="button" class="primary next" data-ref="next" hidden>Next question</button>
+          <button type="button" class="quiet show-how" data-ref="how" hidden>Show me how</button>
+        </div>
       </div>
     </section>`;
   /** @param {string} name */
@@ -144,9 +149,14 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
         <span class="key" aria-hidden="true">${i + 1}</span><span class="choice-text">${choiceHtml(c)}</span></button>`;
     }).join("");
     ref("next").hidden = true;
+    ref("how").hidden = true;
+    teach = null;
     busy = false;
     if (readAloud) readQuestion();
   }
+
+  /** After an answer is shown, the way to see how it's done, if there is one. */
+  let teach = /** @type {((done: () => void) => void) | null} */ (null);
 
   /** @param {number} index */
   async function choose(index) {
@@ -181,6 +191,9 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
         buttons[q.choices.indexOf(q.answer)].classList.add("right");
         const next = ref("next");
         next.hidden = false;
+        // Missed twice: a teaching scene for this kind of question can show how.
+        teach = showMeHow?.(q.type) ?? null;
+        ref("how").hidden = !teach;
         next.focus();
         return;
       }
@@ -195,6 +208,12 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     if (button instanceof HTMLButtonElement) choose(Number(button.dataset.index));
   });
   ref("read")?.addEventListener("click", () => readQuestion());
+  ref("how").addEventListener("click", () => {
+    if (!teach) return;
+    sound.play("click");
+    speaker?.stop();
+    teach(() => ref("next").focus());
+  });
   ref("next").addEventListener("click", () => {
     sound.play("click");
     ref("feedback").textContent = "";

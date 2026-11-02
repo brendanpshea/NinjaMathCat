@@ -64,6 +64,8 @@ export function describeVisual(v) {
   switch (v.kind) {
     case "objects":
       return v.crossed ? `Pictures of ${v.emoji}, some of them crossed out` : `Pictures of ${v.emoji} to count`;
+    case "math":
+      return `Math written out: ${v.lines.map(line => line.join(" ")).join("; then ")}`;
     case "compose":
       return "A shape made of smaller shapes, each in its own color";
     case "pattern":

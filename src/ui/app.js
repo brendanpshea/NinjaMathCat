@@ -602,6 +602,8 @@ export function createApp(root, { storage, sound, speech, rng }) {
     fight(battle, {
       title: `${levelName(level)} · ${chapter.title}`,
       onWin: b => levelDone(level, b, startLevel, foundBefore),
+      grade: level.grade,
+      upTo: level.chapter,
     });
   }
 
@@ -618,7 +620,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
       hero: { level: startLevel, xp: player.xp },
       treasures: player.treasures,
     });
-    fight(battle, { onWin: b => victory(b, startLevel, foundBefore) });
+    fight(battle, { onWin: b => victory(b, startLevel, foundBefore), grade: player.grade, upTo: reached.chapter });
   }
 
   /**
@@ -638,6 +640,8 @@ export function createApp(root, { storage, sound, speech, rng }) {
     fight(battle, {
       title: `Training ground · ${list(plan.kinds.map(k => typeById(k).name))}`,
       onWin: b => trainingDone(b, startLevel, foundBefore),
+      grade: player.grade,
+      upTo: (nextLevel(levelsFor(player.grade), progressIn(player, player.grade)) ?? levelsFor(player.grade).at(-1))?.chapter ?? 0,
     });
   }
 
@@ -648,7 +652,68 @@ export function createApp(root, { storage, sound, speech, rng }) {
    * @param {Battle} battle
    * @param {{ title?: string, onWin: (battle: Battle) => void }} options
    */
-  function fight(battle, { title: name, onWin }) {
+  /**
+   * A way to show how a kind of question is done, if a teaching scene in the
+   * player's grade teaches it: the nearest chapter, up to the one being
+   * played, that brings that kind in and opens with a scene.
+   * @param {number} grade
+   * @param {number} upTo  the chapter being played
+   * @returns {(type: string) => ((done: () => void) => void) | null}
+   */
+  function teachings(grade, upTo) {
+    const chapters = chaptersFor(grade);
+    return type => {
+      const fits = chapters.map((chapter, place) => ({ chapter, place })).filter(({ chapter }) => chapter.learn.includes(type) && sceneFor(chapter.id));
+      const pick = [...fits].reverse().find(f => f.place <= upTo) ?? fits[0];
+      return pick ? done => replay(grade, pick.place, done) : null;
+    };
+  }
+
+  /**
+   * A chapter's teaching scene again, in a dialog over the battle, after a
+   * question was missed twice.
+   * @param {number} grade
+   * @param {number} place  the chapter
+   * @param {() => void} done  once it is closed
+   */
+  function replay(grade, place, done) {
+    const chapter = chaptersFor(grade)[place];
+    const setup = /** @type {import("../scenes.js").Scene} */ (sceneFor(chapter.id));
+    const monster = residents(settingFor(grade, place))[0];
+    const hero = heroOf(me());
+    const dialog = document.createElement("dialog");
+    dialog.className = "scene-dialog";
+    root.append(dialog);
+    const close = () => {
+      speech?.stop();
+      dialog.close();
+      dialog.remove();
+      done();
+    };
+    runScene(dialog, {
+      kicker: "Show me how",
+      title: chapter.title,
+      steps: setup.steps(rng, { monster: monster.name, hero: hero.name }),
+      hero,
+      monster,
+      speech,
+      sound,
+      readAloud: me().readAloud && !save.muted,
+      startLabel: "Back to the battle",
+      onStart: close,
+      replay: true,
+    });
+    dialog.addEventListener("cancel", event => { event.preventDefault(); close(); });
+    dialog.showModal();
+    dialog.querySelector("h1")?.focus();
+  }
+
+  /**
+   * @param {Battle} battle
+   * @param {{ title?: string, onWin: (battle: Battle) => void, grade: number, upTo: number }} options
+   *   grade and upTo: the chapter being played, for the teaching scenes that can show how
+   */
+  function fight(battle, { title: name, onWin, grade, upTo }) {
     const now = me().played + 1;
     change({ played: now });
     session.battles++;
@@ -674,6 +739,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
       },
       onWin,
       onLeave: map,
+      showMeHow: teachings(grade, upTo),
     });
     screenEl.querySelector("h1")?.focus();
   }

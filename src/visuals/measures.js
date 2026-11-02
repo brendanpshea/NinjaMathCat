@@ -1,7 +1,7 @@
 // Figures to measure: areas and perimeters, boxes of unit cubes, angles on
 // protractors, and coordinate grids. Each is drawn to scale.
 
-import { svg, el, text, COLORS, num } from "./svg.js";
+import { svg, el, text, COLORS, num, hit } from "./svg.js";
 import { describeVisual } from "./describe.js";
 
 /** @import { AreaFigure, CubeBox, AngleFigure, CoordinateGrid, Lengths } from "../questions/common.js" */
@@ -41,10 +41,21 @@ export function area(v) {
     if (v.grid) {
       for (let i = 0; i < v.width; i++) {
         for (let j = 0; j < v.height; j++) {
-          parts.push(el("rect", { x: left + i * cell, y: top + j * cell, width: cell, height: cell, fill: "none", stroke: COLORS.accent, "stroke-width": 1.5, class: "cell" }));
+          parts.push(el("rect", { x: left + i * cell, y: top + j * cell, width: cell, height: cell, fill: "none", stroke: COLORS.accent, "stroke-width": 1.5, class: "cell", "data-marks": `row-${j} column-${i} cell-${i}-${j}` }));
         }
       }
-      parts.push(el("rect", { x: left, y: top, width: base, height: h, fill: "none", stroke: COLORS.ink, "stroke-width": 3 }));
+      parts.push(el("rect", { x: left, y: top, width: base, height: h, fill: "none", stroke: COLORS.ink, "stroke-width": 3, "pointer-events": "none" }));
+      // Each row, to tap in a teaching scene: an array's rows.
+      for (let j = 0; j < v.height; j++) parts.push(hit(`row-${j}`, `row ${j + 1}`, { x: left, y: top + j * cell, width: base, height: cell }));
+    } else {
+      // Each side, to tap in a teaching scene: the one to find, or the ones to add.
+      const strip = 18;
+      parts.push(
+        hit("side-top", "the top side", { x: left, y: top - strip / 2, width: base, height: strip }),
+        hit("side-right", "the right side", { x: left + base - strip / 2, y: top, width: strip, height: h }),
+        hit("side-bottom", "the bottom side", { x: left, y: bottom - strip / 2, width: base, height: strip }),
+        hit("side-left", "the left side", { x: left - strip / 2, y: top, width: strip, height: h }),
+      );
     }
   } else {
     const corners = v.shape === "triangle"
@@ -194,7 +205,7 @@ export function lengths(v) {
     const y = 16 + i * row;
     const [x, width] = [left + ribbon.from * unit, ribbon.length * unit];
     parts.push(
-      el("rect", { x, y, width, height: 26, rx: 13, fill: RIBBONS[ribbon.color], stroke: COLORS.ink, "stroke-width": 2, class: "ribbon", "data-from": ribbon.from, "data-length": ribbon.length }),
+      el("rect", { x, y, width, height: 26, rx: 13, fill: RIBBONS[ribbon.color], stroke: COLORS.ink, "stroke-width": 2, class: "ribbon", "data-from": ribbon.from, "data-length": ribbon.length, "data-part": `ribbon-${ribbon.color}`, "aria-label": `the ${ribbon.color} ribbon` }),
       text({ x: x + width + 8, y: y + 13, "font-size": 16, "font-weight": 700, "dominant-baseline": "central", class: "ribbon-label" }, ribbon.color),
     );
   });
@@ -214,7 +225,7 @@ export function lengths(v) {
         parts.push(el("line", { x1: left + end * unit, y1: 16 + v.ribbons.indexOf(ribbon) * row + 26, x2: left + end * unit, y2: top, stroke: COLORS.muted, "stroke-width": 1.5, "stroke-dasharray": "4 4" }));
       }
     }
-    parts.push(el("rect", { x: left - 14, y: top, width: v.span * unit + 28, height: 50, rx: 4, fill: "#fef3c7", stroke: COLORS.ink, "stroke-width": 2, class: "ruler" }));
+    parts.push(el("rect", { x: left - 14, y: top, width: v.span * unit + 28, height: 50, rx: 4, fill: "#fef3c7", stroke: COLORS.ink, "stroke-width": 2, class: "ruler", "data-marks": "ruler" }));
     for (let k = 0; k <= v.span; k++) {
       const x = left + k * unit;
       parts.push(
@@ -266,6 +277,7 @@ export function coordinates(v) {
     parts.push(
       el("circle", { cx: X(p.x), cy: Y(p.y), r: 7, fill: COLORS.point, stroke: COLORS.paper, "stroke-width": 2, class: "point", "data-x": p.x, "data-y": p.y }),
       text({ x: X(p.x) + 8, y: Y(p.y) - 10, "font-size": 20, "font-weight": 800, stroke: COLORS.paper, "stroke-width": 4, "paint-order": "stroke", class: "point-label" }, p.label),
+      el("circle", { cx: X(p.x), cy: Y(p.y), r: 16, fill: "transparent", class: "hit", "data-part": `point-${p.label}`, "aria-label": `point ${p.label}` }),
     );
   }
   const size = span * cell + 2 * pad;

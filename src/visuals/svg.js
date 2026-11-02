@@ -58,6 +58,17 @@ export function text(attrs, content) {
 }
 
 /**
+ * Something to tap in a teaching scene, laid invisibly over a part of a
+ * picture too thin or too scattered to tap by itself: a tick, a row, a hand.
+ * @param {string} part  its name, as a scene's check and focus call it
+ * @param {string} label  what a screen reader says for it
+ * @param {{ x: number, y: number, width: number, height: number }} box
+ */
+export function hit(part, label, { x, y, width, height }) {
+  return el("rect", { x: num(x), y: num(y), width: num(width), height: num(height), fill: "transparent", class: "hit", "data-part": part, "aria-label": label });
+}
+
+/**
  * A whole visual: an SVG that scales to fit its container, labelled for screen
  * readers. `kind` goes in data-visual, where tests and styles can find it.
  * @param {string} kind

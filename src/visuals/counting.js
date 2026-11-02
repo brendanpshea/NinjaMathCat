@@ -27,10 +27,6 @@ export function tenFrame(v) {
       parts.push(el("circle", { cx: left + (col + 0.5) * cell, cy: pad + (row + 0.5) * cell, r: 18, fill: COLORS.point, stroke: COLORS.ink, "stroke-width": 2, class: "counter", "pointer-events": "none" }));
     }
   }
-  if (v.focus !== undefined) {
-    const left = pad + v.focus * (5 * cell + gap);
-    parts.push(el("rect", { x: left - 6, y: pad - 6, width: 5 * cell + 12, height: 2 * cell + 12, rx: 8, fill: "none", stroke: COLORS.accent, "stroke-width": 6, class: "focus", "pointer-events": "none" }));
-  }
   return svg("ten_frame", 2 * pad + v.frames * 5 * cell + (v.frames - 1) * gap, 2 * pad + 2 * cell, describeVisual(v), parts);
 }
 
@@ -51,8 +47,11 @@ export function baseTen(v) {
   /** @type {string[]} */
   const parts = [];
   /** A block of unit squares: w by h units, at x, y. */
-  const block = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ w, /** @type {number} */ h, /** @type {string} */ name, /** @type {string} */ fill) => {
-    parts.push(el("rect", { x, y, width: w * u, height: h * u, fill, stroke: COLORS.ink, "stroke-width": 2, class: name }));
+  /** How many of each kind are drawn so far, to name each block. */
+  const drawn = { flat: 0, rod: 0, unit: 0 };
+  const block = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ w, /** @type {number} */ h, /** @type {"flat" | "rod" | "unit"} */ name, /** @type {string} */ fill) => {
+    const n = drawn[name]++;
+    parts.push(el("rect", { x, y, width: w * u, height: h * u, fill, stroke: COLORS.ink, "stroke-width": 2, class: name, "data-part": `${name}-${n}`, "data-marks": `${name}s`, "aria-label": `${{ flat: "hundred", rod: "ten", unit: "one" }[name]} ${n + 1}` }));
     for (let i = 1; i < w; i++) parts.push(el("line", { x1: x + i * u, y1: y, x2: x + i * u, y2: y + h * u, stroke: COLORS.ink, "stroke-width": 0.75, opacity: 0.6 }));
     for (let j = 1; j < h; j++) parts.push(el("line", { x1: x, y1: y + j * u, x2: x + w * u, y2: y + j * u, stroke: COLORS.ink, "stroke-width": 0.75, opacity: 0.6 }));
   };

@@ -1,7 +1,7 @@
 // The visuals the questions started with: counters, patterns, money, clocks
 // and shapes.
 
-import { svg, el, text, COLORS, num } from "./svg.js";
+import { svg, el, text, hit, COLORS, num } from "./svg.js";
 import { describeVisual } from "./describe.js";
 
 /** @import { Visual } from "../questions/common.js" */
@@ -19,10 +19,10 @@ export function objects(v) {
   const gone = v.count - (v.crossed ?? 0);
   const counters = Array.from({ length: v.count }, (_, i) => {
     const [x, y] = [8 + (i % perRow) * CELL + CELL / 2, 8 + Math.floor(i / perRow) * CELL + CELL / 2];
-    const counter = text({ x, y, "font-size": 34, "text-anchor": "middle", "dominant-baseline": "central", class: "counter", ...(i >= gone ? { opacity: 0.45 } : {}) }, v.emoji);
+    const counter = text({ x, y, "font-size": 34, "text-anchor": "middle", "dominant-baseline": "central", class: "counter", "data-part": `item-${i}`, "aria-label": `picture ${i + 1}`, ...(i >= gone ? { opacity: 0.45 } : {}) }, v.emoji);
     if (i < gone) return counter;
-    const cross = { stroke: COLORS.point, "stroke-width": 4, "stroke-linecap": "round" };
-    return el("g", { class: "crossed" }, counter, el("line", { x1: x - 16, y1: y - 16, x2: x + 16, y2: y + 16, ...cross }), el("line", { x1: x + 16, y1: y - 16, x2: x - 16, y2: y + 16, ...cross }));
+    const cross = { stroke: COLORS.point, "stroke-width": 4, "stroke-linecap": "round", "pointer-events": "none" };
+    return el("g", { class: "crossed", "data-marks": "crossed" }, counter, el("line", { x1: x - 16, y1: y - 16, x2: x + 16, y2: y + 16, ...cross }), el("line", { x1: x + 16, y1: y - 16, x2: x - 16, y2: y + 16, ...cross }));
   });
   return svg("objects", perRow * CELL + 16, rows * CELL + 16, describeVisual(v), counters);
 }
@@ -43,7 +43,8 @@ export function groups(v) {
     class: "counter",
     "data-row": j,
   }, row.emoji)));
-  return svg("groups", longest * CELL + 16, v.rows.length * CELL + 16, describeVisual(v), things);
+  const rows = v.rows.map((row, j) => hit(`row-${j}`, `the ${row.name}`, { x: 4, y: 8 + j * CELL, width: longest * CELL + 8, height: CELL }));
+  return svg("groups", longest * CELL + 16, v.rows.length * CELL + 16, describeVisual(v), [...things, ...rows]);
 }
 
 /**
@@ -54,9 +55,9 @@ export function pattern(v) {
   const cells = v.items.map((item, i) => {
     const x = 8 + i * CELL;
     if (item !== null) {
-      return text({ x: x + CELL / 2, y: 8 + CELL / 2, "font-size": 32, "text-anchor": "middle", "dominant-baseline": "central" }, item);
+      return text({ x: x + CELL / 2, y: 8 + CELL / 2, "font-size": 32, "text-anchor": "middle", "dominant-baseline": "central", "data-part": `item-${i}`, "aria-label": `picture ${i + 1}` }, item);
     }
-    return el("g", { class: "gap" },
+    return el("g", { class: "gap", "data-part": "gap", "aria-label": "the missing picture" },
       el("rect", { x: x + 4, y: 12, width: CELL - 8, height: CELL - 8, rx: 8, fill: COLORS.paper, stroke: COLORS.accent, "stroke-width": 3, "stroke-dasharray": "6 4" }),
       text({ x: x + CELL / 2, y: 8 + CELL / 2, "font-size": 26, "font-weight": 700, fill: COLORS.accent, "text-anchor": "middle", "dominant-baseline": "central" }, "?"));
   });
@@ -72,6 +73,8 @@ const COINS = {
 };
 const BILLS = { dollar: "$1", five: "$5", ten: "$10" };
 const BILL = { width: 112, height: 54 };
+/** What each piece is called, for a screen reader, when a scene asks for one to be tapped. */
+const MONEY_NAMES = { penny: "a penny", nickel: "a nickel", dime: "a dime", quarter: "a quarter", dollar: "a one-dollar bill", five: "a five-dollar bill", ten: "a ten-dollar bill" };
 
 /**
  * Coins and bills in a row, wrapping onto more rows if they need to. The
@@ -101,17 +104,18 @@ export function money(v) {
   const width = Math.max(300, used + 16);
   const left = (width - used) / 2;
   const pieces = [];
-  for (const { id, coin, x: at, row: r } of placed) {
+  for (const [i, { id, coin, x: at, row: r }] of placed.entries()) {
     const x = left + at;
     const cy = 8 + r * rowHeight + rowHeight / 2;
+    const part = { "data-part": `item-${i}`, "aria-label": MONEY_NAMES[/** @type {keyof typeof MONEY_NAMES} */ (id)] ?? id };
     if (coin) {
-      pieces.push(el("g", { class: "money", "data-id": id },
+      pieces.push(el("g", { class: "money", "data-id": id, ...part },
         el("circle", { cx: x + coin.r, cy, r: coin.r, fill: coin.fill, stroke: coin.stroke, "stroke-width": 2.5 }),
         el("circle", { cx: x + coin.r, cy, r: coin.r - 4, fill: "none", stroke: coin.stroke, "stroke-width": 1, opacity: 0.6 }),
         text({ x: x + coin.r, y: cy, "font-size": id === "quarter" ? 10.5 : id === "dime" ? 10 : 10.5, "font-weight": 800, fill: coin.stroke, "text-anchor": "middle", "dominant-baseline": "central", "textLength": id === "dime" ? undefined : 2 * coin.r - 10, lengthAdjust: "spacingAndGlyphs" }, id.toUpperCase())));
     } else {
       const top = cy - BILL.height / 2;
-      pieces.push(el("g", { class: "money", "data-id": id },
+      pieces.push(el("g", { class: "money", "data-id": id, ...part },
         el("rect", { x, y: top, width: BILL.width, height: BILL.height, rx: 4, fill: "#bbf7d0", stroke: "#15803d", "stroke-width": 2.5 }),
         el("rect", { x: x + 6, y: top + 6, width: BILL.width - 12, height: BILL.height - 12, rx: 3, fill: "none", stroke: "#15803d", "stroke-width": 1, opacity: 0.6 }),
         text({ x: x + BILL.width / 2, y: cy, "font-size": 24, "font-weight": 700, fill: "#14532d", "text-anchor": "middle", "dominant-baseline": "central" }, BILLS[/** @type {keyof typeof BILLS} */ (id)])));
@@ -141,11 +145,13 @@ export function clock(v) {
   }
   for (let h = 1; h <= 12; h++) {
     const [x, y] = at(r - 28, h * 30);
-    parts.push(text({ x, y, "font-size": 20, "font-weight": 600, "text-anchor": "middle", "dominant-baseline": "central" }, h));
+    parts.push(text({ x, y, "font-size": 20, "font-weight": 600, "text-anchor": "middle", "dominant-baseline": "central", "data-marks": `number-${h}` }, h));
   }
   const hand = (/** @type {string} */ name, /** @type {number} */ degrees, /** @type {number} */ length, /** @type {number} */ width) => {
     const [x2, y2] = at(length, degrees);
-    return el("line", { x1: c, y1: c, x2, y2, stroke: COLORS.ink, "stroke-width": width, "stroke-linecap": "round", class: "hand", "data-hand": name, "data-angle": num(degrees) });
+    // The hand, and a wide invisible one over it, to tap in a teaching scene.
+    return el("line", { x1: c, y1: c, x2, y2, stroke: COLORS.ink, "stroke-width": width, "stroke-linecap": "round", class: "hand", "data-hand": name, "data-angle": num(degrees) })
+      + el("line", { x1: c, y1: c, x2, y2, stroke: "transparent", "stroke-width": 22, "stroke-linecap": "round", class: "hit", "data-part": `${name}-hand`, "aria-label": `the ${name} hand` });
   };
   parts.push(
     hand("hour", ((v.hours % 12) + v.minutes / 60) * 30, 52, 8),

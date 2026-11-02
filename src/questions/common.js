@@ -118,7 +118,6 @@
  * @property {"ten_frame"} kind
  * @property {number} filled
  * @property {1 | 2} frames
- * @property {number} [focus]  a frame to ring, for a teaching scene to point at
  */
 
 /**
@@ -181,7 +180,6 @@
  * @property {"hundredths"} kind
  * @property {number[]} grids  how many squares of each grid are shaded
  * @property {string[]} [labels]  written under the grids
- * @property {{ column?: number, square?: number }} [focus]  a column or a square of the first grid to ring, for a teaching scene to point at
  */
 
 /**
@@ -255,6 +253,15 @@
  */
 
 /**
+ * Math written out large, a line at a time, for a teaching scene: each line
+ * a list of tokens, such as ["3", "×", "(", "4", "+", "2", ")"], each one a
+ * part to ring or tap, named t<line>-<index>.
+ * @typedef {object} MathCard
+ * @property {"math"} kind
+ * @property {string[][]} lines
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number, crossed?: number }
@@ -263,7 +270,7 @@
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths | Lines | Net | Composite | Gauge | BoxPlot | DoubleLine | Compose} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths | Lines | Net | Composite | Gauge | BoxPlot | DoubleLine | Compose | MathCard} Visual
  */
 
 /**

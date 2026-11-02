@@ -1,6 +1,6 @@
 // Picture graphs, bar graphs, histograms and line plots.
 
-import { svg, el, text, COLORS, FONT, escapeXml } from "./svg.js";
+import { svg, el, text, hit, COLORS, FONT, escapeXml } from "./svg.js";
 import { linear, niceStep } from "./scale.js";
 import { describeVisual } from "./describe.js";
 import { rulerText } from "../questions/rational.js";
@@ -23,7 +23,7 @@ export function pictureGraph(v) {
   v.rows.forEach((row, i) => {
     const y = top + i * rowHeight;
     const pictures = row.value / v.each;
-    parts.push(el("g", { class: "row", "data-label": row.label, "data-value": row.value, "data-pictures": pictures },
+    parts.push(el("g", { class: "row", "data-label": row.label, "data-value": row.value, "data-pictures": pictures, "data-part": `row-${i}`, "aria-label": row.label },
       el("rect", { x: 4, y, width: WIDTH - 8, height: rowHeight, fill: i % 2 === 0 ? "#f3f4f6" : COLORS.paper }),
       text({ x: 14, y: y + rowHeight / 2, "font-size": 18, "font-weight": 600, "dominant-baseline": "central" }, row.label),
       ...Array.from({ length: pictures }, (_, j) => text({
@@ -76,7 +76,7 @@ export function barGraph(v) {
   v.bars.forEach((bar, i) => {
     const centre = plot.left + slot * (i + 0.5);
     parts.push(
-      el("rect", { x: centre - barWidth / 2, y: y(bar.value), width: barWidth, height: plot.bottom - y(bar.value), fill: COLORS.accent, stroke: COLORS.ink, "stroke-width": 1.5, class: "bar", "data-label": bar.label, "data-value": bar.value }),
+      el("rect", { x: centre - barWidth / 2, y: y(bar.value), width: barWidth, height: plot.bottom - y(bar.value), fill: COLORS.accent, stroke: COLORS.ink, "stroke-width": 1.5, class: "bar", "data-label": bar.label, "data-value": bar.value, "data-part": `bar-${i}`, "aria-label": bar.label }),
       text({ x: centre, y: plot.bottom + 26, "font-size": 17, "font-weight": 600, "text-anchor": "middle" }, bar.label),
     );
   });
@@ -118,8 +118,11 @@ export function linePlot(v, { narrow = false } = {}) {
     text({ x: width / 2, y: 30, "font-size": 21, "font-weight": 700, "text-anchor": "middle" }, v.title),
     el("line", { x1: 24, y1: line, x2: width - 24, y2: line, stroke: COLORS.ink, "stroke-width": 3 }),
   ];
+  const reach = v.counts.length > 1 ? x(1) - x(0) : 60;
   v.counts.forEach((count, i) => {
     const at = v.from + i;
+    // The whole column over each position, to tap in a teaching scene.
+    parts.push(hit(`position-${i}`, rulerText(at, v.den), { x: x(i) - reach / 2, y: 44, width: reach, height: line - 44 + 40 }));
     parts.push(
       el("line", { x1: x(i), y1: line - 9, x2: x(i), y2: line + 9, stroke: COLORS.ink, "stroke-width": 2.5, class: "tick", "data-at": at }),
       plotLabel(x(i), line + 32, rulerText(at, v.den), narrow),
