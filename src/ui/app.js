@@ -26,6 +26,8 @@ import { createBattleScreen, choiceHtml, pictureHtml } from "./battle_screen.js"
 import { still } from "./sprites.js";
 import { runScene } from "./scene_view.js";
 import { sceneFor } from "../scenes.js";
+import { startChallenge, recordChallenge, CHALLENGE_FROM, CHALLENGE_SECONDS } from "../challenge.js";
+import { createChallengeScreen } from "./challenge_screen.js";
 
 /** @import { Battle } from "../battle.js" */
 /** @import { Level } from "../adventures.js" */
@@ -34,7 +36,7 @@ import { sceneFor } from "../scenes.js";
 /** @import { SoundSystem } from "../sound.js" */
 /** @import { Speaker } from "../speech.js" */
 
-/** @typedef {"title" | "player" | "map" | "note" | "scene" | "battle" | "level-done" | "training-done" | "victory" | "treasures" | "report"} ScreenName */
+/** @typedef {"title" | "player" | "map" | "note" | "scene" | "battle" | "level-done" | "training-done" | "victory" | "treasures" | "report" | "challenge" | "challenge-done"} ScreenName */
 /** @import { Outcome } from "../mastery.js" */
 
 /** What each kind of level is called on the map. */
@@ -99,8 +101,9 @@ function starsHtml(stars) {
  * @param {SoundSystem} options.sound
  * @param {Speaker} [options.speech]  to read aloud, where the browser can
  * @param {Rng} options.rng
+ * @param {number} [options.challengeSeconds]  how long the one-minute challenge lasts; shorter in the tests
  */
-export function createApp(root, { storage, sound, speech, rng }) {
+export function createApp(root, { storage, sound, speech, rng, challengeSeconds = CHALLENGE_SECONDS }) {
   /** @type {Save} */
   let save = loadSave(storage);
   sound.enabled = !save.muted;
@@ -108,6 +111,8 @@ export function createApp(root, { storage, sound, speech, rng }) {
   let screen = "title";
   /** @type {{ destroy(): void, battle: Battle } | null} */
   let battleScreen = null;
+  /** @type {{ destroy(): void, readonly challenge: import("../challenge.js").Challenge } | null} */
+  let challengeScreen = null;
   /** What has been played since the page was opened, for the progress report. */
   const session = { battles: 0, asked: 0, firstTry: 0, started: Date.now(), restSuggested: false };
   /** How long play has gone on since the game was opened, before a break is suggested, in minutes. */
@@ -156,6 +161,8 @@ export function createApp(root, { storage, sound, speech, rng }) {
   function show(name, markup) {
     battleScreen?.destroy();
     battleScreen = null;
+    challengeScreen?.destroy();
+    challengeScreen = null;
     screen = name;
     root.dataset.screen = name;
     screenEl.innerHTML = markup;
@@ -492,6 +499,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
         <div class="actions map-actions">
           <button type="button" class="quiet" data-ref="training">Training ground</button>
           <button type="button" class="quiet" data-ref="quick">Quick battle</button>
+          ${grade >= CHALLENGE_FROM ? `<button type="button" class="quiet" data-ref="challenge"><span aria-hidden="true">⏱️</span> One-minute challenge</button>` : ""}
           <button type="button" class="quiet" data-ref="treasures">Treasures</button>
           <button type="button" class="quiet" data-ref="report">Progress report</button>
           <button type="button" class="quiet" data-ref="edit">Change hero or grade</button>
@@ -525,6 +533,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
     if (next) onTap(part("continue"), () => begin(next));
     onTap(part("training"), () => training());
     onTap(part("quick"), () => quickBattle());
+    onTap(part("challenge"), () => challengeIntro());
     onTap(part("treasures"), () => treasures());
     onTap(part("report"), () => grownUp(report));
     onTap(part("edit"), () => grownUp(() => playerForm(player)));
@@ -711,6 +720,86 @@ export function createApp(root, { storage, sound, speech, rng }) {
       grade: player.grade,
       upTo: (nextLevel(levelsFor(player.grade), progressIn(player, player.grade)) ?? levelsFor(player.grade).at(-1))?.chapter ?? 0,
     });
+  }
+
+  // ---------------------------------------------------- the one-minute challenge
+
+  /** What the challenge is, and the score to beat. */
+  function challengeIntro() {
+    const player = me();
+    const best = player.challenges[player.grade];
+    show("challenge", `
+      <section class="note-screen challenge-intro">
+        <p class="note-kicker">Against the clock</p>
+        <h1 tabindex="-1">One-minute challenge</h1>
+        <div class="card">
+          <p>Answer as many questions as you can in ${challengeSeconds} seconds. They come from every chapter you've reached.</p>
+          <p>No hints this time. A wrong answer shows the right one, and the next question comes straight away.</p>
+          <p class="challenge-best">${best ? `Your best: <strong>${best} right</strong>` : "No score yet. Set one!"}</p>
+        </div>
+        <div class="actions">
+          <button type="button" class="primary big" data-ref="go">Start the clock</button>
+          <button type="button" class="quiet" data-ref="map">Back to the map</button>
+        </div>
+      </section>`);
+    onTap(part("go"), () => challenge());
+    onTap(part("map"), () => map());
+  }
+
+  /** The challenge itself, with the clock running. */
+  function challenge() {
+    const player = me();
+    show("challenge", "");
+    challengeScreen = createChallengeScreen(screenEl, {
+      challenge: startChallenge(rng, player.grade, progressIn(player, player.grade)),
+      rng,
+      sound,
+      seconds: challengeSeconds,
+      onDone: challengeDone,
+      onStop: challengeIntro,
+    });
+    screenEl.querySelector("h1")?.focus();
+  }
+
+  /**
+   * Time's up: the score, against the best, and what to look at again. Every
+   * answer teaches the game what the player knows, as in a battle.
+   * @param {import("../challenge.js").Challenge} done
+   */
+  function challengeDone(done) {
+    const player = me();
+    const now = player.played + 1;
+    let mastery = player.mastery;
+    for (const { type, outcome } of done.answers) {
+      mastery = learn(mastery, type, outcome, now);
+      session.asked++;
+      session.firstTry += Number(outcome === "firstTry");
+    }
+    const { best, before, newBest } = recordChallenge(player.challenges, player.grade, done.score);
+    change({ mastery, played: now, challenges: best });
+    sound.play("victory");
+    const missed = done.answers.filter(a => a.outcome !== "firstTry");
+    const topics = [...new Set(missed.map(a => typeById(a.type).name))];
+    show("challenge-done", `
+      <section class="victory-screen challenge-done">
+        <h1 tabindex="-1">Time's up!</h1>
+        <p class="challenge-final"><strong>${done.score}</strong> right</p>
+        <p class="tagline">${newBest ? (before === null ? "Your first score. Now try to beat it!" : `A new best! Your best was ${before}.`) : `Your best is ${best[player.grade]}. Keep going!`}</p>
+        <ul class="facts">
+          <li><strong>${done.score} of ${done.answers.length}</strong> right</li>
+          <li><strong>${done.answers.length}</strong> ${done.answers.length === 1 ? "question" : "questions"} in ${challengeSeconds} seconds</li>
+        </ul>
+        ${missed.length > 0 ? `<div class="card challenge-missed">
+          <h2 class="card-title">To look at again: ${esc(list(topics))}</h2>
+          <ul>${missed.slice(0, 5).map(a => `<li>${esc(a.prompt)}${a.pictured ? ` <span class="challenge-note">(with a picture)</span>` : ""} <strong>${choiceHtml(a.answer)}</strong></li>`).join("")}</ul>
+        </div>` : ""}
+        <div class="actions">
+          <button type="button" class="primary big" data-ref="again">Go again</button>
+          <button type="button" class="quiet" data-ref="map">Back to the map</button>
+        </div>
+      </section>`);
+    onTap(part("again"), () => challenge());
+    onTap(part("map"), () => map());
   }
 
   /**
@@ -1079,6 +1168,6 @@ export function createApp(root, { storage, sound, speech, rng }) {
 
   return {
     /** For the browser tests: where the game is. */
-    state: () => ({ screen, save, player: currentPlayer(save), battle: battleScreen?.battle ?? null }),
+    state: () => ({ screen, save, player: currentPlayer(save), battle: battleScreen?.battle ?? null, challenge: challengeScreen?.challenge ?? null }),
   };
 }

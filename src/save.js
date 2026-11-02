@@ -34,6 +34,7 @@ export const LONGEST_NAME = 20;
  * @property {number} played  battles started, the clock that review is timed by
  * @property {boolean} readAloud  read each question aloud as it comes
  * @property {number} backedUp  battles played when a progress code was last offered, to keep a copy
+ * @property {Record<string, number>} challenges  the best one-minute challenge score in each grade, by grade
  */
 
 /** Up to this grade, questions are read aloud unless a grown-up turns it off. */
@@ -76,6 +77,7 @@ export function addPlayer(save, { name, heroId, grade, readAloud }) {
     mastery: {},
     played: 0,
     backedUp: 0,
+    challenges: {},
   };
   return { save: { ...save, players: [...save.players, player], current: player.id }, player };
 }
@@ -215,6 +217,12 @@ function cleanPlayer(stored, seen) {
     }
   }
   const grade = ADVENTURE_GRADES.includes(stored.grade) ? stored.grade : ADVENTURE_GRADES[0];
+  /** @type {Record<string, number>} */
+  const challenges = {};
+  for (const year of ADVENTURE_GRADES) {
+    const best = stored.challenges?.[year];
+    if (Number.isInteger(best) && best > 0 && best < 1000) challenges[year] = best;
+  }
   return {
     id: stored.id,
     name: cleanName(stored.name) || `Player ${stored.id.slice(1)}`,
@@ -227,6 +235,7 @@ function cleanPlayer(stored, seen) {
     mastery,
     played,
     backedUp: Number.isInteger(stored.backedUp) && stored.backedUp >= 0 ? Math.min(stored.backedUp, played) : 0,
+    challenges,
   };
 }
 

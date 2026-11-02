@@ -19,16 +19,17 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, played, still, marathon, showHow, grownUps;
+  let server, played, still, marathon, showHow, grownUps, challenge;
 
   before(async () => {
     server = await startServer();
-    [played, still, marathon, showHow, grownUps] = await Promise.all([
+    [played, still, marathon, showHow, grownUps, challenge] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
       runScenario(browser, server.origin, "showHow"),
       runScenario(browser, server.origin, "grownUps"),
+      runScenario(browser, server.origin, "challenge"),
     ]);
   });
 
@@ -40,6 +41,21 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(marathon.errors, []);
     assert.deepEqual(showHow.errors, []);
     assert.deepEqual(grownUps.errors, []);
+    assert.deepEqual(challenge.errors, []);
+  });
+
+  it("runs the one-minute challenge from 3rd grade: right answers score, a wrong one shows the answer, the best is kept", () => {
+    assert.equal(played.map.challenge, false, "not offered in 2nd grade");
+    assert.ok(challenge.offered);
+    assert.deepEqual(challenge.intro, { heading: "One-minute challenge", best: "No score yet. Set one!" });
+    assert.equal(challenge.clockStart, "5");
+    assert.equal(challenge.answered, 4);
+    assert.match(challenge.wrongShows, /^The answer is /);
+    assert.deepEqual(challenge.done, { heading: "Time's up!", final: "3 right", tagline: "Your first score. Now try to beat it!", missed: true });
+    assert.equal(challenge.best, 3);
+    assert.equal(challenge.played, 27, "a challenge moves the clock that review is timed by");
+    assert.equal(challenge.bestShown, "Your best: 3 right");
+    assert.ok(challenge.stopped, "stopping early ends it, and counts nothing");
   });
 
   it("with the grown-up lock on, asks a grown-up's question before the report, the choices and opening chapters", () => {

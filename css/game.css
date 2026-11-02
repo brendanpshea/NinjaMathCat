@@ -475,6 +475,27 @@ select {
 .journey li { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--indigo); background: var(--surface); }
 .journey .beaten { background: var(--indigo); }
 .journey .current { background: var(--orange); border-color: var(--orange-deep); scale: 1.25; }
+/* The one-minute challenge: the clock, the score, and the time left as a bar that empties. */
+.challenge { display: grid; gap: 14px; }
+.challenge-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.challenge-bar [data-ref=stop] { margin-left: auto; }
+.challenge-clock { margin: 0; min-width: 2.2ch; font: 800 34px var(--display); font-variant-numeric: tabular-nums; color: var(--indigo); }
+.challenge-clock.is-low { color: #dc2626; }
+.challenge-score { margin: 0; font-size: 22px; font-weight: 800; color: var(--orange-deep); }
+.challenge-score.is-up { animation: score-up 300ms ease-out; }
+@keyframes score-up { 40% { transform: scale(1.3); } }
+.challenge-time { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.challenge-time span { display: block; height: 100%; width: 100%; background: var(--indigo); }
+.challenge:has(.is-low) .challenge-time span { background: #dc2626; }
+.challenge-best { margin: 0; font-size: 18px; }
+.challenge-final { margin: 0; font: 800 28px var(--display); }
+.challenge-final strong { font-size: 64px; color: var(--indigo); }
+.challenge-missed ul { display: grid; gap: 8px; margin: 0; padding-left: 20px; }
+.challenge-missed strong { color: var(--indigo); }
+.challenge-note { font-size: 15px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) {
+  .challenge-score.is-up { animation: none; }
+}
 .streak { margin: 0; font-weight: 800; color: var(--orange-deep); }
 .streak:empty { display: none; }
 .leave { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }

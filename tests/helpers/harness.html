@@ -183,6 +183,7 @@
       report.map.levels = $$(".level-button").length;
       report.map.open = $$(".level-button.is-open").length;
       report.map.continue = text("[data-ref=continue]");
+      report.map.challenge = Boolean($("[data-ref=challenge]"));
       click("[data-ref=continue]");
 
       // The chapter opens with its teaching scene; its note is a link away.
@@ -373,7 +374,8 @@
       const sceneShot = screen === "scene";
       if (sceneShot || screen === "how") localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "0-teens")));
       else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify({ ...(await maya()), locked: screen === "lock" }));
-      await load("?test&seed=11");
+      // A challenge a few minutes long, so the shot catches it mid-run.
+      await load(screen === "challenge" ? "?test&seed=11&challenge=170" : "?test&seed=11");
       if (screen === "how") {
         // "Show me how", open over the battle after the first question is missed twice.
         click("[data-ref=continue]");
@@ -429,6 +431,23 @@
           click("[data-ref=report]");
           await until(() => doc().querySelector("dialog.lock-dialog[open]"), "the grown-up question");
           break;
+        case "challenge":
+        case "challenge-done": {
+          // A one-minute challenge with a few answers, every third wrong: running, or once time is up.
+          click("[data-ref=challenge]");
+          await on("challenge");
+          click("[data-ref=go]");
+          await until(() => game().challenge, "the clock to start");
+          for (let i = 0; i < 7; i++) {
+            await until(() => game().screen !== "challenge" || $(".challenge .choice:not(:disabled)"), "a question");
+            if (game().screen !== "challenge") break;
+            const q = game().challenge.question;
+            const choice = i % 3 !== 2 ? q.answer : q.choices.find(c => c !== q.answer);
+            $$(".challenge .choice")[q.choices.indexOf(choice)].click();
+          }
+          if (screen === "challenge-done") await on("challenge-done", "the time to run out");
+          break;
+        }
         case "victory":
           click("[data-ref=quick]");
           await on("battle");
@@ -528,6 +547,51 @@
       click("[data-ref=next]");
       await readyToAnswer();
       report.goesOn = game().battle.question === before && $(".prompt").textContent === before.prompt && $("[data-ref=how]").hidden;
+      report.errors = errors;
+      return report;
+    },
+
+    /** The one-minute challenge, made 5 seconds long: the start, a run with right and wrong answers, time up, and the best kept. */
+    async challenge() {
+      localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify(await maya()));
+      await load("?test&seed=2&challenge=5");
+      const report = {};
+      report.offered = Boolean($("[data-ref=challenge]"));
+      click("[data-ref=challenge]");
+      await on("challenge", "the challenge's start");
+      report.intro = { heading: $("h1").textContent, best: text(".challenge-best") };
+      click("[data-ref=go]");
+      await until(() => game().challenge, "the clock to start");
+      report.clockStart = text("[data-ref=clock]");
+      // Right, right, wrong, right; then the rest of the time runs out.
+      let answered = 0;
+      for (const right of [true, true, false, true]) {
+        await until(() => game().screen !== "challenge" || $(".challenge .choice:not(:disabled)"), "a question");
+        if (game().screen !== "challenge") break;
+        const q = game().challenge.question;
+        const choice = right ? q.answer : q.choices.find(c => c !== q.answer);
+        $$(".challenge .choice")[q.choices.indexOf(choice)].click();
+        answered++;
+        if (!right) {
+          await until(() => /The answer is/.test(text("[data-ref=feedback]")), "the right answer shown");
+          report.wrongShows = text("[data-ref=feedback]");
+        }
+      }
+      report.answered = answered;
+      await on("challenge-done", "the time to run out");
+      report.done = { heading: $("h1").textContent, final: text(".challenge-final"), tagline: text(".tagline"), missed: Boolean($(".challenge-missed")) };
+      report.best = saved().players[0].challenges["3"];
+      report.played = saved().players[0].played;
+      // Again, then stopped early: the best stays, and the start says so.
+      click("[data-ref=again]");
+      await until(() => game().challenge, "the clock again");
+      click("[data-ref=stop]");
+      await on("challenge", "the start again");
+      report.bestShown = text(".challenge-best");
+      report.stopped = !game().challenge;
+      click("[data-ref=map]");
+      await on("map");
       report.errors = errors;
       return report;
     },

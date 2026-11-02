@@ -24,7 +24,7 @@ describe("the save", () => {
 
   it("adds players, each new one the current one, and names a blank one by number", () => {
     let { save, player } = addPlayer(newSave(), owl);
-    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, readAloud: false, xp: 0, treasures: [], adventures: {}, mastery: {}, played: 0, backedUp: 0 });
+    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, readAloud: false, xp: 0, treasures: [], adventures: {}, mastery: {}, played: 0, backedUp: 0, challenges: {} });
     ({ save, player } = addPlayer(save, { name: "   ", heroId: "dragon_king", grade: 9 }));
     assert.deepEqual([player.name, player.heroId, player.grade], ["Player 2", "cat_ninja", 0]);
     // Questions are read aloud for the youngest, unless chosen otherwise.
@@ -55,7 +55,7 @@ describe("the save", () => {
     const progress = recordLevel(progressIn(player, 3), level, { firstTry: 7, secondTry: 1, missed: 0, knockouts: 0, byType: {} });
     save = updatePlayer({ ...save, muted: true, locked: true }, player.id, {
       xp: 730, treasures: [TREASURES[3].id, TREASURES[0].id], adventures: { 3: progress },
-      mastery: { addition: { score: 0.72, seen: 9, last: 4 } }, played: 5, backedUp: 4,
+      mastery: { addition: { score: 0.72, seen: 9, last: 4 } }, played: 5, backedUp: 4, challenges: { 3: 17 },
     });
     assert.equal(writeSave(storage, save), true);
     assert.deepEqual(loadSave(storage), save);
@@ -69,6 +69,7 @@ describe("the save", () => {
       "ninja-math-cat": JSON.stringify({
         players: [
           { id: "p1", name: 42, heroId: "dragon_king", grade: 2.5, xp: -5, treasures: ["nope", TREASURES[1].id, TREASURES[1].id, 7], played: 3, backedUp: 9,
+            challenges: { 3: 14, 4: -2, 5: "lots", 6: 2.5, 12: 9 },
             mastery: { addition: { score: 0.4, seen: 2, last: 9 }, subtraction: { score: 7, seen: 1, last: 0 }, gone_type: { score: 0.5, seen: 1, last: 0 }, shapes: { score: 0.9, seen: 0, last: 1 } },
             adventures: { 2: { done: { [level]: { stars: 2, firstTry: 6, asked: 8 }, "2-gone.1": { stars: 3, firstTry: 8, asked: 8 }, [levelsFor(2)[1].id]: { stars: 9, firstTry: 1, asked: 1 } }, opened: 99 }, 12: { done: {} } } },
           { id: "p1", name: "A copy" },
@@ -90,6 +91,8 @@ describe("the save", () => {
       played: 3,
       // Nor can the last copy kept.
       backedUp: 3,
+      // Best challenge scores are whole numbers, for grades that have an adventure.
+      challenges: { 3: 14 },
     });
     assert.deepEqual([save.current, save.muted, save.locked], [null, false, false]);
   });
@@ -100,7 +103,7 @@ describe("the save", () => {
     });
     const save = loadSave(storage);
     assert.deepEqual(save, {
-      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, readAloud: true, xp: 730, treasures: [TREASURES[3].id], adventures: {}, mastery: {}, played: 0, backedUp: 0 }],
+      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, readAloud: true, xp: 730, treasures: [TREASURES[3].id], adventures: {}, mastery: {}, played: 0, backedUp: 0, challenges: {} }],
       current: "p1",
       muted: true,
       locked: false,
