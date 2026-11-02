@@ -34,6 +34,15 @@ describe("reading aloud", () => {
     assert.equal(speakable("5:13", { ratios: true }), "5 to 13");
   });
 
+  it("says money in dollars and cents, as a child would", () => {
+    assert.equal(speakable("$2.75"), "2 dollars and 75 cents");
+    assert.equal(speakable("$1.00"), "1 dollar");
+    assert.equal(speakable("$0.05"), "5 cents");
+    assert.equal(speakable("$10"), "10 dollars");
+    assert.equal(speakable("55¢ and 1¢"), "55 cents and 1 cent");
+    assert.equal(speakable("A toy car costs $4.50. Malik has 90¢."), "A toy car costs 4 dollars and 50 cents. Malik has 90 cents.");
+  });
+
   it("reads a question's choices with their numbers", () => {
     assert.equal(questionSpeech("What comes next?", [5, "seven"]), "What comes next? 1, 5. 2, seven.");
   });
@@ -42,7 +51,7 @@ describe("reading aloud", () => {
     for (const { type } of CURRICULUM) {
       for (const { question: q, at } of questionsOf(type, 30)) {
         const said = speakable(questionSpeech(q.prompt, q.choices), { ratios: type.id === "ratios" });
-        assert.ok(!/[+×÷−=□≤≥<>²³⁴⁵°]/.test(said), `${at}: "${said}"`);
+        assert.ok(!/[+×÷−=□≤≥<>²³⁴⁵°$¢]/.test(said), `${at}: "${said}"`);
         assert.ok(!/\d\/\d/.test(said), `${at}: "${said}"`);
       }
     }

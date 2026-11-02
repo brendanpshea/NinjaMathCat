@@ -371,6 +371,94 @@
       report.errors = errors;
       return report;
     },
+
+    /**
+     * A whole grade's adventure played through the screens, for
+     * tools/playthrough.js: every note read, most answers right, some wrong
+     * once, now and then wrong twice. Run with ?grade=, and maybe ?levels=
+     * and a ?width= for the screen, such as a phone's 390.
+     */
+    async marathon() {
+      const params = new URLSearchParams(location.search);
+      const grade = Number(params.get("grade") ?? 3);
+      const most = Number(params.get("levels") ?? 99);
+      if (params.get("width")) frame.style.width = `${params.get("width")}px`;
+      localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify({
+        players: [{ id: "p1", name: "Tester", heroId: "cat_ninja", grade, readAloud: false, xp: 0, treasures: [], adventures: {} }],
+        current: "p1",
+        muted: true,
+      }));
+      await load(`?test&seed=${grade * 7 + 3}`);
+      const report = { levels: 0, questions: 0, wrongOnce: 0, wrongTwice: 0, notes: [], kinds: {}, problems: [], screens: [] };
+      const problem = what => { if (report.problems.length < 40) report.problems.push(what); };
+      let roll = grade * 97 + 13;
+      const chance = p => ((roll = (roll * 16807) % 2147483647) / 2147483647) < p;
+      await on("map");
+      click("[data-ref=continue]");
+      while (report.levels < most) {
+        await until(() => ["note", "battle"].includes(game().screen), "a note or a battle");
+        if (game().screen === "note") {
+          report.notes.push({ heading: $("h1").textContent, example: Boolean(text(".example-answer strong")) });
+          if (!text(".note-text") || !text(".example-answer strong")) problem(`note "${$("h1").textContent}" has no text or example`);
+          click("[data-ref=start]");
+          await on("battle");
+        }
+        const title = text(".journey-title");
+        while (game().screen === "battle") {
+          await readyToAnswer();
+          if (game().screen !== "battle") break;
+          const q = game().battle.question;
+          report.questions++;
+          const where = `${title}: ${q.prompt}`;
+          if ($$(".choice").length !== 4 || $$(".choice-text").some(c => !c.textContent.trim())) problem(`${where}: choices missing or blank`);
+          if (q.visual) {
+            report.kinds[q.visual.kind] = (report.kinds[q.visual.kind] ?? 0) + 1;
+            const picture = $(".picture svg");
+            if (!picture) problem(`${where}: no picture drawn for ${q.visual.kind}`);
+            else if (!picture.getAttribute("aria-label")) problem(`${where}: picture with no label`);
+            else if (picture.getBoundingClientRect().width < 100) problem(`${where}: picture only ${Math.round(picture.getBoundingClientRect().width)}px wide`);
+          } else if ($(".picture svg")) problem(`${where}: a picture left over from the last question`);
+          const page = doc().documentElement;
+          if (page.scrollWidth > page.clientWidth + 1) problem(`${where}: the page scrolls sideways, ${page.scrollWidth}px in ${page.clientWidth}px`);
+          if (chance(0.8)) {
+            await answer(true);
+          } else if (chance(0.75)) {
+            report.wrongOnce++;
+            await answer(false);
+            await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint");
+            if (!text(".feedback")) problem(`${where}: no hint shown`);
+            await answer(true);
+          } else {
+            report.wrongTwice++;
+            await answer(false);
+            await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint");
+            await answer(false);
+            await until(() => !$("[data-ref=next]").hidden, "the Next button");
+            if ($$(".choice.right").length !== 1) problem(`${where}: the right answer is not shown`);
+            click("[data-ref=next]");
+          }
+          await wait(20);
+        }
+        await until(() => game().screen !== "battle", "the battle's end");
+        report.screens.push(game().screen);
+        if (game().screen !== "level-done") { problem(`after ${title}: ${game().screen}, not the level's end`); break; }
+        report.levels++;
+        const next = $("[data-ref=next]");
+        if (!next) break;
+        next.click();
+        await until(() => game().screen !== "level-done", "leaving the level's end");
+        if (game().screen === "map") {
+          if (!$("[data-ref=continue]")) break;
+          click("[data-ref=continue]");
+        }
+      }
+      report.finalScreen = game().screen;
+      report.saved = Object.keys(saved().players[0].adventures?.[grade]?.done ?? {}).length;
+      report.xp = game().player.xp;
+      report.errors = errors;
+      return report;
+    },
   };
 
   try {

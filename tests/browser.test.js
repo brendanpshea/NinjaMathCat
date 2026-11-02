@@ -19,13 +19,14 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, played, still;
+  let server, played, still, marathon;
 
   before(async () => {
     server = await startServer();
-    [played, still] = await Promise.all([
+    [played, still, marathon] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
+      runScenario(browser, server.origin, "marathon&grade=0"),
     ]);
   });
 
@@ -34,6 +35,16 @@ describe("in a real browser", { skip }, () => {
   it("runs without a single error", () => {
     assert.deepEqual(played.errors, []);
     assert.deepEqual(still.errors, []);
+    assert.deepEqual(marathon.errors, []);
+  });
+
+  it("plays kindergarten's whole adventure through the screens, every note and picture as it should be", () => {
+    assert.deepEqual(marathon.problems, []);
+    assert.equal(marathon.levels, 40);
+    assert.equal(marathon.saved, 40);
+    assert.equal(marathon.notes.length, 8);
+    assert.ok(marathon.wrongOnce > 0 && marathon.wrongTwice > 0, "some answers wrong, so hints and answers were shown");
+    assert.ok(Object.keys(marathon.kinds).length >= 6, `pictures of only ${Object.keys(marathon.kinds).join(", ")}`);
   });
 
   it("opens on a title that asks who is playing, with nobody yet", () => {

@@ -14,6 +14,7 @@
     "gallery": "node tools/build_gallery.js",
     "stage": "node tools/build_stage_preview.js",
     "screens": "node tools/screenshots.js",
+    "playthrough": "node tools/playthrough.js",
     "backdrop-prompts": "node tools/backdrop_prompts.js",
     "backdrops": "node tools/backdrop_review.js"
   },

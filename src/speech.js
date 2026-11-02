@@ -1,8 +1,8 @@
 // Reading aloud, for children still learning to read, with the browser's own
 // speech. Math is turned into the words a child would hear: "3/4" is "3
-// fourths", "7 × 8" is "7 times 8", "−3" is "negative 3", and the box in an
-// equation is "box". Where there is no speech, nothing is said and nothing
-// breaks.
+// fourths", "7 × 8" is "7 times 8", "−3" is "negative 3", "$2.75" is "2
+// dollars and 75 cents", and the box in an equation is "box". Where there is
+// no speech, nothing is said and nothing breaks.
 
 /** Fraction words, one and many, by denominator. */
 const PARTS = {
@@ -23,6 +23,18 @@ function fractionWords(top, bottom) {
 }
 
 /**
+ * An amount of money in words: "2 dollars and 75 cents", "1 dollar", "5 cents".
+ * Voices differ on "$2.75" and "55¢", and some read out "cent sign".
+ * @param {number} dollars
+ * @param {number} cents
+ */
+function moneyWords(dollars, cents) {
+  const d = dollars > 0 ? `${dollars} ${dollars === 1 ? "dollar" : "dollars"}` : "";
+  const c = cents > 0 ? `${cents} ${cents === 1 ? "cent" : "cents"}` : "";
+  return d && c ? `${d} and ${c}` : d || c || "0 dollars";
+}
+
+/**
  * Text as it should be spoken. A colon with two digits after it is a time,
  * "3:45", unless the text is about ratios, where "5:13" is "5 to 13".
  * @param {string} text
@@ -30,6 +42,8 @@ function fractionWords(top, bottom) {
  */
 export function speakable(text, { ratios = false } = {}) {
   return text
+    .replace(/\$(\d[\d,]*)(?:\.(\d{2}))?/g, (_, dollars, cents = "0") => moneyWords(Number(dollars.replace(/,/g, "")), Number(cents)))
+    .replace(/(\d+)¢/g, (_, cents) => moneyWords(0, Number(cents)))
     .replace(/(\d+) (\d+)\/(\d+)/g, (_, whole, top, bottom) => `${whole} and ${fractionWords(top, bottom)}`)
     .replace(/(\d+)\/(\d+)/g, (_, top, bottom) => fractionWords(top, bottom))
     .replace(/(^|[\s(,])−(?=\d)/g, "$1negative ")

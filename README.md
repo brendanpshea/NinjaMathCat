@@ -49,7 +49,9 @@ npm run check                 # type-check src/, then run the tests
 npm run sample -- 2.5         # print ten sample questions for mid-second grade
 npm run sample -- 1 5 money   # five money questions for first grade
 npm run coverage -- 5         # which 5th grade standards the questions cover, and which they don't yet
-npm run simulate -- 2         # how adventures go for children of different accuracy
+npm run simulate -- 2         # how quick battles go for children of different accuracy
+npm run playthrough           # play every grade's whole adventure in a real browser, and report problems
+npm run playthrough -- 3 10 390   # 3rd grade's first 10 levels, on a phone-wide screen
 npm run gallery               # out/gallery.html: sample questions with their pictures
 npm run stage                 # out/stage-preview/: try the battle stage with any hero and monster
 npm run screens               # out/screens/: screenshots of every screen, desktop and phone
