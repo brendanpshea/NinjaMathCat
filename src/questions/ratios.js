@@ -14,8 +14,9 @@ export const ratios = {
   id: "ratios",
   name: "Ratios and percents",
   generate(rng) {
-    switch (rng.pick(["language", "equivalent", "rate", "percentOf", "whatPercent"])) {
+    switch (rng.pick(["language", "equivalent", "doubleLine", "rate", "percentOf", "whatPercent"])) {
       case "language": return language(rng);
+      case "doubleLine": return doubleLine(rng);
       case "equivalent": return equivalentRatio(rng);
       case "rate": return unitRate(rng);
       case "percentOf": return percentOf(rng);
@@ -42,6 +43,36 @@ function language(rng) {
     wrong: rng.shuffle([`${b}:${a}`, whole ? `${a}:${b}` : `${a}:${a + b}`, `${a + b}:${a}`, `${b}:${a + b}`].filter(t => t !== answer)),
     hint: `The ratio of ${first} to ${whole ? "everything" : second} puts the number of ${first} first.`,
     difficulty: 1 + Number(whole),
+  };
+}
+
+/** Things that go together in a ratio, for a double number line. */
+const TOGETHER = [["cups of flour", "cups of milk"], ["laps", "minutes"], ["dollars", "pounds of apples"], ["pages", "minutes"], ["red beads", "blue beads"]];
+
+/**
+ * A double number line with one number missing (6.RP.3a). Adding the same
+ * amount the other line went up by is the mistake to catch.
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function doubleLine(rng) {
+  const [first, second] = rng.pick(TOGETHER);
+  let [a, b] = [rng.int(2, 9), rng.int(2, 9)];
+  while (a === b) b = rng.int(2, 9);
+  const at = rng.int(2, 4);
+  const onTop = rng.chance(0.5);
+  const [hidden, other] = onTop ? [a, b] : [b, a];
+  const answer = at * hidden;
+  /** @param {number} unit @param {boolean} gap */
+  const line = (unit, gap) => [0, 1, 2, 3, 4].map(i => (gap && i === at ? null : i * unit));
+  return {
+    prompt: `The double number line shows ${first} and ${second} in the same ratio. What number goes in the box?`,
+    visual: { kind: "double_line", top: { label: first, values: line(a, onTop) }, bottom: { label: second, values: line(b, !onTop) } },
+    answer,
+    // The number on the other line, adding on the other line's jump, or a step out.
+    wrong: wrongNumbers(rng, answer, [at * other, (at - 1) * hidden + other, answer + hidden, answer - hidden], { min: 1 }),
+    hint: "The marks line up: each jump along one line goes with the same jump along the other. Count the jumps from 0.",
+    difficulty: 2,
   };
 }
 

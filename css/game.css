@@ -428,9 +428,9 @@ select {
 .picture { display: grid; place-items: center; padding: 8px; background: #f7f9fc; border-radius: 12px; }
 .picture:empty { display: none; }
 .picture svg { width: 100%; max-width: 560px; max-height: 230px; height: auto; }
-/* Graphs, grids and protractors are read by their small print, so they get
+/* Graphs, grids, protractors and dials are read by their small print, so they get
    more room; squeezed to 230 pixels, a coordinate grid's numbers were 7 pixels high. */
-.picture svg:is([data-visual="coordinates"], [data-visual="bar_graph"], [data-visual="picture_graph"], [data-visual="line_plot"], [data-visual="angle"]) {
+.picture svg:is([data-visual="coordinates"], [data-visual="bar_graph"], [data-visual="picture_graph"], [data-visual="line_plot"], [data-visual="angle"], [data-visual="gauge"]) {
   max-height: min(380px, 50vh);
 }
 
@@ -485,7 +485,7 @@ select {
   /* A taller stage in its narrower column, as on phones; the backdrop
      still covers it from the floor up. */
   .battle .stage { --aspect: 1.7; }
-  .picture svg:is([data-visual="coordinates"], [data-visual="bar_graph"], [data-visual="picture_graph"], [data-visual="line_plot"], [data-visual="angle"]) {
+  .picture svg:is([data-visual="coordinates"], [data-visual="bar_graph"], [data-visual="picture_graph"], [data-visual="line_plot"], [data-visual="angle"], [data-visual="gauge"]) {
     max-height: max(230px, min(380px, 100vh - 390px));
   }
 }

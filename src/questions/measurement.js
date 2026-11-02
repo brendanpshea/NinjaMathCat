@@ -569,7 +569,7 @@ const CONVERSIONS = [
  * @type {readonly [number, string[]][]}
  */
 const CONVERTING = [
-  [3.5, ["which", "which", "sameUnit"]],
+  [3.5, ["which", "sameUnit", "read", "read"]],
   [4, ["toSmall", "toSmall", "story"]],
   [4.5, ["toSmall", "mixed", "story"]],
   [Infinity, ["toSmall", "toBig", "toBig", "toBigDecimal", "mixed", "story"]],
@@ -582,6 +582,7 @@ export const conversions = {
   generate(rng, grade) {
     switch (rng.pick(atGrade(grade, CONVERTING))) {
       case "which": return whichUnit(rng);
+      case "read": return readGauge(rng);
       case "sameUnit": return sameUnit(rng);
       case "toSmall": return toSmall(rng, grade);
       case "toBig": return toBig(rng);
@@ -622,6 +623,41 @@ function whichUnit(rng) {
       ? "Liters and milliliters measure how much a container holds; a liter is much more than a milliliter."
       : "Kilograms and grams measure how heavy something is; a kilogram is much more than a gram.",
     difficulty: 1,
+  };
+}
+
+/**
+ * Measuring tools, and the marks on them (3.MD.2). The value is always on a
+ * mark, and most often on one without a number.
+ * @type {readonly { tool: "jug" | "scale", unit: "mL" | "g" | "kg", max: number, step: number, labelEvery: number, ask: string }[]}
+ */
+const GAUGES = [
+  { tool: "jug", unit: "mL", max: 1000, step: 50, labelEvery: 100, ask: "How many milliliters of water are in the jug?" },
+  { tool: "jug", unit: "mL", max: 500, step: 20, labelEvery: 100, ask: "How many milliliters of water are in the jug?" },
+  { tool: "scale", unit: "g", max: 1000, step: 50, labelEvery: 200, ask: "How many grams does the bag of flour on the scale weigh?" },
+  { tool: "scale", unit: "kg", max: 20, step: 1, labelEvery: 5, ask: "How many kilograms does the box on the scale weigh?" },
+];
+
+/**
+ * Reading a measuring jug or a scale (3.MD.2).
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function readGauge(rng) {
+  const g = rng.pick(GAUGES);
+  const marks = g.max / g.step;
+  const unnumbered = Array.from({ length: marks - 1 }, (_, i) => (i + 1) * g.step).filter(m => m % g.labelEvery !== 0);
+  const value = rng.chance(0.8) ? rng.pick(unnumbered) : g.labelEvery * rng.int(1, g.max / g.labelEvery - 1);
+  const below = value - (value % g.labelEvery);
+  const between = (value - below) / g.step;
+  return {
+    prompt: g.ask,
+    visual: { kind: "gauge", tool: g.tool, unit: g.unit, max: g.max, step: g.step, labelEvery: g.labelEvery, value },
+    answer: value,
+    // A mark off either way, or each small mark counted as 1 or 10 instead of what it is worth.
+    wrong: wrongNumbers(rng, value, [below + between * (g.step === 10 ? 1 : 10), below + between * (g.step === 1 ? 2 : 1), value + g.step, value - g.step], { min: g.step, step: g.step }),
+    hint: `Work out what each small mark is worth: the numbers go up by ${g.labelEvery}, and there are ${g.labelEvery / g.step} marks from one number to the next.`,
+    difficulty: 1 + Number(value % g.labelEvery !== 0),
   };
 }
 

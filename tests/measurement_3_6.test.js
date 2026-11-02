@@ -138,6 +138,13 @@ describe("units of measure", () => {
     for (const { question: q, at } of questionsOf(conversions)) {
       const p = q.prompt;
       let match;
+      if (q.visual?.kind === "gauge") {
+        const v = q.visual;
+        assert.equal(q.answer, v.value, at);
+        assert.ok(v.value > 0 && v.value < v.max && v.value % v.step === 0, `${at}: on a mark`);
+        assert.ok(p.includes({ mL: "milliliters", g: "grams", kg: "kilograms" }[v.unit]), at);
+        continue;
+      }
       if ((match = p.match(/^How many (\w+) are in (\d+) (\w+)\?$/))) {
         assert.equal(q.answer, Number(match[2]) * FACTS[`${match[3]} ${match[1]}`], at);
       } else if ((match = p.match(/^How many (\w+) is (\d+) (\w+) and (\d+) (\w+)\?$/))) {

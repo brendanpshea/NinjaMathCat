@@ -213,6 +213,39 @@
  */
 
 /**
+ * A measuring jug with water in it, or a kitchen scale's dial and needle, to
+ * read (3.MD.2). Marks every `step`, numbered every `labelEvery`.
+ * @typedef {object} Gauge
+ * @property {"gauge"} kind
+ * @property {"jug" | "scale"} tool
+ * @property {"mL" | "g" | "kg"} unit
+ * @property {number} max
+ * @property {number} step
+ * @property {number} labelEvery
+ * @property {number} value
+ */
+
+/**
+ * A box plot over a number line marked every `step` (6.SP.4).
+ * @typedef {object} BoxPlot
+ * @property {"box_plot"} kind
+ * @property {string} title
+ * @property {number} from
+ * @property {number} to
+ * @property {number} step
+ * @property {[number, number, number, number, number]} five  least, lower quartile, median, upper quartile, greatest
+ */
+
+/**
+ * Two number lines, one above the other, their marks lined up in the same
+ * ratio, with one number missing (6.RP.3a).
+ * @typedef {object} DoubleLine
+ * @property {"double_line"} kind
+ * @property {{ label: string, values: (number | null)[] }} top
+ * @property {{ label: string, values: (number | null)[] }} bottom
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -221,7 +254,7 @@
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths | Lines | Net | Composite} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths | Lines | Net | Composite | Gauge | BoxPlot | DoubleLine} Visual
  */
 
 /**

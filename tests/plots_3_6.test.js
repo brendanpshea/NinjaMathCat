@@ -61,6 +61,18 @@ describe("dot plots and histograms", () => {
         for (const c of q.choices) if (c !== q.answer) assert.ok(NOT_STATISTICAL.includes(c), at);
         continue;
       }
+      if (v.kind === "box_plot") {
+        const [low, q1, median, q3, high] = v.five;
+        assert.ok(v.from < low && low < q1 && q1 < median && median < q3 && q3 < high && high < v.to, `${at}: inside the number line, in order`);
+        assert.ok(v.five.every(n => (n - v.from) % v.step === 0), `${at}: every number on a mark`);
+        if (/^About how much/.test(p)) {
+          const SHARE = { [`between ${q1} and ${q3}`]: "half", [`above ${median}`]: "half", [`above ${q3}`]: "a quarter", [`below ${q1}`]: "a quarter", [`below ${q3}`]: "three quarters" };
+          assert.equal(q.answer, SHARE[p.match(/data is (.+)\?$/)[1]], at);
+        } else {
+          assert.equal(q.answer, /interquartile/.test(p) ? q3 - q1 : /range/.test(p) ? high - low : median, at);
+        }
+        continue;
+      }
       if (v.kind === "bar_graph") {
         assert.ok(v.histogram, at);
         const range = p.match(/ (\d+) to (\d+) /);

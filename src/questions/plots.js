@@ -230,10 +230,11 @@ export const NOT_STATISTICAL = [
 /** @type {QuestionType} */
 export const dataDisplays = {
   id: "data_displays",
-  name: "Dot plots and histograms",
+  name: "Dot plots, histograms and box plots",
   generate(rng) {
-    switch (rng.pick(["dot", "dot", "histogram", "statistical"])) {
+    switch (rng.pick(["dot", "dot", "histogram", "box", "box", "statistical"])) {
       case "dot": return dotPlot(rng);
+      case "box": return boxPlotQuestion(rng);
       case "histogram": return histogram(rng);
       default: return {
         prompt: "Which is a statistical question, one whose answers would vary?",
@@ -355,3 +356,64 @@ function histogram(rng) {
   };
 }
 
+/** What a box plot can show. */
+const BOX_DATA = [
+  { title: "Minutes spent reading", what: "minutes" },
+  { title: "Points scored in each game", what: "points" },
+  { title: "Heights of sunflowers, in centimeters", what: "centimeters" },
+  { title: "Push-ups done in one minute", what: "push-ups" },
+];
+
+/** How much of the data a part of a box plot holds, and the words for it. */
+const SHARES = ["a quarter", "half", "three quarters", "all of them"];
+
+/**
+ * Reading a box plot (6.SP.4): its median, range, or interquartile range,
+ * or how much of the data falls in a part of it. Every one of its five
+ * numbers is on a mark of the number line.
+ * @param {Rng} rng
+ * @returns {import("./common.js").Draft}
+ */
+function boxPlotQuestion(rng) {
+  const data = rng.pick(BOX_DATA);
+  const step = rng.pick([2, 5, 10]);
+  const from = step * rng.int(0, 3);
+  // Gaps between the five numbers, in marks, filling at most 11 of the 12.
+  let gaps;
+  do gaps = [rng.int(1, 2), rng.int(1, 3), rng.int(1, 3), rng.int(1, 3), rng.int(1, 2)];
+  while (gaps.reduce((sum, g) => sum + g, 0) > 11);
+  const five = /** @type {[number, number, number, number, number]} */ (gaps.reduce((out, gap) => [...out, (out.length ? out[out.length - 1] : from) + gap * step], /** @type {number[]} */ ([])));
+  const [low, q1, median, q3, high] = five;
+  /** @type {import("./common.js").BoxPlot} */
+  const visual = { kind: "box_plot", title: data.title, from, to: from + 12 * step, step, five };
+  const kind = rng.pick(["median", "range", "iqr", "share"]);
+  if (kind === "share") {
+    const ask = rng.pick([
+      { words: `between ${q1} and ${q3}`, answer: "half" },
+      { words: `above ${median}`, answer: "half" },
+      { words: `above ${q3}`, answer: "a quarter" },
+      { words: `below ${q1}`, answer: "a quarter" },
+      { words: `below ${q3}`, answer: "three quarters" },
+    ]);
+    return {
+      prompt: `About how much of the data is ${ask.words}?`,
+      visual,
+      answer: ask.answer,
+      wrong: SHARES.filter(s => s !== ask.answer),
+      hint: "A box plot cuts the data into four parts with about the same number in each: each whisker, and each half of the box.",
+      difficulty: 3,
+    };
+  }
+  const [prompt, answer, likely, hint] = /** @type {[string, number, number[], string]} */ (
+    kind === "median" ? [`What is the median number of ${data.what}?`, median, [q1, q3, (low + high) / 2], "The line inside the box marks the median."]
+    : kind === "range" ? [`What is the range of the numbers of ${data.what}?`, high - low, [q3 - q1, high, high - median], "The range is the greatest value take away the least: the ends of the whiskers."]
+    : [`What is the interquartile range of the numbers of ${data.what}?`, q3 - q1, [high - low, q3, median - q1], "The interquartile range is the width of the box: the upper quartile take away the lower."]);
+  return {
+    prompt,
+    visual,
+    answer,
+    wrong: wrongNumbers(rng, answer, likely.filter(n => Number.isInteger(n)), { min: step, step }),
+    hint,
+    difficulty: kind === "median" ? 2 : 3,
+  };
+}

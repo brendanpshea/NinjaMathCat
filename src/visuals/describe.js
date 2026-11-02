@@ -121,6 +121,14 @@ export function describeVisual(v) {
         : "A net of flat shapes that folds into a solid";
     case "composite":
       return `A shape made of two rectangles, like the letter L, with sides labelled ${list([v.labels.top, v.labels.left, v.labels.bottom, v.labels.right])}`;
+    case "gauge": {
+      const unit = { mL: "milliliters", g: "grams", kg: "kilograms" }[v.unit];
+      return v.tool === "jug" ? `A measuring jug with water in it, marked in ${unit}` : `A kitchen scale with a dial marked in ${unit}`;
+    }
+    case "box_plot":
+      return `A box plot of ${v.title.toLowerCase()}`;
+    case "double_line":
+      return `A double number line for ${v.top.label} and ${v.bottom.label}, with one number missing`;
     case "groups":
       return `Rows of ${list(v.rows.map(r => r.name))}`;
     case "scene":

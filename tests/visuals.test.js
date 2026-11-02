@@ -352,6 +352,46 @@ describe("drawing", () => {
     }
   });
 
+  it("jugs and scales: the water as high as its value, the needle pointing at it, marks every step", () => {
+    for (const { v, svg, at } of rendered("gauge")) {
+      assert.equal(elementsIn(svg, "line", "mark").length, v.max / v.step + (v.tool === "scale" ? 1 : 0), at);
+      if (v.tool === "jug") {
+        const [water] = elementsIn(svg, "rect", "water");
+        const share = (water["data-bottom"] - water["data-top"]) / (water["data-bottom"] - water["data-full"]);
+        close(share * 100, (v.value / v.max) * 100, at);
+      } else {
+        const [needle] = elementsIn(svg, "line", "needle");
+        // Clockwise from straight up, the dial running from -150° to 150°.
+        const degrees = (Math.atan2(needle.x2 - needle.x1, needle.y1 - needle.y2) * 180) / Math.PI;
+        close(degrees, -150 + (300 * v.value) / v.max, at);
+      }
+    }
+  });
+
+  it("box plots: the box from quartile to quartile, the median inside, the whiskers to the ends", () => {
+    for (const { v, svg, at } of rendered("box_plot")) {
+      const X = n => 36 + ((464 - 36) * (n - v.from)) / (v.to - v.from);
+      const [low, q1, median, q3, high] = v.five.map(X);
+      const [box] = elementsIn(svg, "rect", "box");
+      close(Number(box.x), q1, at);
+      close(Number(box.x) + Number(box.width), q3, at);
+      close(Number(elementsIn(svg, "line", "median")[0].x1), median, at);
+      assert.deepEqual(elementsIn(svg, "line", "end").map(e => Math.round(e.x1)), [Math.round(low), Math.round(high)], at);
+      assert.equal(elementsIn(svg, "text", "tick-label").length, (v.to - v.from) / v.step + 1, at);
+    }
+  });
+
+  it("double number lines: marks lined up, every number shown but one, and that one boxed", () => {
+    for (const { v, svg, at } of rendered("double_line")) {
+      const ticks = elementsIn(svg, "line", "tick");
+      assert.equal(ticks.length, 2 * v.top.values.length, at);
+      const [top, bottom] = [ticks.slice(0, v.top.values.length), ticks.slice(v.top.values.length)];
+      top.forEach((t, i) => assert.equal(t.x1, bottom[i].x1, at));
+      assert.equal(elementsIn(svg, "rect", "missing").length, 1, at);
+      assert.equal(elementsIn(svg, "text", "value").length, 2 * v.top.values.length - 1, at);
+    }
+  });
+
   it("ten frames: a counter for each one counted, filling the first frame first", () => {
     for (const { v, svg, at } of rendered("ten_frame")) {
       assert.equal(elementsIn(svg, "rect", "frame").length, v.frames, at);

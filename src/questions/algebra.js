@@ -244,9 +244,10 @@ export const equations = {
   id: "equations",
   name: "Equations and inequalities",
   generate(rng) {
-    const kind = rng.pick(["solve", "solve", "substitute", "inequality", "table"]);
+    const kind = rng.pick(["solve", "solve", "substitute", "inequality", "table", "graph"]);
     if (kind === "inequality") return inequality(rng);
     if (kind === "table") return table(rng);
+    if (kind === "graph") return graph(rng);
     if (kind === "substitute") {
       const [a, x, b] = [rng.int(2, 9), rng.int(2, 12), rng.int(1, 20)];
       const total = a * x + b;
@@ -300,6 +301,31 @@ function table(rng) {
       : [`y = x + ${k}`, `x = ${k}y`, firstOnly, `y = ${k + 1}x`],
     hint: "Check the equation with every pair in the table, not just the first.",
     difficulty: 2 + Number(!adds),
+  };
+}
+
+/**
+ * The equation for points on a graph, where y depends on x (6.EE.9). As with
+ * the table, one wrong equation fits the first point only.
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function graph(rng) {
+  const adds = rng.chance(0.5);
+  const k = adds ? rng.int(1, 5) : rng.int(2, 3);
+  const xs = adds || k === 2 ? [1, 2, 3, 4] : [1, 2, 3];
+  const points = xs.map((x, i) => ({ x, y: adds ? x + k : k * x, label: "ABCD"[i] }));
+  const [first] = points;
+  const firstOnly = adds ? `y = ${first.y / first.x}x` : `y = x + ${first.y - first.x}`;
+  return {
+    prompt: "The points on the graph show how y depends on x. Which equation fits every point?",
+    visual: { kind: "coordinates", min: 0, max: 10, points },
+    answer: adds ? `y = x + ${k}` : `y = ${k}x`,
+    wrong: adds
+      ? [`y = ${k}x`, `x = y + ${k}`, ...(Number.isInteger(first.y / first.x) && first.y / first.x !== k ? [firstOnly] : []), `y = x + ${k + 1}`]
+      : [`y = x + ${k}`, `x = ${k}y`, firstOnly, `y = ${k + 1}x`],
+    hint: "Read each point's x and y, and check the equation with every one, not just the first.",
+    difficulty: 3,
   };
 }
 

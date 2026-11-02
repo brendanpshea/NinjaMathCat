@@ -77,8 +77,10 @@ describe("equations and inequalities", () => {
   it("have answers that make them true, and wrong choices that don't", () => {
     for (const { question: q, at } of questionsOf(equations)) {
       const table = q.prompt.match(/^When x is ([\d, ]+), y is ([\d, ]+)\./);
-      if (table) {
-        const [xs, ys] = [numbersIn(table[1]), numbersIn(table[2])];
+      const graphed = q.visual?.kind === "coordinates";
+      if (table || graphed) {
+        // From a table, or from the points on a graph.
+        const [xs, ys] = graphed ? [q.visual.points.map(p => p.x), q.visual.points.map(p => p.y)] : [numbersIn(table[1]), numbersIn(table[2])];
         /** Whether an equation like "y = 4x" or "x = y + 4" holds for every pair. */
         const fitsAll = equation => {
           const [left, right] = equation.split(" = ").map(side => side.replace(/(\d)([xy])/g, "$1*$2"));
@@ -106,6 +108,15 @@ describe("ratios and percents", () => {
       if (/ratio of/.test(q.prompt)) {
         const [a, b] = n;
         assert.equal(q.answer, /all the|things in/.test(q.prompt) ? `${a}:${a + b}` : `${a}:${b}`, at);
+      } else if (q.visual?.kind === "double_line") {
+        const { top, bottom } = q.visual;
+        const missing = [...top.values, ...bottom.values].filter(x => x === null).length;
+        assert.equal(missing, 1, at);
+        // Each line goes up in equal jumps from 0, and the answer fills the gap.
+        const [line, i] = top.values.includes(null) ? [top.values, top.values.indexOf(null)] : [bottom.values, bottom.values.indexOf(null)];
+        const jump = line[1];
+        assert.equal(q.answer, i * jump, at);
+        for (const values of [top.values, bottom.values]) values.forEach((x, j) => x === null || assert.equal(x, j * values[1], at));
       } else if (/for every/.test(q.prompt)) {
         const [a, b, more] = n;
         assert.equal(q.answer, (a * more) / b, at);
