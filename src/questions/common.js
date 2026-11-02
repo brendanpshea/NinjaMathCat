@@ -183,6 +183,36 @@
  */
 
 /**
+ * A line, ray or line segment, or two lines that are parallel, perpendicular
+ * or crossing at a slant, tilted by `turn` degrees (4.G.1).
+ * @typedef {object} Lines
+ * @property {"lines"} kind
+ * @property {"line" | "ray" | "segment" | "parallel" | "perpendicular" | "intersecting"} figure
+ * @property {number} turn
+ * @property {number} [cross]  for intersecting lines, the angle between them
+ */
+
+/**
+ * A net that folds into a solid (6.G.4). A box or cube is drawn to scale,
+ * with its edges labelled if `labels` is given.
+ * @typedef {{ kind: "net", solid: "box" | "cube", length: number, width: number, height: number, labels?: { length: string, width: string, height: string } }
+ *   | { kind: "net", solid: "triangular prism" | "square pyramid" }} Net
+ */
+
+/**
+ * A rectangle with a smaller one cut from its top right corner: an L-shape,
+ * with four sides labelled. The two sides of the corner cut away are not
+ * labelled, so they have to be worked out (3.MD.7d).
+ * @typedef {object} Composite
+ * @property {"composite"} kind
+ * @property {number} width
+ * @property {number} height
+ * @property {[number, number]} notch  the width and height of the corner cut away
+ * @property {{ top: string, left: string, bottom: string, right: string }} labels
+ * @property {boolean} split  a dashed line cutting it into two rectangles
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -191,7 +221,7 @@
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths | Lines | Net | Composite} Visual
  */
 
 /**

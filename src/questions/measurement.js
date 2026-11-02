@@ -41,10 +41,10 @@ function sides(rng, long, short) {
  */
 const AREAS = [
   [3, { kinds: ["count", "count", "multiply", "perimeter", "missingSide"], long: [3, 9], short: [2, 8] }],
-  [3.5, { kinds: ["count", "multiply", "perimeter", "missingSide", "compare", "compare"], long: [3, 9], short: [2, 8] }],
-  [4.5, { kinds: ["multiply", "perimeter", "missingSide", "story"], long: [10, 25], short: [3, 12] }],
-  [5.5, { kinds: ["multiply", "perimeter", "missingSide", "story"], long: [12, 40], short: [5, 20] }],
-  [Infinity, { kinds: ["triangle", "triangle", "parallelogram", "missingHeight", "story"], long: [6, 20], short: [3, 14] }],
+  [3.5, { kinds: ["count", "multiply", "perimeter", "missingSide", "compare", "compare", "composite"], long: [3, 9], short: [2, 8] }],
+  [4.5, { kinds: ["multiply", "perimeter", "missingSide", "story", "composite"], long: [10, 25], short: [3, 12] }],
+  [5.5, { kinds: ["multiply", "perimeter", "missingSide", "story", "composite"], long: [12, 40], short: [5, 20] }],
+  [Infinity, { kinds: ["triangle", "triangle", "parallelogram", "missingHeight", "story", "composite"], long: [6, 20], short: [3, 14] }],
 ];
 
 /** @type {QuestionType} */
@@ -78,6 +78,7 @@ export const area = {
       };
       case "missingSide": return missingSide(rng, w, h, unit, big);
       case "compare": return compareRectangles(rng);
+      case "composite": return lShape(rng, unit, grade);
       case "story": return areaStory(rng, w, h);
       case "missingHeight": return missingHeight(rng, w, h, unit);
       default: return slanted(rng, w, h, unit);
@@ -216,6 +217,48 @@ function compareRectangles(rng) {
 }
 
 /**
+ * The area of an L-shape, by cutting it into two rectangles (3.MD.7d), or
+ * from fourth grade its perimeter, two sides of which have to be worked out.
+ * Third grade sees the cut drawn in.
+ * @param {Rng} rng
+ * @param {Unit} unit
+ * @param {number} grade
+ * @returns {Draft}
+ */
+function lShape(rng, unit, grade) {
+  const [W, H] = [rng.int(5, 10), rng.int(4, 8)];
+  const [nw, nh] = [rng.int(2, W - 2), rng.int(1, H - 2)];
+  /** @param {number} n */
+  const write = n => `${n} ${unit.short}`;
+  const split = grade < 4;
+  /** @type {import("./common.js").Composite} */
+  const visual = { kind: "composite", width: W, height: H, notch: [nw, nh], labels: { top: write(W - nw), left: write(H), bottom: write(W), right: write(H - nh) }, split };
+  const labelled = (W - nw) + H + W + (H - nh);
+  if (grade >= 4 && rng.chance(0.35)) {
+    const around = 2 * (W + H);
+    return {
+      prompt: `What is the perimeter of this shape, in ${unit.many}?`,
+      visual,
+      answer: around,
+      // Only the sides with numbers, or the area.
+      wrong: wrongNumbers(rng, around, [labelled, W * H - nw * nh, around + nw, around - nh], { min: 1, spread: 4 }),
+      hint: "Two sides have no numbers. Work them out from the sides across from them, then add all six.",
+      difficulty: 3,
+    };
+  }
+  const area = W * H - nw * nh;
+  return {
+    prompt: `What is the area of this shape, in square ${unit.many}?`,
+    visual,
+    answer: area,
+    // The whole rectangle with no corner cut away, the two parts overlapping, or the perimeter.
+    wrong: wrongNumbers(rng, area, [W * H, (W - nw) * H + W * (H - nh), 2 * (W + H), labelled], { min: 1, spread: 4 }),
+    hint: split ? "The dashed line cuts it into two rectangles. Find the area of each, then add them." : "Cut it into two rectangles. Find the area of each, then add them.",
+    difficulty: split ? 2 : 3,
+  };
+}
+
+/**
  * The area or perimeter of something real (4.MD.3).
  * @type {readonly { measure: "area" | "perimeter" | "width", text: (l: number, w: number) => string }[]}
  */
@@ -309,7 +352,7 @@ function missingHeight(rng, b, h, unit) {
 /** @type {readonly [number, string[]][]} */
 const VOLUMES = [
   [5.5, ["count", "count", "multiply", "layers", "missingEdge", "combine"]],
-  [Infinity, ["half", "half", "surface", "surface", "multiply", "missingEdge", "combine"]],
+  [Infinity, ["half", "half", "surface", "net", "net", "multiply", "missingEdge", "combine"]],
 ];
 
 /** @type {QuestionType} */
@@ -341,6 +384,7 @@ export const volume = {
         difficulty: 3,
       };
       case "combine": return combine(rng, unit);
+      case "net": return netQuestion(rng, unit);
       case "surface": {
         const faces = [l * w, l * h, w * h];
         const total = 2 * (faces[0] + faces[1] + faces[2]);
@@ -358,6 +402,44 @@ export const volume = {
     }
   },
 };
+
+/**
+ * A net: which solid it folds into, or the surface area of the box it makes
+ * (6.G.4). A cube is a rectangular prism too, so that is never a wrong answer
+ * for a cube.
+ * @param {Rng} rng
+ * @param {Unit} unit
+ * @returns {Draft}
+ */
+function netQuestion(rng, unit) {
+  if (rng.chance(0.5)) {
+    const solid = rng.pick(/** @type {const} */ (["cube", "box", "triangular prism", "square pyramid"]));
+    const name = solid === "box" ? "rectangular prism" : solid;
+    const edge = rng.int(2, 6);
+    const [l, w, h] = solid === "cube" ? [edge, edge, edge] : [rng.int(4, 7), rng.int(2, 3), rng.int(2, 3)];
+    const others = ["cube", "rectangular prism", "triangular prism", "square pyramid", "cylinder"].filter(n => n !== name && !(solid === "cube" && n === "rectangular prism"));
+    return {
+      prompt: "Which solid does this net fold into?",
+      visual: solid === "cube" || solid === "box" ? { kind: "net", solid, length: l, width: w, height: h } : { kind: "net", solid },
+      answer: name,
+      wrong: rng.shuffle(others).slice(0, 3),
+      hint: "Count the faces, and look at their shapes. Triangles that meet at a point make a pyramid.",
+      difficulty: 2,
+    };
+  }
+  const [l, w, h] = [rng.int(3, 9), rng.int(2, 6), rng.int(2, 6)];
+  const faces = [l * w, l * h, w * h];
+  const total = 2 * (faces[0] + faces[1] + faces[2]);
+  return {
+    prompt: `This net folds into a box. What is the surface area of the box, in square ${unit.many}?`,
+    visual: { kind: "net", solid: "box", length: l, width: w, height: h, labels: { length: `${l} ${unit.short}`, width: `${w} ${unit.short}`, height: `${h} ${unit.short}` } },
+    answer: total,
+    // The volume, one of each face, or a pair missed.
+    wrong: wrongNumbers(rng, total, [l * w * h, total / 2, total - 2 * faces[2], total - faces[0]], { min: 1 }),
+    hint: "Find the area of each of the 6 rectangles in the net, then add them. They come in matching pairs.",
+    difficulty: 3,
+  };
+}
 
 /**
  * Volume as a count of unit cubes (5.MD.3-4). The box is drawn whole, so

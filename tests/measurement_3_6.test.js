@@ -16,11 +16,21 @@ const UNITS = { cm: "centimeters", m: "meters", in: "inches", ft: "feet" };
 
 describe("area and perimeter", () => {
   it("are worked out from the sides shown or given", () => {
-    for (const { question: q, at } of questionsOf(area)) {
+    for (const { grade, question: q, at } of questionsOf(area)) {
       const v = q.visual;
       const p = q.prompt;
       if (v?.grid) {
         assert.equal(q.answer, v.width * v.height, at);
+        continue;
+      }
+      if (v?.kind === "composite") {
+        // The labels agree with the shape drawn, and the cut-away corner's sides are left to work out.
+        const [W, H] = [v.width, v.height];
+        const [nw, nh] = v.notch;
+        assert.deepEqual([v.labels.top, v.labels.left, v.labels.bottom, v.labels.right].map(l => labelValue(l).n), [W - nw, H, W, H - nh], at);
+        assert.ok(nw >= 1 && nh >= 1 && nw < W && nh < H, at);
+        assert.equal(q.answer, /perimeter/.test(p) ? 2 * (W + H) : W * H - nw * nh, at);
+        assert.equal(v.split, grade < 4, `${at}: the cut is drawn in for third grade only`);
         continue;
       }
       if (v) {
@@ -79,6 +89,19 @@ describe("volume", () => {
     for (const { question: q, at } of questionsOf(volume)) {
       const v = q.visual;
       const p = q.prompt;
+      if (v?.kind === "net") {
+        if (/^Which solid/.test(p)) {
+          const NAMES = { cube: "cube", box: "rectangular prism", "triangular prism": "triangular prism", "square pyramid": "square pyramid" };
+          assert.equal(q.answer, NAMES[v.solid], at);
+          if (v.solid === "cube") assert.ok(!q.choices.includes("rectangular prism"), `${at}: a cube is a rectangular prism too`);
+          if (v.solid === "box") assert.ok(new Set([v.length, v.width, v.height]).size > 1, `${at}: a box that is really a cube`);
+        } else {
+          const [l, w, h] = [v.length, v.width, v.height];
+          assert.deepEqual([v.labels.length, v.labels.width, v.labels.height].map(e => labelValue(e).n), [l, w, h], at);
+          assert.equal(q.answer, 2 * (l * w + l * h + w * h), at);
+        }
+        continue;
+      }
       if (v?.cubes) {
         assert.equal(q.answer, v.length * v.width * v.height, at);
         continue;
@@ -149,6 +172,12 @@ describe("angles", () => {
     for (const { question: q, at } of questionsOf(angles)) {
       const p = q.prompt;
       const n = numbersIn(p);
+      if (q.visual?.kind === "lines") {
+        const NAMES = { line: "a line", ray: "a ray", segment: "a line segment", parallel: "parallel lines", perpendicular: "perpendicular lines", intersecting: "intersecting lines" };
+        assert.equal(q.answer, NAMES[q.visual.figure], at);
+        if (q.visual.figure === "perpendicular") assert.ok(!q.choices.includes("intersecting lines"), `${at}: perpendicular lines intersect too`);
+        continue;
+      }
       if (p === "What kind of angle is this?") {
         const d = q.visual.degrees;
         assert.equal(q.answer, d < 90 ? "acute" : d === 90 ? "right" : d < 180 ? "obtuse" : "straight", at);

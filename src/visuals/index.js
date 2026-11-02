@@ -8,6 +8,7 @@ import { fraction, fractionBars, hundredths } from "./fractions.js";
 import { area, cubes, angle, coordinates, lengths } from "./measures.js";
 import { tenFrame, baseTen } from "./counting.js";
 import { solid, scene } from "./solids.js";
+import { lines, net, composite } from "./figures.js";
 
 /** @import { Visual } from "../questions/common.js" */
 
@@ -23,6 +24,9 @@ export function renderVisual(v, options = {}) {
     case "objects": return objects(v);
     case "pattern": return pattern(v);
     case "groups": return groups(v);
+    case "lines": return lines(v);
+    case "net": return net(v);
+    case "composite": return composite(v);
     case "fraction_bars": return fractionBars(v);
     case "hundredths": return hundredths(v);
     case "money": return money(v);

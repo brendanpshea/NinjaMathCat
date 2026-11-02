@@ -9,8 +9,8 @@ import { gcd } from "./rational.js";
 
 /** @type {readonly [number, string[]][]} */
 const ANGLES = [
-  [4, ["kind", "kind", "protractor", "turn"]],
-  [Infinity, ["protractor", "protractor", "turn", "add", "kind"]],
+  [4, ["kind", "kind", "figure", "figure", "protractor", "turn"]],
+  [Infinity, ["protractor", "protractor", "turn", "add", "kind", "figure"]],
 ];
 
 /** @type {QuestionType} */
@@ -21,6 +21,7 @@ export const angles = {
     switch (rng.pick(atGrade(grade, ANGLES))) {
       case "kind": return angleKind(rng);
       case "protractor": return protractor(rng);
+      case "figure": return figure(rng);
       case "turn": return turn(rng);
       default: return addAngles(rng);
     }
@@ -42,6 +43,36 @@ function wrongDegrees(rng, answer, likely) {
 
 /** @param {Rng} rng */
 const base = rng => /** @type {"right" | "left"} */ (rng.pick(["right", "left"]));
+
+/** What each figure of lines is called (4.G.1). */
+export const FIGURES = {
+  line: "a line", ray: "a ray", segment: "a line segment",
+  parallel: "parallel lines", perpendicular: "perpendicular lines", intersecting: "intersecting lines",
+};
+
+/**
+ * Naming a line, ray or segment, or a pair of lines (4.G.1). Perpendicular
+ * lines intersect too, so "intersecting lines" is never a wrong answer for
+ * them.
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function figure(rng) {
+  const shape = rng.pick(/** @type {const} */ (["line", "ray", "segment", "parallel", "perpendicular", "intersecting"]));
+  const singles = /** @type {const} */ (["line", "ray", "segment"]);
+  const pairs = /** @type {const} */ (["parallel", "perpendicular", "intersecting"]);
+  const others = singles.includes(/** @type {any} */ (shape))
+    ? [...singles.filter(s => s !== shape), rng.pick(pairs)]
+    : [...pairs.filter(p => p !== shape && !(shape === "perpendicular" && p === "intersecting")), ...rng.shuffle([...singles]).slice(0, 2)];
+  return {
+    prompt: "What does this picture show?",
+    visual: { kind: "lines", figure: shape, turn: 15 * rng.int(0, 11), ...(shape === "intersecting" ? { cross: rng.pick([45, 55, 65, 120, 130]) } : {}) },
+    answer: FIGURES[shape],
+    wrong: others.map(o => FIGURES[o]),
+    hint: "An arrow means it goes on forever; a dot means it stops. Parallel lines never meet; perpendicular lines meet at a square corner.",
+    difficulty: 1 + Number(!singles.includes(/** @type {any} */ (shape))),
+  };
+}
 
 /**
  * Acute, right, obtuse or straight (4.G.1). Angles near a right angle are

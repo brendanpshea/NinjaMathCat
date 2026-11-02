@@ -48,6 +48,9 @@ for (let i = 0; i < Number(countArg); i++) {
     : v.kind === "solid" ? `solid: ${v.solid}`
     : v.kind === "fraction_bars" ? `bars: ${v.bars.map(b => `${b.shaded} of ${b.parts}${b.label ? ` (${b.label})` : ""}`).join(" / ")}`
     : v.kind === "hundredths" ? `hundredths: ${v.grids.join(" and ")} shaded`
+    : v.kind === "lines" ? `lines: ${v.figure} at ${v.turn}°`
+    : v.kind === "net" ? `net: ${v.solid}${"labels" in v && v.labels ? ` ${v.labels.length} × ${v.labels.width} × ${v.labels.height}` : ""}`
+    : v.kind === "composite" ? `L-shape ${v.width} by ${v.height}, ${v.notch.join(" by ")} cut away${v.split ? ", split" : ""}`
     : v.kind === "groups" ? `groups: ${v.rows.map(r => `${r.count} ${r.name}`).join(", ")}`
     : v.kind === "scene" ? `a ${v.thing} ${v.place} a ${v.landmark}`
     : v.kind === "lengths" ? `ribbons ${v.ribbons.map(r => `${r.color} ${r.from}+${r.length}`).join(", ")}${v.ruler ? `, ruler in ${v.ruler}` : ""}${v.cubes ? ", cubes" : ""}`

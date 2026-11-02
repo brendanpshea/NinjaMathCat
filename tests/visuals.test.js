@@ -300,6 +300,58 @@ describe("drawing", () => {
     }
   });
 
+  it("lines: arrows where they go on, dots where they stop, and pairs at the right angle", () => {
+    const ENDS = { line: [["arrow", "arrow"]], ray: [["dot", "arrow"]], segment: [["dot", "dot"]], parallel: [["arrow", "arrow"], ["arrow", "arrow"]], perpendicular: [["arrow", "arrow"], ["arrow", "arrow"]], intersecting: [["arrow", "arrow"], ["arrow", "arrow"]] };
+    for (const figure of Object.keys(ENDS)) {
+      for (const turn of [0, 45, 90, 165]) {
+        const v = { kind: "lines", figure, turn, cross: 55 };
+        const svg = renderVisual(v);
+        const at = `${figure} at ${turn}°`;
+        assert.ok(wellFormed(svg), at);
+        const straights = elementsIn(svg, "line", "straight");
+        assert.deepEqual(straights.map(s => [s["data-start"], s["data-end"]]), ENDS[figure], at);
+        const dots = ENDS[figure].flat().filter(e => e === "dot").length;
+        assert.equal(elementsIn(svg, "circle", "end-dot").length, dots, at);
+        assert.equal(elementsIn(svg, "polygon", "end-arrow").length, ENDS[figure].flat().length - dots, at);
+        // Every end stays inside the picture.
+        for (const s of straights) for (const [x, y] of [[s.x1, s.y1], [s.x2, s.y2]]) assert.ok(x >= 10 && x <= 290 && y >= 10 && y <= 250, `${at}: off the picture`);
+        if (straights.length === 2) {
+          const [a, b] = straights.map(s => [s.x2 - s.x1, s.y2 - s.y1]);
+          const cos = (a[0] * b[0] + a[1] * b[1]) / (Math.hypot(...a) * Math.hypot(...b));
+          if (figure === "parallel") close(Math.abs(cos), 1, at);
+          if (figure === "perpendicular") close(cos * 100, 0, at);
+          if (figure === "intersecting") assert.ok(Math.abs(cos) > 0.3 && Math.abs(cos) < 0.99, at);
+          assert.equal(elementsIn(svg, "polyline", "right-angle").length, Number(figure === "perpendicular"), at);
+        }
+      }
+    }
+  });
+
+  it("nets: six faces for a box or cube, five for a triangular prism or square pyramid, and labels where given", () => {
+    const FACES = { box: 6, cube: 6, "triangular prism": 5, "square pyramid": 5 };
+    for (const { v, svg, at } of rendered("net")) {
+      assert.equal(elementsIn(svg, "polygon", "face").length, FACES[v.solid], at);
+      const labels = svg.match(/class="edge-label"[^>]*>([^<]*)</g) ?? [];
+      assert.equal(labels.length, v.labels ? 3 : 0, at);
+    }
+  });
+
+  it("L-shapes: six corners, the corner cut away where it says, and four sides labelled", () => {
+    for (const { v, svg, at } of rendered("composite")) {
+      const [polygon] = elementsIn(svg, "polygon", "figure");
+      const corners = polygon.points.split(" ").map(p => p.split(",").map(Number));
+      assert.equal(corners.length, 6, at);
+      // Side lengths in proportion to the numbers: the bottom is as long as width says, the top as long as width less the notch.
+      const unit = (corners[4][0] - corners[5][0]) / v.width;
+      close((corners[1][0] - corners[0][0]) / unit, v.width - v.notch[0], at);
+      close((corners[5][1] - corners[0][1]) / unit, v.height, at);
+      close((corners[3][1] - corners[2][1]) / unit, 0, at);
+      close((corners[2][1] - corners[1][1]) / unit, v.notch[1], at);
+      assert.equal(elementsIn(svg, "text", "side-label").length, 4, at);
+      assert.equal(elementsIn(svg, "line", "split").length, Number(v.split), at);
+    }
+  });
+
   it("ten frames: a counter for each one counted, filling the first frame first", () => {
     for (const { v, svg, at } of rendered("ten_frame")) {
       assert.equal(elementsIn(svg, "rect", "frame").length, v.frames, at);

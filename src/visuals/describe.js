@@ -113,6 +113,14 @@ export function describeVisual(v) {
       const grids = v.grids.length === 1 ? "A grid of 100 squares, some shaded" : `${v.grids.length === 2 ? "Two" : v.grids.length} grids of 100 squares, some shaded`;
       return v.labels ? `${grids}, labelled ${list(v.labels)}` : grids;
     }
+    case "lines":
+      return "A figure made of straight lines";
+    case "net":
+      return v.solid === "box" || v.solid === "cube"
+        ? `A net of rectangles that folds into a solid${v.labels ? `, with edges labelled ${list([v.labels.length, v.labels.width, v.labels.height])}` : ""}`
+        : "A net of flat shapes that folds into a solid";
+    case "composite":
+      return `A shape made of two rectangles, like the letter L, with sides labelled ${list([v.labels.top, v.labels.left, v.labels.bottom, v.labels.right])}`;
     case "groups":
       return `Rows of ${list(v.rows.map(r => r.name))}`;
     case "scene":
