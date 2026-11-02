@@ -23,8 +23,17 @@
  * @property {"attack" | "hit" | "vanish" | "down" | "revive" | "glow" | "drop"} act
  * @property {string} [text]
  * @property {"hit" | "hurt" | "heal" | "gold" | "item"} [tone]
- * @property {boolean} [charged]  an attack on a streak, which glows
+ * @property {boolean} [charged]  on a streak: the attack glows, and the blow it lands hits bigger
  */
+
+/**
+ * What a streak's attack is called as it lands, by how much the streak adds:
+ * 3 in a row, 5, then 8 (src/combat.js).
+ * @param {number} multiplier
+ */
+export function strikeName(multiplier) {
+  return multiplier >= 2 ? "Mega strike!" : multiplier >= 1.5 ? "Super strike!" : "Power strike!";
+}
 
 /** How long each act takes, in ms. */
 export const BEAT = {
@@ -50,15 +59,18 @@ export function planRound(round) {
   let end = 0;
 
   if (round.correct) {
-    beats.push({ at: 0, who: "hero", act: "attack", charged: round.streakMultiplier > 1 });
+    const charged = round.streakMultiplier > 1;
+    beats.push(charged
+      ? { at: 0, who: "hero", act: "attack", charged, text: strikeName(round.streakMultiplier), tone: "gold" }
+      : { at: 0, who: "hero", act: "attack", charged });
     const lands = BEAT.strike;
     const blow = `-${round.heroDamage}`;
     if (round.defeatedFoe) {
-      beats.push({ at: lands, who: "monster", act: "vanish", text: blow, tone: "hit" });
+      beats.push({ at: lands, who: "monster", act: "vanish", text: blow, tone: "hit", charged });
       end = lands + BEAT.vanish;
       if (round.drop) beats.push({ at: lands + BEAT.vanish / 2, who: "monster", act: "drop", text: round.drop.emoji, tone: "item" });
     } else {
-      beats.push({ at: lands, who: "monster", act: "hit", text: blow, tone: "hit" });
+      beats.push({ at: lands, who: "monster", act: "hit", text: blow, tone: "hit", charged });
       end = Math.max(lands + BEAT.hit, BEAT.attack);
     }
     // Health coming back shows once the monster is going: a win heals a

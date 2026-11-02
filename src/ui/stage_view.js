@@ -33,7 +33,7 @@ const combatant = side => `
   <div class="combatant combatant--${side}" data-ref="${side}Side">
     <div class="plate"><span class="plate-name" data-ref="${side}Name"></span><span class="plate-level" data-ref="${side}Level"></span></div>
     <div class="hp" role="meter" aria-valuemin="0" aria-label="${side === "hero" ? "Your health" : "Monster's health"}" data-ref="${side}Hp">
-      <div class="hp-fill"></div><span class="hp-text"></span>
+      <div class="hp-lag"></div><div class="hp-fill"></div><span class="hp-text"></span>
     </div>
     <div class="sprite-slot"><div class="actor" data-ref="${side}Actor"><div class="figure">
       <span class="shadow"></span><div class="sprite" role="img" data-pose="stand" data-ref="${side}Sprite"></div>
@@ -97,26 +97,83 @@ export function createStage(root) {
   }
 
   /**
-   * Text that floats up from a fighter: damage, health, a treasure. It hangs
-   * on the slot rather than the actor, so it stays put while the actor moves
-   * and stays visible when a beaten monster fades.
+   * Something that shows for a moment over a fighter, hung on its slot rather
+   * than the actor, so it stays put while the actor moves and stays visible
+   * when a beaten monster fades. Gone when its animation ends.
    * @param {HTMLElement} sprite
-   * @param {string} text
-   * @param {string} tone
+   * @param {string} className
+   * @param {{ text?: string, middle?: boolean, style?: Record<string, string> }} [options]
+   *   middle: centred on the fighter, rather than near its top
    */
-  function floatText(sprite, text, tone) {
+  function overlay(sprite, className, { text = "", middle = false, style = {} } = {}) {
     const span = document.createElement("span");
-    span.className = `float-text float-text--${tone}`;
+    span.className = className;
     span.textContent = text;
     span.setAttribute("aria-hidden", "true");
     const slot = /** @type {HTMLElement} */ (sprite.closest(".sprite-slot"));
     const [box, frame] = [sprite.getBoundingClientRect(), slot.getBoundingClientRect()];
     span.style.left = `${box.left - frame.left + box.width / 2}px`;
+    if (middle) span.style.top = `${box.top - frame.top + box.height / 2}px`;
+    for (const [name, value] of Object.entries(style)) span.style.setProperty(name, value);
     slot.append(span);
     // animationend never comes when animations are off, so a timer backs it up.
     const remove = () => span.remove();
     span.addEventListener("animationend", remove, { once: true });
     setTimeout(remove, 1200);
+  }
+
+  /**
+   * Text that floats up from a fighter: damage, health, a treasure, a strike's name.
+   * @param {HTMLElement} sprite
+   * @param {string} text
+   * @param {string} tone
+   * @param {boolean} [big]  a blow on a streak
+   */
+  function floatText(sprite, text, tone, big = false) {
+    overlay(sprite, `float-text float-text--${tone}${big ? " float-text--big" : ""}`, { text });
+  }
+
+  /**
+   * Where a blow lands: a burst of light on the one it hits, bigger on a streak.
+   * @param {HTMLElement} sprite
+   * @param {boolean} big
+   */
+  function impact(sprite, big) {
+    overlay(sprite, `impact${big ? " impact--big" : ""}`, { middle: true });
+  }
+
+  /**
+   * Sparks flying out from a fighter, for a monster beaten or a new level.
+   * @param {HTMLElement} sprite
+   * @param {string} color
+   */
+  function sparks(sprite, color) {
+    for (let i = 0; i < 12; i++) {
+      overlay(sprite, "spark", { middle: true, style: { "--angle": `${i * 30 + (i % 2) * 12}deg`, "--reach": (0.4 + (i % 3) * 0.12).toFixed(2), "--spark": color } });
+    }
+  }
+
+  /**
+   * Words across the middle of the stage, for a moment: a streak's strike.
+   * @param {string} text
+   */
+  function callout(text) {
+    const span = document.createElement("span");
+    span.className = "stage-callout";
+    span.textContent = text;
+    span.setAttribute("aria-hidden", "true");
+    stageEl.append(span);
+    const remove = () => span.remove();
+    span.addEventListener("animationend", remove, { once: true });
+    setTimeout(remove, 1200);
+  }
+
+  /**
+   * The whole stage shakes with a blow: a little, or a lot.
+   * @param {"shake" | "quake"} how
+   */
+  function shake(how) {
+    animate(stageEl, [how === "quake" ? "is-quaking" : "is-shaking"], how === "quake" ? 420 : 260);
   }
 
   function reducedMotion() {
@@ -179,7 +236,9 @@ export function createStage(root) {
     const sprite = ref(isHero ? "heroSprite" : "monsterSprite");
     const heroMax = heroStats(before.hero.level).maxHp;
     const foeMax = before.foe ? monsterStats(before.foe.level, before.foe.toughness).maxHp : 0;
-    if (beat.text) floatText(sprite, beat.text, beat.tone ?? "hit");
+    // A streak's strike is named across the middle of the stage, where it has room on a phone.
+    if (beat.text && beat.act === "attack") callout(beat.text);
+    else if (beat.text) floatText(sprite, beat.text, beat.tone ?? "hit", beat.charged && beat.who === "monster");
     switch (beat.act) {
       case "attack":
         animate(actor, beat.charged ? ["is-lunging", "is-charged"] : ["is-lunging"], BEAT.attack);
@@ -188,12 +247,23 @@ export function createStage(root) {
       case "hit":
         animate(actor, ["is-hit"], BEAT.hit);
         pose(sprite, "recoil", BEAT.hit);
-        if (isHero) setHp("hero", Math.max(0, before.hero.hp - round.foeDamage), heroMax);
-        else setHp("monster", Math.max(0, (before.foe?.hp ?? 0) - round.heroDamage), foeMax);
+        impact(sprite, Boolean(beat.charged));
+        if (isHero) {
+          // The hero's blow lands on the monster; the monster's makes the whole stage flinch.
+          animate(stageEl, ["is-hurt"], 450);
+          shake("shake");
+          setHp("hero", Math.max(0, before.hero.hp - round.foeDamage), heroMax);
+        } else {
+          shake(beat.charged ? "quake" : "shake");
+          setHp("monster", Math.max(0, (before.foe?.hp ?? 0) - round.heroDamage), foeMax);
+        }
         break;
       case "vanish":
         sprite.dataset.pose = "recoil";
         actor.classList.add("is-vanquished"); // and it stays gone until the next one steps in
+        impact(sprite, true);
+        sparks(sprite, "#fde047");
+        shake("quake");
         setHp("monster", 0, foeMax);
         break;
       case "down":
@@ -210,6 +280,7 @@ export function createStage(root) {
       case "glow":
         actor.dataset.tone = beat.tone ?? "heal";
         animate(actor, ["is-glowing"], BEAT.glow);
+        if (beat.tone === "gold") sparks(sprite, "#fcd34d"); // a new level
         setHp("hero", after.hero.hp, heroStats(after.hero.level).maxHp);
         ref("heroLevel").textContent = `Level ${after.hero.level}`;
         break;

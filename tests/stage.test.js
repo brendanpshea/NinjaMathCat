@@ -2,7 +2,7 @@
 // round looks like as a sequence of beats, and what it says in words.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { planRound, narrate, sfxFor, BEAT } from "../src/stage.js";
+import { planRound, narrate, sfxFor, strikeName, BEAT } from "../src/stage.js";
 import { startBattle, answer } from "../src/battle.js";
 import { MONSTERS } from "../src/monsters.js";
 import { TREASURES } from "../src/treasures.js";
@@ -26,9 +26,12 @@ describe("a right answer", () => {
     assert.ok(plan.end >= BEAT.attack);
   });
 
-  it("glows on a streak", () => {
-    assert.equal(planRound(round({ heroDamage: 30, streakMultiplier: 1.5 })).beats[0].charged, true);
-    assert.equal(planRound(round({ heroDamage: 20 })).beats[0].charged, false);
+  it("glows on a streak, says so, and lands a bigger blow", () => {
+    const streak = planRound(round({ heroDamage: 30, streakMultiplier: 1.5 }));
+    assert.deepEqual([streak.beats[0].charged, streak.beats[0].text, streak.beats[1].charged], [true, "Super strike!", true]);
+    const plain = planRound(round({ heroDamage: 20 }));
+    assert.deepEqual([plain.beats[0].charged, plain.beats[0].text, plain.beats[1].charged], [false, undefined, false]);
+    assert.deepEqual([1.25, 1.5, 2].map(strikeName), ["Power strike!", "Super strike!", "Mega strike!"]);
   });
 
   it("beats a monster: it vanishes, drops its treasure, and the hero heals while it goes", () => {

@@ -81,10 +81,19 @@
   overflow: hidden;
 }
 .hp-fill {
+  position: relative; /* over the lag */
   height: 100%;
   width: calc(var(--hp, 1) * 100%);
   background: #22c55e;
   transition: width 0.3s ease, background-color 0.3s ease;
+}
+/* What a blow just took off, in red, catching up with the bar a moment later. */
+.hp-lag {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--hp, 1) * 100%);
+  background: #f87171;
+  transition: width 0.45s ease 0.35s;
 }
 .hp[data-level="mid"] .hp-fill { background: #eab308; }
 .hp[data-level="low"] .hp-fill { background: #ef4444; }
@@ -168,16 +177,119 @@
   text-shadow: 0 2px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 4px 6px rgb(0 0 0 / 0.4);
   animation: float-up 0.9s ease-out forwards;
 }
-.float-text--hit { color: #fde047; }
-.float-text--hurt { color: #fca5a5; }
+.float-text--hit { color: #fde047; font-size: 2.1rem; }
+.float-text--hurt { color: #fca5a5; font-size: 2.1rem; }
 .float-text--heal { color: #86efac; }
 .float-text--gold { color: #fcd34d; }
 .float-text--item { font-size: 2.4rem; text-shadow: none; }
+/* A blow on a streak. */
+.float-text--big { font-size: 2.8rem; color: #fb923c; animation-name: float-pop; }
 
 @keyframes float-up {
-  0% { opacity: 1; transform: translate(-50%, 0) scale(1.3); }
-  55% { opacity: 1; transform: translate(-50%, -30px) scale(1); }
+  0% { opacity: 1; transform: translate(-50%, 0) scale(1.5); }
+  20% { opacity: 1; transform: translate(-50%, -8px) scale(1); }
+  60% { opacity: 1; transform: translate(-50%, -30px) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -52px) scale(0.9); }
+}
+@keyframes float-pop {
+  0% { opacity: 1; transform: translate(-50%, 0) scale(1.8) rotate(-6deg); }
+  25% { opacity: 1; transform: translate(-50%, -10px) scale(1) rotate(3deg); }
+  60% { opacity: 1; transform: translate(-50%, -30px) scale(1.05) rotate(0); }
+  100% { opacity: 0; transform: translate(-50%, -56px) scale(0.9); }
+}
+
+/* A streak's strike, named across the middle of the stage. */
+.stage-callout {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  z-index: 3;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: clamp(1.5rem, 7cqw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #fde047;
+  text-shadow: 0 3px 0 #c2410c, 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 5px 10px rgb(0 0 0 / 0.45);
+  translate: -50% 0;
+  animation: callout-pop 900ms ease-out forwards;
+}
+@keyframes callout-pop {
+  0% { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  18% { opacity: 1; transform: scale(1.15) rotate(-3deg); }
+  32% { transform: scale(1) rotate(-3deg); }
+  75% { opacity: 1; transform: scale(1) rotate(-3deg); }
+  100% { opacity: 0; transform: translateY(-14px) scale(1.05) rotate(-3deg); }
+}
+
+/* Where a blow lands: a spiky burst of light, over the middle of the one hit. */
+.impact {
+  position: absolute;
+  z-index: 2;
+  width: calc(var(--sprite-h) * 0.62);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+  clip-path: polygon(50% 0%, 59.2% 27.8%, 85.4% 14.6%, 72.2% 40.8%, 100% 50%, 72.2% 59.2%, 85.4% 85.4%, 59.2% 72.2%,
+    50% 100%, 40.8% 72.2%, 14.6% 85.4%, 27.8% 59.2%, 0% 50%, 27.8% 40.8%, 14.6% 14.6%, 40.8% 27.8%);
+  background: radial-gradient(circle, #fff 0 22%, #fde047 45%, #f97316 100%);
+  animation: impact-burst 320ms ease-out forwards;
+}
+.impact--big { width: calc(var(--sprite-h) * 0.95); }
+@keyframes impact-burst {
+  0% { opacity: 1; transform: scale(0.3) rotate(0deg); }
+  45% { opacity: 1; transform: scale(1.05) rotate(12deg); }
+  100% { opacity: 0; transform: scale(1.25) rotate(20deg); }
+}
+
+/* Sparks flying out from the middle of a fighter, each its own way (--angle) and distance (--reach). */
+.spark {
+  position: absolute;
+  z-index: 2;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  translate: -50% -50%;
+  pointer-events: none;
+  background: var(--spark, #fde047);
+  box-shadow: 0 0 8px 2px rgb(251 146 60 / 0.8);
+  animation: spark-fly 650ms ease-out forwards;
+}
+@keyframes spark-fly {
+  from { opacity: 1; transform: rotate(var(--angle)) translateY(0) scale(1.2); }
+  to { opacity: 0; transform: rotate(var(--angle)) translateY(calc(var(--sprite-h) * var(--reach) * -1)) scale(0.3); }
+}
+
+/* The stage shakes with a blow, and glows red at its edges when the hero is hit. */
+@keyframes stage-shake {
+  0%, 100% { transform: none; }
+  20% { transform: translate(-4px, 2px); }
+  45% { transform: translate(4px, -2px); }
+  70% { transform: translate(-2px, 1px); }
+}
+@keyframes stage-quake {
+  0%, 100% { transform: none; }
+  15% { transform: translate(-9px, 4px) rotate(-0.4deg); }
+  35% { transform: translate(8px, -4px) rotate(0.4deg); }
+  55% { transform: translate(-5px, 2px); }
+  75% { transform: translate(3px, -1px); }
+}
+.stage.is-shaking { animation: stage-shake 260ms ease-out; }
+.stage.is-quaking { animation: stage-quake 420ms ease-out; }
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 50px 14px rgb(239 68 68 / 0.8);
+  opacity: 0;
+}
+.stage.is-hurt::after { animation: hurt-flash 450ms ease-out; }
+@keyframes hurt-flash {
+  0%, 100% { opacity: 0; }
+  25% { opacity: 1; }
 }
 @keyframes stage-lunge {
   0% { transform: translateX(0); }
@@ -234,6 +346,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .actor, .float-text { animation: none !important; }
-  .hp-fill { transition: none; }
+  .actor, .float-text, .stage, .stage::after { animation: none !important; }
+  .impact, .spark, .stage-callout { display: none; }
+  .hp-fill, .hp-lag { transition: none; }
 }
