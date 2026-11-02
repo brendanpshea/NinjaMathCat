@@ -83,7 +83,17 @@
     const { TREASURES } = await import("/src/treasures.js");
     const done = Object.fromEntries(levelsFor(3).slice(0, levels).map((l, i) => [l.id, { stars: i % 4 === 1 ? 2 : 3, firstTry: 7, asked: 8 }]));
     return {
-      players: [{ id: "p1", name: "Maya", heroId: "cat_ninja", grade: 3, xp: 2600, treasures: TREASURES.filter((_, i) => i % 3 === 0).map(t => t.id), adventures: { 3: { done, opened: 0 } } }],
+      players: [{
+        id: "p1", name: "Maya", heroId: "cat_ninja", grade: 3, xp: 2600, played: 26,
+        treasures: TREASURES.filter((_, i) => i % 3 === 0).map(t => t.id), adventures: { 3: { done, opened: 0 } },
+        mastery: {
+          multiplication: { score: 0.82, seen: 41, last: 24 }, word_multiplication: { score: 0.71, seen: 18, last: 22 },
+          division: { score: 0.38, seen: 30, last: 25 }, word_division: { score: 0.52, seen: 12, last: 20 },
+          missing_number: { score: 0.66, seen: 9, last: 19 }, time: { score: 0.45, seen: 14, last: 23 },
+          conversions: { score: 0.6, seen: 10, last: 21 }, rounding: { score: 0.31, seen: 11, last: 26 },
+          area: { score: 0.74, seen: 16, last: 26 }, addition: { score: 0.9, seen: 6, last: 12 },
+        },
+      }],
       current: "p1",
       muted: false,
     };
@@ -565,6 +575,7 @@
           if (game().screen !== "battle") break;
           const q = game().battle.question;
           report.questions++;
+          if ($(".review-tag:not([hidden])")) report.reviewTags = (report.reviewTags ?? 0) + 1;
           const where = `${title}: ${q.prompt}`;
           if ($$(".choice").length !== 4 || $$(".choice-text").some(c => !c.textContent.trim())) problem(`${where}: choices missing or blank`);
           if (q.visual) {

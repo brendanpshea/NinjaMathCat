@@ -1,8 +1,8 @@
 // Reading aloud, for children still learning to read, with the browser's own
 // speech. Math is turned into the words a child would hear: "3/4" is "3
 // fourths", "7 × 8" is "7 times 8", "−3" is "negative 3", "$2.75" is "2
-// dollars and 75 cents", and the box in an equation is "box". Where there is
-// no speech, nothing is said and nothing breaks.
+// dollars and 75 cents", and the box in an equation is "what number". Where
+// there is no speech, nothing is said and nothing breaks.
 
 /** Fraction words, one and many, by denominator. */
 const PARTS = {
@@ -57,7 +57,7 @@ export function speakable(text, { ratios = false } = {}) {
     .replace(/</g, " is less than ")
     .replace(/>/g, " is greater than ")
     .replace(/=/g, " equals ")
-    .replace(/□/g, " box ")
+    .replace(/□/g, " what number ")
     .replace(/²/g, " squared").replace(/³/g, " cubed").replace(/⁴/g, " to the 4th").replace(/⁵/g, " to the 5th")
     .replace(/°/g, " degrees")
     .replace(/%/g, " percent")

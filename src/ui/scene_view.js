@@ -75,7 +75,10 @@ export function ringFocus(svg, focus) {
 export function runScene(root, { kicker, title, steps, hero, monster, speech, sound, readAloud, startLabel, onStart, onNote, onMap, replay = false }) {
   root.innerHTML = `
     <section class="scene-screen">
-      <p class="note-kicker">${esc(kicker)}</p>
+      <div class="scene-top">
+        <p class="note-kicker">${esc(kicker)}</p>
+        ${replay ? "" : `<button type="button" class="quiet scene-skip" data-ref="skip">Skip to the battle</button>`}
+      </div>
       <h1 tabindex="-1">${esc(title)}</h1>
       <div class="scene-cast">
         <div class="scene-actor scene-actor--hero" data-ref="hero"></div>
@@ -93,7 +96,6 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
       </div>
       <ol class="scene-steps" aria-label="Steps">${steps.map((_, i) => `<li data-step="${i}"><span class="visually-hidden">Step ${i + 1}</span></li>`).join("")}</ol>
       ${replay ? "" : `<div class="actions scene-more">
-        <button type="button" class="link" data-ref="skip">Skip to the battle</button>
         <button type="button" class="link" data-ref="note">Read the chapter note</button>
         <button type="button" class="link" data-ref="map">Back to the map</button>
       </div>`}
@@ -104,11 +106,14 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
   ref("monster").append(still(monsterSprite(monster), monster.name));
   const next = /** @type {HTMLButtonElement} */ (ref("next"));
 
-  let index = 0;
+  // Shown again after a miss, the scene starts where the hero starts explaining, with the picture of that moment.
+  let index = replay ? Math.max(0, steps.findIndex(s => s.who === "hero")) : 0;
   /** Whether the step's check has been answered rightly, or it has none. */
   let cleared = true;
   /** The picture showing, which stays from step to step until one brings a new one. */
-  let picture = /** @type {import("../scenes.js").ScenePicture | undefined} */ (undefined);
+  let picture = /** @type {import("../scenes.js").ScenePicture | undefined} */ ([...steps.slice(0, index + 1)].reverse().find(s => s.picture)?.picture);
+  /** The picture last drawn. */
+  let drawn = /** @type {typeof picture} */ (undefined);
   /** What was last said, to say again. */
   let said = { text: "", who: /** @type {"hero" | "monster"} */ ("hero") };
 
@@ -125,13 +130,14 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
 
   function show() {
     const step = steps[index];
-    if (step.picture) {
-      picture = step.picture;
+    if (step.picture) picture = step.picture;
+    if (picture && picture !== drawn) {
       ref("picture").innerHTML = pictureHtml(picture);
+      drawn = picture;
     }
     ref("picture").hidden = !root.querySelector(".scene-picture svg");
-    const drawn = root.querySelector(".scene-picture svg");
-    if (drawn) ringFocus(drawn, step.picture?.focus); // a ring lasts only for the step that sets it
+    const svg = root.querySelector(".scene-picture svg");
+    if (svg) ringFocus(svg, step.picture?.focus); // a ring lasts only for the step that sets it
     // For tests and tools: what the step points at.
     ref("picture").dataset.focus = [step.picture?.focus ?? []].flat().join(" ");
     root.querySelectorAll(".scene-steps li").forEach((li, i) => li.classList.toggle("is-done", i <= index));

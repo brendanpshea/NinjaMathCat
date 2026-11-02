@@ -109,7 +109,9 @@ export function createApp(root, { storage, sound, speech, rng }) {
   /** @type {{ destroy(): void, battle: Battle } | null} */
   let battleScreen = null;
   /** What has been played since the page was opened, for the progress report. */
-  const session = { battles: 0, asked: 0, firstTry: 0 };
+  const session = { battles: 0, asked: 0, firstTry: 0, started: Date.now(), restSuggested: false };
+  /** How long play has gone on since the game was opened, before a break is suggested, in minutes. */
+  const REST_AFTER = 15;
 
   root.innerHTML = `
     <header class="top">
@@ -418,6 +420,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
         </div>
         <div class="card map-progress">
           <p class="map-count"><strong>${done} of ${levels.length} levels done</strong> · ${stars} of ${levels.length * 3} stars</p>
+          <p class="map-time">A level takes about 5 minutes, and a chapter is 5 levels.</p>
           <div class="progress-bar" role="progressbar" aria-label="Levels done" aria-valuemin="0" aria-valuemax="${levels.length}" aria-valuenow="${done}">
             <span style="width: ${(100 * done) / levels.length}%"></span>
           </div>
@@ -604,6 +607,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
       onWin: b => levelDone(level, b, startLevel, foundBefore),
       grade: level.grade,
       upTo: level.chapter,
+      fresh: chapter.learn,
     });
   }
 
@@ -710,10 +714,11 @@ export function createApp(root, { storage, sound, speech, rng }) {
 
   /**
    * @param {Battle} battle
-   * @param {{ title?: string, onWin: (battle: Battle) => void, grade: number, upTo: number }} options
-   *   grade and upTo: the chapter being played, for the teaching scenes that can show how
+   * @param {{ title?: string, onWin: (battle: Battle) => void, grade: number, upTo: number, fresh?: string[] }} options
+   *   grade and upTo: the chapter being played, for the teaching scenes that can show how;
+   *   fresh: the kinds of question the level is about, so any other is marked as review
    */
-  function fight(battle, { title: name, onWin, grade, upTo }) {
+  function fight(battle, { title: name, onWin, grade, upTo, fresh }) {
     const now = me().played + 1;
     change({ played: now });
     session.battles++;
@@ -740,6 +745,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
       onWin,
       onLeave: map,
       showMeHow: teachings(grade, upTo),
+      reviewOf: fresh ? type => (fresh.includes(type) ? null : typeById(type).name) : undefined,
     });
     screenEl.querySelector("h1")?.focus();
   }
@@ -778,6 +784,9 @@ export function createApp(root, { storage, sound, speech, rng }) {
     const hero = heroOf(player);
     const stars = starsFor(tally.firstTry, asked);
     const note = topicNote(tally.answers);
+    const minutes = Math.round((Date.now() - session.started) / 60000);
+    const rest = minutes >= REST_AFTER && !session.restSuggested;
+    if (rest) session.restSuggested = true;
     show("level-done", `
       <section class="victory-screen level-done">
         <div class="banner">
@@ -795,6 +804,9 @@ export function createApp(root, { storage, sound, speech, rng }) {
           <li><strong>${found.length}</strong> new ${found.length === 1 ? "treasure" : "treasures"}</li>
         </ul>
         ${found.length > 0 ? `<ul class="treasure-grid">${found.map(treasureCard).join("")}</ul>` : ""}
+        ${rest ? `<div class="card rest-offer">
+          <p><strong>That's ${minutes} minutes of play.</strong> A good time for a stretch, a drink of water, or a break. Everything is saved.</p>
+        </div>` : ""}
         ${stars === 1 ? `<div class="card training-offer">
           <p>That was a tough one. The training ground practises what's been tricky, a little at a time.</p>
           <button type="button" class="quiet" data-ref="training">Go to the training ground</button>
@@ -861,7 +873,11 @@ export function createApp(root, { storage, sound, speech, rng }) {
     const levels = levelsFor(grade);
     const progress = progressIn(player, grade);
     const done = levels.filter(l => progress.done[l.id]).length;
-    const kinds = [...new Set(chaptersFor(grade).flatMap(c => [...c.learn, ...(c.warmup ?? [])]))];
+    // Topics met so far, the ones needing most practice first; then the ones not met yet, in the adventure's order.
+    const inOrder = [...new Set(chaptersFor(grade).flatMap(c => [...c.learn, ...(c.warmup ?? [])]))];
+    const met = inOrder.filter(type => (player.mastery[type]?.seen ?? 0) > 0).sort((a, b) => player.mastery[a].score - player.mastery[b].score);
+    const kinds = [...met, ...inOrder.filter(type => !met.includes(type))];
+    const needHelp = met.filter(type => strength(player.mastery[type]) === "practise").slice(0, 3);
     /** @param {number} last */
     const when = last => {
       const ago = player.played - last;
@@ -875,13 +891,16 @@ export function createApp(root, { storage, sound, speech, rng }) {
           <li><strong>${done} of ${levels.length}</strong> levels done</li>
           <li><strong>${player.played}</strong> ${player.played === 1 ? "battle" : "battles"} played in all</li>
           <li>${session.asked > 0
-            ? `<strong>${Math.round((100 * session.firstTry) / session.asked)}%</strong> right the first time since this page was opened, of ${session.asked} ${session.asked === 1 ? "question" : "questions"}`
-            : `<strong>No questions</strong> answered yet since this page was opened`}</li>
+            ? `<strong>${Math.round((100 * session.firstTry) / session.asked)}%</strong> right the first time this sitting, of ${session.asked} ${session.asked === 1 ? "question" : "questions"}`
+            : `<strong>No questions</strong> answered yet this sitting`}</li>
         </ul>
+        <p class="report-summary">${needHelp.length > 0
+          ? `<strong>Needs practice with:</strong> ${esc(list(needHelp.map(type => typeById(type).name)))}.`
+          : met.length > 0 ? "<strong>Nothing needs extra practice right now.</strong>" : "<strong>No topics met yet.</strong> They appear here once the adventure brings them in."}</p>
         <div class="card report-table">
           <!-- The roles keep it a table to a screen reader when a phone lays its rows out as cards. -->
           <table role="table">
-            <caption>Topics in the order the adventure brings them in</caption>
+            <caption>Topics, the ones that need practice first</caption>
             <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Topic</th><th role="columnheader" scope="col">Answered</th><th role="columnheader" scope="col">How it's going</th><th role="columnheader" scope="col">Last practised</th></tr></thead>
             <tbody role="rowgroup">${kinds.map(type => {
               const m = player.mastery[type];
@@ -896,10 +915,12 @@ export function createApp(root, { storage, sound, speech, rng }) {
         <p class="field-hint">"How it's going" follows the most recent answers, so it changes as a child practises. The training ground works on the topics that need it most.</p>
         <div class="actions">
           <button type="button" class="primary" data-ref="training">Go to the training ground</button>
+          <button type="button" class="quiet" data-ref="print">Print this page</button>
           <button type="button" class="quiet" data-ref="map">Back to the map</button>
         </div>
       </section>`);
     onTap(part("training"), () => training());
+    onTap(part("print"), () => window.print?.());
     onTap(part("map"), () => map());
   }
 

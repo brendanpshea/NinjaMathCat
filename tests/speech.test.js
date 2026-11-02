@@ -14,7 +14,7 @@ describe("reading aloud", () => {
   });
 
   it("says the signs of arithmetic, comparison and equations", () => {
-    assert.equal(speakable("What number goes in the box? 6 × □ = 42"), "What number goes in the box? 6 times box equals 42");
+    assert.equal(speakable("What number goes in the box? 6 × □ = 42"), "What number goes in the box? 6 times what number equals 42");
     assert.equal(speakable("12 ÷ 4 − 1"), "12 divided by 4 minus 1");
     assert.equal(speakable("x ≥ 5"), "x is greater than or equal to 5");
     assert.equal(speakable("3 < 5"), "3 is less than 5");

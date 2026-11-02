@@ -76,8 +76,10 @@ export function feedbackFor(round) {
  * @param {() => void} options.onLeave
  * @param {(type: string) => ((done: () => void) => void) | null} [options.showMeHow]  for a kind of question,
  *   a way to show how it's done, with a teaching scene, if there is one; it calls `done` once the scene is closed
+ * @param {(type: string) => string | null} [options.reviewOf]  for a kind of question from an earlier chapter, the
+ *   topic it reviews, so a question that isn't about the level's topic doesn't look like a mistake
  */
-export function createBattleScreen(root, { battle: start, hero, rng, sound, title, speaker, readAloud = false, onProgress, onWin, onLeave, showMeHow }) {
+export function createBattleScreen(root, { battle: start, hero, rng, sound, title, speaker, readAloud = false, onProgress, onWin, onLeave, showMeHow, reviewOf }) {
   let battle = start;
   let busy = false;
   let arrivedAt = -1; // which monster the arrival line is about
@@ -98,6 +100,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
           ${speaker?.available ? `<button type="button" class="quiet read-aloud" data-ref="read"><span aria-hidden="true">🔈</span> Read to me</button>` : ""}
         </div>
         <div class="ask" aria-live="polite" data-ref="ask">
+          <p class="review-tag" data-ref="tag" hidden></p>
           <p class="prompt" data-ref="prompt"></p>
           <div class="picture" data-ref="picture"></div>
         </div>
@@ -139,6 +142,9 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
       arrivedAt = battle.beaten;
       ref("arrival").textContent = `Here comes ${battle.foe.monster.name}! ${battle.foe.monster.description}`;
     }
+    const review = reviewOf?.(q.type) ?? null;
+    ref("tag").hidden = !review;
+    ref("tag").textContent = review ? `Review: ${review}` : "";
     ref("prompt").textContent = q.prompt;
     ref("picture").innerHTML = q.visual ? pictureHtml(q.visual) : "";
     // Long choices, such as the steps of a way to work something out, get a row each.

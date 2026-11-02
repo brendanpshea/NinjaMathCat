@@ -66,18 +66,19 @@ export const fractions = {
       ...plan.parts.map(other => /** @type {[number, number]} */ ([shaded, other])),
       ...plan.parts.map(other => /** @type {[number, number]} */ ([1, other])),
     ];
-    // Then, if those run short, any other fraction the grade could meet.
-    const bottoms = plan.words ? [2, 3, 4] : plan.parts;
-    const others = bottoms.flatMap(bottom => Array.from({ length: bottom }, (_, i) => /** @type {[number, number]} */ ([i + 1, bottom])));
+    // Then, if those run short, any other fraction the grade could meet. In
+    // words, only the parts the grade has learned: no "one third" in first grade.
+    const others = plan.parts.flatMap(bottom => Array.from({ length: bottom }, (_, i) => /** @type {[number, number]} */ ([i + 1, bottom])));
     const wrong = [...rng.shuffle(tempting), ...rng.shuffle(others)].filter(([top, bottom]) =>
-      top >= 1 && bottom >= 2 && top * parts !== shaded * bottom && (!plan.words || (bottom in PART_WORDS && top <= bottom)));
+      top >= 1 && bottom >= 2 && top * parts !== shaded * bottom && (!plan.words || (plan.parts.includes(bottom) && top <= bottom)));
 
     return {
-      prompt: plan.words ? "What part of the shape is shaded?" : "What fraction of the shape is shaded?",
+      // Children still learning to read hear "blue", the colour they see, not "shaded".
+      prompt: plan.words ? "How much of the shape is blue?" : "What fraction of the shape is shaded?",
       visual,
       answer: fractionText(shaded, parts, plan.words),
       wrong: wrong.map(([top, bottom]) => fractionText(top, bottom, plan.words)),
-      hint: plan.words ? "Count all the equal parts, then count the shaded ones."
+      hint: plan.words ? "Count all the equal parts, then count the blue ones."
         : "The bottom number is how many equal parts. The top number is how many are shaded.",
       difficulty: plan.words ? 1 + Number(shaded > 1) : 2 + Number(parts >= 6),
     };

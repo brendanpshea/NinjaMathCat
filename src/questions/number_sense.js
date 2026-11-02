@@ -254,7 +254,7 @@ export const comparison = {
       const other = op === "=" ? a + b : op === "<" ? a + b + rng.int(1, 5) : a + b - rng.int(1, 5);
       const wrongOps = ["<", "=", ">"].filter(o => o !== op);
       return {
-        prompt: "Which is true?",
+        prompt: grade < 2 ? "Which one is right?" : "Which is true?",
         answer: `${sum} ${op} ${other}`,
         wrong: [
           ...wrongOps.map(o => `${sum} ${o} ${other}`),
@@ -277,7 +277,7 @@ export const comparison = {
     const flipped = op === ">" ? "<" : ">";
     const [x, y] = [fmt(a), fmt(b)];
     return {
-      prompt: "Which is true?",
+      prompt: grade < 2 ? "Which one is right?" : "Which is true?",
       answer: `${x} ${op} ${y}`,
       wrong: [`${x} ${flipped} ${y}`, `${x} = ${y}`, `${y} ${op} ${x}`],
       hint: top > 1000 ? "Compare the digits place by place, starting from the biggest place." : "The open side of < or > faces the bigger number.",

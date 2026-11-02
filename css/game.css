@@ -359,11 +359,24 @@ select {
 .example-answer { font-size: 20px; }
 .example-answer strong { color: var(--right); }
 .example-tip { color: var(--muted); }
+/* In a battle, a question from an earlier chapter says it is review. */
+.review-tag { justify-self: start; margin: 0; padding: 3px 10px; border-radius: 999px; background: var(--indigo-soft); color: var(--indigo); font-size: 14px; font-weight: 800; }
+.review-tag[hidden] { display: none; }
+.map-time { margin: 0; color: var(--muted); font-size: 15px; }
+.report-summary { margin: 0; font-size: 18px; }
+@media print {
+  /* The progress report on paper: the page itself, without buttons or backgrounds. */
+  button, .brand { display: none !important; }
+  body, .game { background: #fff !important; }
+}
 
 /* A teaching scene: the hero and the monster, the one speaking a little
    raised, the line between them in a bubble pointing at its speaker, and the
    picture below. */
 .scene-screen { display: grid; gap: 16px; }
+.scene-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.scene-top .note-kicker { margin: 0; }
+.scene-skip { font-size: 16px; }
 .scene-cast { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 14px; }
 .scene-actor { opacity: 0.55; transition: transform 0.25s ease, opacity 0.25s ease; }
 .scene-actor.is-speaking { opacity: 1; transform: translateY(-8px); }

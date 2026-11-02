@@ -48,7 +48,7 @@ for (let i = 0; i < Number(countArg); i++) {
     : v.kind === "solid" ? `solid: ${v.solid}`
     : v.kind === "fraction_bars" ? `bars: ${v.bars.map(b => `${b.shaded} of ${b.parts}${b.label ? ` (${b.label})` : ""}`).join(" / ")}`
     : v.kind === "hundredths" ? `hundredths: ${v.grids.join(" and ")} shaded`
-    : v.kind === "lines" ? `lines: ${v.figure} at ${v.turn}°`
+    : v.kind === "lines" ? `lines: ${v.figure}, the picture tilted ${v.turn}°`
     : v.kind === "net" ? `net: ${v.solid}${"labels" in v && v.labels ? ` ${v.labels.length} × ${v.labels.width} × ${v.labels.height}` : ""}`
     : v.kind === "composite" ? `L-shape ${v.width} by ${v.height}, ${v.notch.join(" by ")} cut away${v.split ? ", split" : ""}`
     : v.kind === "gauge" ? `${v.tool} at ${v.value} ${v.unit} (marks every ${v.step}, numbered every ${v.labelEvery})`

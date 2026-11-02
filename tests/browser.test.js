@@ -48,6 +48,7 @@ describe("in a real browser", { skip }, () => {
     assert.ok(showHow.onlyBack, "over a battle, the scene has no skipping, note or map");
     assert.deepEqual(showHow.scene.problems, []);
     assert.equal(showHow.scene.title, "Teen numbers");
+    assert.ok(!/^I'm /.test(showHow.scene.lines[0]), `shown again, it starts where the hero explains, not "${showHow.scene.lines[0]}"`);
     assert.equal(showHow.last, "Back to the battle");
     assert.ok(showHow.closed && showHow.backInBattle && showHow.focusOnNext, "closed, back in the battle, ready to go on");
     assert.ok(showHow.goesOn, "the next question comes as usual");
@@ -66,6 +67,7 @@ describe("in a real browser", { skip }, () => {
     const teens = marathon.scenes.find(s => s.title === "Teen numbers");
     assert.match(teens.lines[0], /^I'm Grumpy Cloud!/);
     assert.ok(marathon.wrongOnce > 0 && marathon.wrongTwice > 0, "some answers wrong, so hints and answers were shown");
+    assert.ok(marathon.reviewTags > 0, "questions from earlier chapters say they are review");
     assert.ok(Object.keys(marathon.kinds).length >= 6, `pictures of only ${Object.keys(marathon.kinds).join(", ")}`);
   });
 
