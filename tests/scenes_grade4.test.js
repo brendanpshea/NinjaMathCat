@@ -65,17 +65,19 @@ describe("4th grade's teaching scenes", () => {
       seen.add(`${n}x${big}`);
       const tens = Math.floor(big / 10) * 10;
       const ones = big % 10;
-      const lines = steps[4].picture.lines;
-      assert.deepEqual(lines[2], [String(n), "×", String(tens), "=", String(n * tens)], at);
-      assert.deepEqual(lines[3], [String(n), "×", String(ones), "=", String(n * ones)], at);
-      assert.equal(lines[4][4], String(n * big), at);
-      assert.match(steps[4].say, new RegExp(`make ${n * big}\\.$`), at);
-      // The tens' part, wherever it is on the card, and only there.
-      const card5 = steps[4].picture.lines;
-      assert.deepEqual(steps[5].check.answers.map(a => card5[Number(a[1])][Number(a.slice(3))]), steps[5].check.answers.map(() => String(n * tens)), at);
-      assert.equal(steps[5].check.answers.length, card5.flat().filter(t => t === String(n * tens)).length, at);
-      const [n2, , big2] = steps[6].picture.lines[0].map(Number);
-      assert.equal(steps[6].check.answer, String(n2 * big2), at);
+      // The split and its two products, rung together, then the sum.
+      const parts = steps[1].picture.lines;
+      assert.deepEqual(parts[1], [String(n), "×", String(tens), "+", String(n), "×", String(ones)], at);
+      assert.deepEqual(parts[2], [String(n), "×", String(tens), "=", String(n * tens)], at);
+      assert.deepEqual(parts[3], [String(n), "×", String(ones), "=", String(n * ones)], at);
+      assert.deepEqual(steps[1].picture.focus, ["line-2", "line-3"], at);
+      assert.match(steps[1].say, new RegExp(`^Split ${big} into ${tens} and ${ones}\\. ${n} times ${tens} is ${n * tens}\\. ${n} times ${ones} is ${n * ones}\\.$`), at);
+      const lines = steps[2].picture.lines;
+      assert.deepEqual(lines[4], [String(n * tens), "+", String(n * ones), "=", String(n * big)], at);
+      assert.match(steps[2].say, new RegExp(`make ${n * big}\\.$`), at);
+      assert.ok(steps.findIndex(s => s.check) <= 3, `${at}: the first check comes late`);
+      const [n2, , big2] = steps[3].picture.lines[0].map(Number);
+      assert.equal(steps[3].check.answer, String(n2 * big2), at);
       assert.ok(n2 * (big2 % 10) >= 10, at);
     }
     assert.ok(seen.size > 50);

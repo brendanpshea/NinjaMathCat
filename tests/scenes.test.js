@@ -32,7 +32,7 @@ describe("teaching scenes", () => {
 
   it("keep each step to one short line, shorter for children still learning to read", () => {
     for (const { grade, steps, at } of playedScenes()) {
-      assert.ok(steps.length >= 3 && steps.length <= 8, `${at}: ${steps.length} steps`);
+      assert.ok(steps.length >= 3 && steps.length <= 7, `${at}: ${steps.length} steps`);
       assert.ok(steps[0].picture, `${at}: the picture comes first`);
       assert.ok(!steps[steps.length - 1].check, `${at}: the scene ends on a line, not a question, before the battle`);
       const most = grade < 3 ? 14 : 28;

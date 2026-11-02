@@ -20,7 +20,7 @@ describe("1st grade's teaching scenes", () => {
       // The hops are one each, end to end, from the start.
       hops.forEach(([from, to], i) => assert.deepEqual([from, to], [a + i, a + i + 1], at));
       assert.deepEqual(steps[2].picture.focus, hops.map((_, i) => `jump-${i}`), at);
-      assert.equal(steps[1].picture.focus, `point-${a}`, at);
+      assert.deepEqual(steps[1].picture.focus, [`point-${a}`, `tick-${a}`], at);
       assert.deepEqual(numbersIn(steps[0].say), [a, b], at);
       assert.equal(steps[3].say, `We land on ${a + b}. So ${a} and ${b} more make ${a + b}.`, at);
       assert.equal(steps[3].picture.focus, `tick-${hops[hops.length - 1][1]}`, at);
@@ -30,12 +30,15 @@ describe("1st grade's teaching scenes", () => {
       assert.deepEqual(tap.picture.points, [a2], at);
       assert.deepEqual(tap.check.answers, [`tick-${a2 + b2}`], at);
       assert.ok(a2 + b2 <= 20 && (a2 !== a || b2 !== b), at);
-      // The choice check.
+      // The choice check comes first, with its hops drawn to count, but not where they land.
       const [choose] = checkOf(steps, "choose");
       const [a3, b3] = numbersIn(choose.say);
       assert.deepEqual(choose.picture.points, [a3], at);
+      assert.deepEqual(choose.picture.jumps, Array.from({ length: b3 }, (_, i) => [a3 + i, a3 + i + 1]), at);
       assert.equal(choose.check.answer, a3 + b3, at);
       assert.ok(a3 + b3 <= 20, at);
+      assert.ok(steps.indexOf(choose) < steps.indexOf(tap), `${at}: the hops to count come before hopping alone`);
+      assert.equal(tap.picture.jumps.length, 0, at);
     }
     assert.ok(starts.size >= 15, `only ${starts.size} different sums`);
   });
@@ -86,10 +89,13 @@ describe("1st grade's teaching scenes", () => {
     for (const { steps, at } of playedScenes("1-tens")) {
       const { tens, ones, hundreds } = steps[0].picture;
       assert.equal(hundreds, 0, at);
-      assert.ok(tens >= 2 && ones >= 1, at);
-      assert.equal(steps[2].say, `Here are ${tens} tens, ${tens} sticks.`, at);
-      assert.equal(steps[3].say, `${ones === 1 ? "This little cube is 1 one" : `These little cubes are ${ones} ones`}.`, at);
-      assert.equal(steps[4].say, `${tens} tens and ${ones} ${ones === 1 ? "one" : "ones"} make ${tens * 10 + ones}.`, at);
+      assert.ok(tens >= 2 && ones >= 3, `${at}: cubes enough to count before the check`);
+      // Counting the sticks by tens: the count said ends at the sticks' worth.
+      const counted = numbersIn(steps[2].say);
+      assert.equal(counted[0], tens, at);
+      assert.equal(counted[counted.length - 1], 10 * tens, at);
+      assert.equal(steps[3].say, `These little cubes are ${ones} ones.`, at);
+      assert.equal(steps[4].say, `${tens} tens and ${ones} ones make ${tens * 10 + ones}. The tens come first.`, at);
       assert.deepEqual([steps[1].picture.focus, steps[2].picture.focus, steps[3].picture.focus], ["rod-0", "rods", "units"], at);
       const [choose] = checkOf(steps, "choose");
       const { tens: t2, ones: o2 } = choose.picture;
@@ -168,14 +174,20 @@ describe("1st grade's teaching scenes", () => {
       const { parts, shaded, model } = steps[0].picture;
       seen.add(`${model}${parts}${shaded}`);
       assert.ok([2, 4].includes(parts) && shaded >= 1 && shaded < parts, at);
-      const name = parts === 2 ? "half" : "fourth";
-      assert.equal(steps[3].say, `${parts} equal parts. Each part is one ${name}.`, at);
-      assert.equal(steps[4].say, `${parts} ${parts === 2 ? "halves" : "fourths"} make the whole jelly.`, at);
-      // Then the other cut: halves after fourths, fourths after halves.
-      assert.equal(steps[5].picture.parts, parts === 2 ? 4 : 2, at);
+      const [name, names] = parts === 2 ? ["half", "halves"] : ["fourth", "fourths"];
+      assert.deepEqual(numbersIn(steps[0].say), [parts], at);
+      assert.equal(steps[2].say, `Each part is one ${name}. You ate ${shaded === 1 ? `one ${name}` : `${shaded} ${names}`}.`, at);
+      assert.equal(steps[2].picture.focus, "shaded", at);
+      assert.equal(steps[3].say, `${parts} ${names} make the whole jelly.`, at);
+      // Then the other cut, halves after fourths and fourths after halves, with its one part shown.
+      const otherCut = steps[4].picture;
+      assert.deepEqual([otherCut.parts, otherCut.shaded, otherCut.focus], [parts === 2 ? 4 : 2, 1, "shaded"], at);
+      assert.equal(steps[4].say, `Cut into ${otherCut.parts} equal parts, each part is one ${otherCut.parts === 2 ? "half" : "fourth"}.`, at);
+      // The check asks for the shares by name, and the answer is how many parts the jelly has.
       const [choose] = checkOf(steps, "choose");
+      const asked = choose.picture.parts === 2 ? "halves" : "fourths";
+      assert.ok(choose.say.includes(`How many ${asked}`), at);
       assert.equal(choose.check.answer, choose.picture.parts, at);
-      assert.ok(choose.check.right.endsWith(`one ${choose.picture.parts === 2 ? "half" : "fourth"}.`), at);
     }
     assert.ok(seen.size >= 6);
   });

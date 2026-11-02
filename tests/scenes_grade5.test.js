@@ -41,13 +41,15 @@ describe("5th grade's teaching scenes", () => {
       const a = Number(a1 + a2);
       const b = Number(t + o);
       assert.match(steps[0].say, new RegExp(`What is ${a} times ${b}\\?`), at);
-      assert.deepEqual(steps[2].check.answers, ["t0-3"], at);
+      assert.ok(steps[1].say.startsWith(`Split ${b} into ${Number(t) * 10} and ${o}.`), at);
+      assert.ok(steps[1].say.endsWith(`${a} times ${Number(t) * 10} is ${a * Number(t) * 10}: ${a} times ${t}, then a zero.`), at);
+      assert.ok(steps.findIndex(s => s.check) <= 3, `${at}: the first check comes late`);
       // The parts, as the last card shows them.
-      const last = picturesOf(steps)[5];
+      const last = picturesOf(steps)[2];
       assert.deepEqual(tokens(last, 1), [String(a), "×", o, "=", String(a * Number(o))], at);
       assert.deepEqual(tokens(last, 2), [String(a), "×", `${t}0`, "=", String(a * Number(t) * 10)], at);
       assert.deepEqual(tokens(last, 3), [String(a * Number(o)), "+", String(a * Number(t) * 10), "=", String(a * b)], at);
-      assert.match(steps[5].say, new RegExp(`make ${a * b}\\.$`), at);
+      assert.match(steps[2].say, new RegExp(`make ${a * b}\\.$`), at);
       const choose = checkOf(steps, "choose");
       const [x, , y] = tokens(choose.picture, 0);
       assert.equal(choose.check.answer, Number(x) * Number(y), at);
@@ -60,13 +62,14 @@ describe("5th grade's teaching scenes", () => {
     for (const { steps, at } of playedScenes("5-expressions")) {
       const [a, times, open, b, plus, c, close] = tokens(steps[0].picture, 0);
       assert.deepEqual([times, open, plus, close], ["×", "(", "+", ")"], at);
-      assert.match(steps[1].say, new RegExp(`${b} plus ${c} inside`), at);
-      assert.match(steps[3].say, new RegExp(`${a} times ${Number(b) + Number(c)} is ${Number(a) * (Number(b) + Number(c))}\\.$`), at);
-      assert.deepEqual(tokens(steps[3].picture, 2), [String(Number(a) * (Number(b) + Number(c)))], at);
-      // Multiplying first, in the card for the second example.
-      const [x, p, y, m, z] = tokens(steps[4].picture, 0);
-      assert.deepEqual([p, m], ["+", "×"], at);
-      assert.match(steps[5].say, new RegExp(`${y} times ${z} is ${Number(y) * Number(z)}\\. Then add ${x}\\. The answer is ${Number(x) + Number(y) * Number(z)}\\.$`), at);
+      const sum = Number(b) + Number(c);
+      assert.match(steps[1].say, new RegExp(`^Parentheses go first\\. ${b} plus ${c} is ${sum}\\.$`), at);
+      assert.deepEqual(tokens(steps[1].picture, 1), [a, "×", String(sum)], at);
+      assert.deepEqual(steps[1].picture.focus, ["t0-2", "t0-3", "t0-4", "t0-5", "t0-6"], at);
+      assert.match(steps[2].say, new RegExp(`^Now multiply: ${a} times ${sum} is ${Number(a) * sum}\\.`), at);
+      assert.deepEqual(tokens(steps[2].picture, 2), [String(Number(a) * sum)], at);
+      assert.ok(steps.findIndex(s => s.check) <= 3, `${at}: the first check comes late`);
+      // Multiplying first, in the check: the card has no parentheses.
       const choose = checkOf(steps, "choose");
       const [x2, , y2, , z2] = tokens(choose.picture, 0).map(Number);
       assert.equal(choose.check.answer, x2 + y2 * z2, at);
@@ -168,14 +171,11 @@ describe("5th grade's teaching scenes", () => {
       const at_ = (/** @type {string} */ label) => points.find((/** @type {any} */ p) => p.label === label);
       const { x, y } = at_("A");
       assert.notEqual(x, y, at);
-      assert.deepEqual([at_("O").x, at_("O").y, at_("B").x, at_("B").y, at_("C").x, at_("C").y], [0, 0, x, 0, 0, y], at);
-      assert.match(steps[2].say, new RegExp(`B is ${x} steps across from O, so the first number is ${x}\\.`), at);
-      assert.match(steps[3].say, new RegExp(`A is ${y} steps up from B, so the second number is ${y}\\.`), at);
-      assert.match(steps[4].say, new RegExp(`A is at \\(${x}, ${y}\\)`), at);
-      assert.deepEqual([steps[1].picture.focus, steps[2].picture.focus, steps[3].picture.focus], ["point-O", "point-B", "point-A"], at);
-      // The tap check names the point at (0, y).
-      assert.match(steps[5].say, new RegExp(`\\(0, ${y}\\)`), at);
-      assert.deepEqual(steps[5].check.answers, ["point-C"], at);
+      assert.deepEqual([at_("O").x, at_("O").y, at_("B").x, at_("B").y], [0, 0, x, 0], at);
+      assert.match(steps[1].say, new RegExp(`Go across ${x} steps to B\\. The first number is ${x}\\.$`), at);
+      assert.match(steps[2].say, new RegExp(`Then go up ${y} steps to A\\. The second number is ${y}, so A is at \\(${x}, ${y}\\)\\.`), at);
+      assert.deepEqual([steps[1].picture.focus, steps[2].picture.focus], [["point-O", "point-B"], "point-A"], at);
+      assert.ok(steps.findIndex(s => s.check) <= 3, `${at}: the first check comes late`);
       const choose = checkOf(steps, "choose");
       const d = choose.picture.points.find((/** @type {any} */ p) => p.label === "D");
       assert.equal(choose.check.answer, `(${d.x}, ${d.y})`, at);

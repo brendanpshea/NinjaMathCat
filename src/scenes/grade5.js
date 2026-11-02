@@ -91,17 +91,10 @@ export const SCENES = [
       const line0 = [String(a1), String(a2), "×", String(t), String(o)];
       return [
         { who: "monster", say: `I'm ${monster}! I swap the digits around. What is ${a} times ${b}?`, picture: card([line0]) },
-        { who: "hero", say: `Split ${b} into ${t * 10} and ${o}. We multiply ${a} by each part, then add.`, picture: card([line0], ["t0-3", "t0-4"]) },
-        {
-          who: "monster",
-          say: `Hmph. Which digit of ${b} means ${t} tens? Tap it!`,
-          check: { kind: "tap", answers: ["t0-3"], retry: "Tens are in the place on the left.", right: `Yes! The ${t} stands for ${t * 10}.` },
-        },
-        { who: "hero", say: `First the ones: ${a} times ${o} is ${ones}.`, picture: card([line0, [String(a), "×", String(o), "=", String(ones)]], "line-1") },
         {
           who: "hero",
-          say: `Now the tens: ${a} times ${t * 10} is ${tens}. Do ${a} times ${t}, then put a zero on the end.`,
-          picture: card([line0, [String(a), "×", String(o), "=", String(ones)], [String(a), "×", String(t * 10), "=", String(tens)]], "line-2"),
+          say: `Split ${b} into ${t * 10} and ${o}. ${a} times ${o} is ${ones}. ${a} times ${t * 10} is ${tens}: ${a} times ${t}, then a zero.`,
+          picture: card([line0, [String(a), "×", String(o), "=", String(ones)], [String(a), "×", String(t * 10), "=", String(tens)]], ["line-1", "line-2"]),
         },
         {
           who: "hero",
@@ -138,24 +131,15 @@ export const SCENES = [
       const a = rng.int(2, 6);
       const [b, c] = digits(rng, 2).map(n => n + 1);
       const sum = b + c;
-      const { x, y, z } = pick();
       const first = [String(a), "×", "(", String(b), "+", String(c), ")"];
-      const second = [String(x), "+", String(y), "×", String(z)];
       let next = pick();
       // Four different answers: a + b × c, (a + b) × c, a + b + c, a × b + c.
       while (new Set([next.x + next.y * next.z, (next.x + next.y) * next.z, next.x + next.y + next.z, next.x * next.y + next.z]).size < 4) next = pick();
       const value = next.x + next.y * next.z;
       return [
         { who: "monster", say: `I'm ${monster}! My lamp hides a sum inside parentheses. What is the answer?`, picture: card([first]) },
-        { who: "hero", say: `Parentheses go first. Work out ${b} plus ${c} inside them.`, picture: card([first], ["t0-2", "t0-3", "t0-4", "t0-5", "t0-6"]) },
-        { who: "hero", say: `${b} plus ${c} is ${sum}. The parentheses are done.`, picture: card([first, [String(a), "×", String(sum)]], "t1-2") },
-        { who: "hero", say: `Now multiply: ${a} times ${sum} is ${a * sum}.`, picture: card([first, [String(a), "×", String(sum)], [String(a * sum)]], "line-2") },
-        { who: "hero", say: `No parentheses here. Multiplying goes before adding, so ${y} times ${z} comes first.`, picture: card([second], ["t0-2", "t0-3", "t0-4"]) },
-        {
-          who: "hero",
-          say: `${y} times ${z} is ${y * z}. Then add ${x}. The answer is ${x + y * z}.`,
-          picture: card([second, [String(x), "+", String(y * z)], [String(x + y * z)]], "line-2"),
-        },
+        { who: "hero", say: `Parentheses go first. ${b} plus ${c} is ${sum}.`, picture: card([first, [String(a), "×", String(sum)]], ["t0-2", "t0-3", "t0-4", "t0-5", "t0-6"]) },
+        { who: "hero", say: `Now multiply: ${a} times ${sum} is ${a * sum}. With no parentheses, multiply before you add.`, picture: card([first, [String(a), "×", String(sum)], [String(a * sum)]], "line-2") },
         {
           who: "monster",
           say: "Flicker! What is this one?",
@@ -407,22 +391,15 @@ export const SCENES = [
         kind: "coordinates",
         min: 0,
         max: 10,
-        points: [{ x: 0, y: 0, label: "O" }, { x, y, label: "A" }, { x, y: 0, label: "B" }, { x: 0, y, label: "C" }],
+        points: [{ x: 0, y: 0, label: "O" }, { x, y, label: "A" }, { x, y: 0, label: "B" }],
         ...(focus ? { focus } : {}),
       });
       const found = { x: other.x, y: other.y };
       const all = (/** @type {number} */ p, /** @type {number} */ q) => [`(${p}, ${q})`, `(${q}, ${p})`, `(${p}, 0)`, `(0, ${q})`];
       return [
         { who: "monster", say: `I'm ${monster}! I have seven eyes, but I lost my keys. They are at point A. What are the coordinates of A?`, picture: grid() },
-        { who: "hero", say: "We start at O, the corner. Both numbers are 0 there.", picture: grid("point-O") },
-        { who: "hero", say: `First go across. B is ${x} steps across from O, so the first number is ${x}.`, picture: grid("point-B") },
-        { who: "hero", say: `Then go up. A is ${y} steps up from B, so the second number is ${y}.`, picture: grid("point-A") },
-        { who: "hero", say: `So A is at (${x}, ${y}). Across first, then up.`, picture: grid() },
-        {
-          who: "monster",
-          say: `Which point is at (0, ${y})? Tap it!`,
-          check: { kind: "tap", answers: ["point-C"], retry: "Zero across means the point sits on the left edge.", right: `Yes! C is 0 across and ${y} up.` },
-        },
+        { who: "hero", say: `Start at O, the corner. Go across ${x} steps to B. The first number is ${x}.`, picture: grid(["point-O", "point-B"]) },
+        { who: "hero", say: `Then go up ${y} steps to A. The second number is ${y}, so A is at (${x}, ${y}). Across first, then up.`, picture: grid("point-A") },
         {
           who: "monster",
           say: "Where did I lose my other key? What are the coordinates of point D?",

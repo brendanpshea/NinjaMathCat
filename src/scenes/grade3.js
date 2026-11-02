@@ -52,19 +52,12 @@ export const SCENES = [
       const sum = more * per;
       return [
         { who: "monster", say: `I'm ${monster}! I float on the breeze with ${groups} bunches of balloons. How many balloons is that in all?`, picture: bunches(groups, each) },
-        { who: "hero", say: `Look! This bunch has ${each} balloons, and so does every bunch. These are equal groups.`, picture: bunches(groups, each, "row-0") },
         {
           who: "hero",
-          say: `${groups} groups of ${each} is written ${groups} times ${each}. The number of groups comes first.`,
+          say: `Every bunch has ${each} balloons. ${groups} groups of ${each} is written ${groups} times ${each}.`,
           picture: { kind: "math", lines: [[String(groups), "×", String(each)]], focus: "line-0" },
         },
-        {
-          who: "monster",
-          say: "Which number says how many groups? Tap it!",
-          check: { kind: "tap", answers: ["t0-0"], retry: "Think about how many bunches I'm holding. Which number is that?", right: `Yes! ${groups} groups, so ${groups} comes first.` },
-        },
-        { who: "hero", say: `To find how many in all, count by ${each}s, once for each group: ${countBy(each, groups)}.`, picture: card("line-1") },
-        { who: "hero", say: `The last number tells how many in all. ${groups} times ${each} is ${total}.`, picture: card(`t1-${2 * (groups - 1)}`) },
+        { who: "hero", say: `Count by ${each}s, once for each group: ${countBy(each, groups)}. So ${groups} times ${each} is ${total}.`, picture: card(`t1-${2 * (groups - 1)}`) },
         {
           who: "monster",
           say: "Grr! Here are more bunches. How many balloons in all?",
@@ -90,7 +83,7 @@ export const SCENES = [
       const total = plates * each;
       /** @param {number} n */
       const pile = n => /** @type {ScenePicture} */ ({ kind: "objects", emoji: "🍅", count: n });
-      const card = (/** @type {number} */ lines, /** @type {string} */ focus) => /** @type {ScenePicture} */ ({
+      const card = (/** @type {number} */ lines, /** @type {string | string[]} */ focus) =>/** @type {ScenePicture} */ ({
         kind: "math",
         lines: [
           [String(total), "÷", String(plates)],
@@ -106,24 +99,8 @@ export const SCENES = [
       const total2 = p2 * e2;
       return [
         { who: "monster", say: `I'm ${monster}! My giant spoon scooped ${total} tomatoes. Share them equally onto ${plates} plates. How many on each plate?`, picture: pile(total) },
-        { who: "hero", say: `Sharing ${total} into ${plates} equal groups is written ${total} divided by ${plates}.`, picture: card(1, "line-0") },
-        { who: "hero", say: `Turn it around. ${plates} times what number makes ${total}?`, picture: card(2, "line-1") },
-        { who: "hero", say: `Count by ${plates}s until you reach ${total}: ${countBy(plates, each)}. That took ${each} counts.`, picture: card(3, "line-2") },
-        {
-          who: "monster",
-          say: "Which number is how many plates? Tap it!",
-          // The plates are in the sum, the times fact, and the first count by them.
-          check: { kind: "tap", answers: ["t0-2", "t1-0", "t2-0"], retry: "Think of the plates I am sharing onto. Which number counts them?", right: `Yes! ${plates} plates, so ${plates} groups.` },
-        },
-        {
-          who: "hero",
-          say: `So each plate gets ${each} tomatoes. ${total} divided by ${plates} is ${each}.`,
-          picture: {
-            kind: "groups",
-            rows: Array.from({ length: plates }, (_, i) => ({ name: `plate ${i + 1}`, emoji: "🍅", count: each })),
-            focus: "row-0",
-          },
-        },
+        { who: "hero", say: `Sharing ${total} onto ${plates} plates is written ${total} divided by ${plates}. Turn it around: ${plates} times what makes ${total}?`, picture: card(2, ["line-0", "line-1"]) },
+        { who: "hero", say: `Count by ${plates}s until you reach ${total}: ${countBy(plates, each)}. That took ${each} counts, so each plate gets ${each}.`, picture: card(3, "line-2") },
         {
           who: "monster",
           say: `Mmm, more tomatoes! I have ${total2} for ${p2} plates. How many on each plate?`,
@@ -157,16 +134,9 @@ export const SCENES = [
       return [
         { who: "monster", say: `I'm ${monster}! My lamp has a clock, and I flicker on the dot. What time does it show?`, picture: clock() },
         { who: "hero", say: `The short hand is the hour hand. It has passed the ${hour} but not reached the ${(hour % 12) + 1}, so the hour is ${hour}.`, picture: clock("hour-hand") },
-        { who: "hero", say: "The long hand is the minute hand. It tells how many minutes past the hour.", picture: clock("minute-hand") },
-        {
-          who: "monster",
-          say: "Which hand tells the minutes? Tap it!",
-          check: { kind: "tap", answers: ["minute-hand"], retry: "The hour hand is the short one. Look at the other hand.", right: "Yes! The long hand counts the minutes." },
-        },
-        { who: "hero", say: `The long hand is just past the ${fives}. Count by 5s to the ${fives}: ${countBy(5, fives)}. That is ${5 * fives} minutes.`, picture: clock(`number-${fives}`) },
         {
           who: "hero",
-          say: `Then count ${extra} more little ${plural(extra, "mark", "marks")} past the ${fives}. That makes ${minutes} minutes, so the time is ${formatClock(hour, minutes)}.`,
+          say: `The long hand shows minutes. Count by 5s to the ${fives}: ${countBy(5, fives)}. Add ${extra} little ${plural(extra, "mark", "marks")}: ${minutes}. It is ${formatClock(hour, minutes)}.`,
           picture: clock("minute-hand"),
         },
         {
@@ -390,19 +360,15 @@ export const SCENES = [
       while ((w2 === width && h2 === height) || new Set([2 * (w2 + h2), ...wrongs()]).size < 4) [w2, h2] = [rng.int(4, 9), rng.int(2, 3)];
       return [
         { who: "monster", say: `I'm ${monster}! I want a gold ribbon all the way around my lid. How long must my ribbon be?`, picture: lid(width, height) },
-        { who: "hero", say: "The distance all the way around a shape is its perimeter. We add up every side.", picture: lid(width, height, ["side-top", "side-right", "side-bottom", "side-left"]) },
-        { who: "hero", say: `The bottom is ${width} centimeters. The top is just as long: ${width} centimeters too.`, picture: lid(width, height, ["side-top", "side-bottom"]) },
-        { who: "hero", say: `The left side is ${height} centimeters, and so is the right side.`, picture: lid(width, height, ["side-left", "side-right"]) },
         {
           who: "hero",
-          say: `${width} plus ${width} plus ${height} plus ${height} is ${around}. The ribbon must be ${around} centimeters long.`,
-          picture: { kind: "math", lines: [[String(width), "+", String(width), "+", String(height), "+", String(height), "=", String(around)]], focus: "t0-8" },
+          say: `Perimeter is the distance all the way around. The top matches the bottom: ${width} centimeters. The right matches the left: ${height} centimeters.`,
+          picture: lid(width, height, ["side-top", "side-right", "side-bottom", "side-left"]),
         },
         {
-          who: "monster",
-          say: "Which side is just as long as my left side, with no number on it? Tap it!",
-          picture: lid(width, height),
-          check: { kind: "tap", answers: ["side-right"], retry: "A rectangle's sides come in pairs, across from each other.", right: `Yes! The right side is ${height} centimeters too.` },
+          who: "hero",
+          say: `Add all four sides: ${width} plus ${width} plus ${height} plus ${height} is ${around}. The ribbon must be ${around} centimeters long.`,
+          picture: { kind: "math", lines: [[String(width), "+", String(width), "+", String(height), "+", String(height), "=", String(around)]], focus: "t0-8" },
         },
         {
           who: "monster",

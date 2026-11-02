@@ -127,16 +127,8 @@ export const SCENES = [
       const whole2 = n2 * (t2 * 10 + ones2);
       return [
         { who: "monster", say: `I am ${monster}! I grabbed ${n} bags of ${tens + o} coins each. How many coins is that?`, picture: card(lines) },
-        { who: "hero", say: `Split ${tens + o} into tens and ones: ${tens} and ${o}.`, picture: card(split, ["t1-2", "t1-6"]) },
-        { who: "hero", say: `First the tens. ${n} times ${tens} is ${parts}.`, picture: card(first, "line-2") },
-        { who: "hero", say: `Then the ones. ${n} times ${o} is ${n * o}.`, picture: card(second, "line-3") },
+        { who: "hero", say: `Split ${tens + o} into ${tens} and ${o}. ${n} times ${tens} is ${parts}. ${n} times ${o} is ${n * o}.`, picture: card(second, ["line-2", "line-3"]) },
         { who: "hero", say: `Add the two parts. ${parts} and ${n * o} make ${whole}.`, picture: card([...second, [String(parts), "+", String(n * o), "=", String(whole)]], "line-4") },
-        {
-          who: "monster",
-          say: `Grr! Where is the answer to ${n} times ${tens}? Tap it!`,
-          // The tens' part is where the tens are multiplied, and again where the parts are added.
-          check: { kind: "tap", answers: ["t2-4", "t4-0"], retry: "Find the line where the tens are multiplied.", right: `Yes! ${n} times ${tens} is ${parts}.` },
-        },
         {
           who: "monster",
           say: `Gimme more! What is ${n2} times ${t2 * 10 + ones2}?`,

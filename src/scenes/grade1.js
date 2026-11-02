@@ -36,21 +36,17 @@ export const SCENES = [
       const b2 = intNot(rng, 2, 5, [b]);
       const a3 = intNot(rng, 6, 12, [a, a2]);
       const b3 = intNot(rng, 2, 5, [b, b2]);
+      // The dot stands for the ducks, so the first line says so. The first check shows
+      // the hops to count; the second leaves the child to hop on alone.
       return [
-        { who: "monster", say: `I'm ${monster}! ${a} ducks hide here, and ${b} more sneak in!`, picture: line(a, 0) },
-        { who: "hero", say: `Start at ${a}, where the ducks are. We count on from here.`, picture: line(a, 0, `point-${a}`) },
+        { who: "monster", say: `I'm ${monster}! My ${a} ducks wait at the dot. ${b} more sneak in!`, picture: line(a, 0) },
+        { who: "hero", say: `Start at ${a}, where the ducks are. We count on from here.`, picture: line(a, 0, [`point-${a}`, `tick-${a}`]) },
         { who: "hero", say: `Hop ${b} times, one hop for each duck that sneaks in.`, picture: line(a, b, Array.from({ length: b }, (_, i) => `jump-${i}`)) },
         { who: "hero", say: `We land on ${sum}. So ${a} and ${b} more make ${sum}.`, picture: line(a, b, `tick-${sum}`, true) },
         {
           who: "monster",
-          say: `Sneaky again! ${a2} ducks, and ${b2} more come. Tap where you land!`,
-          picture: line(a2, 0),
-          check: { kind: "tap", answers: [`tick-${a2 + b2}`], retry: "Start at the dot. Hop one number at a time.", right: `Yes! ${a2} and ${b2} more make ${a2 + b2}.` },
-        },
-        {
-          who: "monster",
-          say: `Last sneak! ${a3} ducks, and ${b3} more. How many now?`,
-          picture: line(a3, 0),
+          say: `Sneaky again! ${a3} ducks, and ${b3} more. Count the hops. How many now?`,
+          picture: line(a3, b3),
           check: {
             kind: "choose",
             choices: rng.shuffle([a3 + b3, a3 + b3 + 1, a3 + b3 - 1, a3]),
@@ -58,6 +54,12 @@ export const SCENES = [
             retry: "Start at the dot and hop on. Count each hop.",
             right: `Yes! ${a3 + b3} ducks in all.`,
           },
+        },
+        {
+          who: "monster",
+          say: `Last sneak! ${a2} ducks, and ${b2} more come. Tap where you land!`,
+          picture: line(a2, 0),
+          check: { kind: "tap", answers: [`tick-${a2 + b2}`], retry: "Start at the dot. Hop one number at a time.", right: `Yes! ${a2} and ${b2} more make ${a2 + b2}.` },
         },
         { who: "monster", say: "You counted every sneaky duck! Now, let's battle!" },
       ];
@@ -148,8 +150,10 @@ export const SCENES = [
     // A number is tens and ones, shown with blocks (1.NBT.2).
     chapter: "1-tens",
     steps(rng, { monster }) {
-      const [t, o] = [rng.int(2, 9), rng.int(1, 9)];
+      // Several cubes in the example, so it shows how they are counted before the check asks.
+      const [t, o] = [rng.int(2, 9), rng.int(3, 9)];
       const ones = (/** @type {number} */ n) => (n === 1 ? "one" : "ones");
+      const byTens = Array.from({ length: Math.min(t, 3) }, (_, i) => 10 * (i + 1)).join(", ") + (t > 3 ? `, and on to ${10 * t}` : "");
       /** @param {number} tens @param {number} ones @param {string} [focus] */
       const blocks = (tens, ones, focus) => /** @type {ScenePicture} */ ({ kind: "base_ten", hundreds: 0, tens, ones, ...(focus ? { focus } : {}) });
       let t2 = t;
@@ -159,9 +163,9 @@ export const SCENES = [
       return [
         { who: "monster", say: `I'm ${monster}! I pinched up a pile of blocks!`, picture: blocks(t, o) },
         { who: "hero", say: "A long stick is 1 ten. It holds 10 ones.", picture: blocks(t, o, "rod-0") },
-        { who: "hero", say: `Here are ${t} tens, ${t} sticks.`, picture: blocks(t, o, "rods") },
-        { who: "hero", say: `${o === 1 ? "This little cube is" : "These little cubes are"} ${o} ${ones(o)}.`, picture: blocks(t, o, "units") },
-        { who: "hero", say: `${t} tens and ${o} ${ones(o)} make ${10 * t + o}.`, picture: blocks(t, o) },
+        { who: "hero", say: `${t} sticks. Count them by tens: ${byTens}.`, picture: blocks(t, o, "rods") },
+        { who: "hero", say: `These little cubes are ${o} ones.`, picture: blocks(t, o, "units") },
+        { who: "hero", say: `${t} tens and ${o} ones make ${10 * t + o}. The tens come first.`, picture: blocks(t, o) },
         {
           who: "monster",
           say: "Grr! How many do these blocks show?",
@@ -170,8 +174,8 @@ export const SCENES = [
             kind: "choose",
             choices: rng.shuffle([n2, 10 * o2 + t2, t2 + o2, 10 * t2]),
             answer: n2,
-            retry: "Count the sticks first, then the little cubes.",
-            right: "Yes! Tens first, then ones.",
+            retry: "Count the sticks by tens first. Then count on the little cubes.",
+            right: `Yes! ${t2} tens and ${o2} ${ones(o2)} make ${n2}.`,
           },
         },
         { who: "monster", say: "You're too quick for my pinch! Now, let's battle!" },
@@ -302,29 +306,36 @@ export const SCENES = [
       const ate = rng.int(1, parts - 1);
       /** @param {number} p */
       const share = p => (p === 2 ? "half" : "fourth");
+      /** @param {number} p */
+      const shares = p => (p === 2 ? "halves" : "fourths");
       /** @param {"circle" | "bar"} model @param {number} p @param {number} shaded @param {string | string[]} [focus] */
       const jelly = (model, p, shaded, focus) => /** @type {ScenePicture} */ ({ kind: "fraction", model, parts: p, shaded, ...(focus ? { focus } : {}) });
       const model = /** @type {"circle" | "bar"} */ (rng.pick(["circle", "bar"]));
       const all = (/** @type {number} */ p) => Array.from({ length: p }, (_, i) => `part-${i}`);
       const check = rng.pick([2, 4]);
       const checkModel = /** @type {"circle" | "bar"} */ (rng.pick(["circle", "bar"]));
+      // One idea a step: equal parts, the name of one part, the whole, then the other cut
+      // with one part shaded, and a check that ties the name to the number of parts.
       return [
-        { who: "monster", say: `I'm ${monster}! My jelly is cut into ${parts} equal parts.`, picture: jelly(model, parts, ate) },
-        { who: "monster", say: `I ate the blue ${ate === 1 ? "part" : "parts"}! Yum!`, picture: jelly(model, parts, ate, "shaded") },
-        { who: "hero", say: "Equal parts are all the same size. They are fair shares.", picture: jelly(model, parts, ate, ["part-0", "part-1"]) },
-        { who: "hero", say: `${parts} equal parts. Each part is one ${share(parts)}.`, picture: jelly(model, parts, ate, "part-0") },
-        { who: "hero", say: `${parts} ${parts === 2 ? "halves" : "fourths"} make the whole jelly.`, picture: jelly(model, parts, ate, all(parts)) },
-        { who: "hero", say: `Cut it into ${other} equal parts, and each part is one ${share(other)}.`, picture: jelly(model, other, 0, "part-0") },
+        { who: "monster", say: `I'm ${monster}! My jelly has ${parts} equal parts. I ate the blue ${ate === 1 ? "one" : "ones"}!`, picture: jelly(model, parts, ate) },
+        { who: "hero", say: "Equal parts are all the same size. Each one is a fair share.", picture: jelly(model, parts, ate, all(parts)) },
+        {
+          who: "hero",
+          say: `Each part is one ${share(parts)}. You ate ${ate === 1 ? `one ${share(parts)}` : `${ate} ${shares(parts)}`}.`,
+          picture: jelly(model, parts, ate, "shaded"),
+        },
+        { who: "hero", say: `${parts} ${shares(parts)} make the whole jelly.`, picture: jelly(model, parts, ate, all(parts)) },
+        { who: "hero", say: `Cut into ${other} equal parts, each part is one ${share(other)}.`, picture: jelly(model, other, 1, "shaded") },
         {
           who: "monster",
-          say: "Wobble! How many equal parts is this jelly cut into?",
+          say: `Wobble! How many ${shares(check)} make my whole jelly?`,
           picture: jelly(checkModel, check, 0),
           check: {
             kind: "choose",
             choices: rng.shuffle([1, 2, 3, 4]),
             answer: check,
-            retry: "Touch each part as you count. Are they all the same size?",
-            right: `Yes! ${check} equal parts. Each is one ${share(check)}.`,
+            retry: "Touch each part as you count. Each one is a fair share.",
+            right: `Yes! ${check} ${shares(check)} make the whole jelly.`,
           },
         },
         { who: "monster", say: "You shared my jelly fairly! Now, let's battle!" },

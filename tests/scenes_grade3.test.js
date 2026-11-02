@@ -24,18 +24,15 @@ describe("3rd grade's teaching scenes", () => {
       assert.ok(rows.every(r => r.count === each), `${at}: equal groups`);
       assert.notEqual(groups, each, at);
       seen.push(`${groups}x${each}`);
-      assert.match(steps[2].say, new RegExp(`^${groups} groups of ${each} is written ${groups} times ${each}\\.`), at);
-      assert.deepEqual(steps[2].picture.lines, [[String(groups), "×", String(each)]], at);
-      // The first number is the groups: the card token the tap check wants.
-      assert.equal(steps[2].picture.lines[0][0], String(groups), at);
-      const tap = steps.find(s => s.check?.kind === "tap");
-      assert.deepEqual(tap.check.answers, ["t0-0"], at);
+      assert.match(steps[1].say, new RegExp(`${groups} groups of ${each} is written ${groups} times ${each}\\.$`), at);
+      assert.deepEqual(steps[1].picture.lines, [[String(groups), "×", String(each)]], at);
       // The count by the group size ends on the total, at the token the last line rings.
-      const counting = steps[4].picture.lines[1].filter(t => t !== ",").map(Number);
+      const counting = steps[2].picture.lines[1].filter(t => t !== ",").map(Number);
       assert.deepEqual(counting, Array.from({ length: groups }, (_, i) => each * (i + 1)), at);
-      assert.equal(steps[5].picture.focus, `t1-${steps[4].picture.lines[1].length - 1}`, at);
-      assert.equal(steps[4].picture.lines[1].at(-1), String(groups * each), at);
-      assert.match(steps[5].say, new RegExp(`${groups} times ${each} is ${groups * each}\\.$`), at);
+      assert.equal(steps[2].picture.focus, `t1-${steps[2].picture.lines[1].length - 1}`, at);
+      assert.equal(steps[2].picture.lines[1].at(-1), String(groups * each), at);
+      assert.match(steps[2].say, new RegExp(`${groups} times ${each} is ${groups * each}\\.$`), at);
+      assert.ok(steps.findIndex(s => s.check) <= 3, `${at}: the first check comes late`);
       const { step, picture } = choose(steps);
       const [more, per] = [picture.rows.length, picture.rows[0].count];
       assert.equal(step.check.answer, more * per, at);
@@ -51,21 +48,21 @@ describe("3rd grade's teaching scenes", () => {
     for (const { steps, at } of playedScenes("3-sharing")) {
       const pile = steps[0].picture.count;
       assert.ok(steps[0].say.includes(`scooped ${pile} tomatoes`), at);
-      const shown = steps[5].picture.rows;
-      const [n, each] = [shown.length, shown[0].count];
-      assert.ok(shown.every(r => r.count === each), at);
-      assert.equal(n * each, pile, at);
-      assert.equal(steps[0].say.includes(`onto ${n} plates`), true, at);
+      const [, plates] = steps[0].say.match(/onto (\d+) plates/);
+      const n = Number(plates);
       seen.push(`${pile}/${n}`);
-      const lines = steps[3].picture.lines;
+      const lines = steps[2].picture.lines;
       assert.deepEqual(lines[0], [String(pile), "÷", String(n)], at);
       assert.deepEqual(lines[1], [String(n), "×", "?", "=", String(pile)], at);
+      assert.ok(steps[1].say.includes(`${pile} divided by ${n}.`) && steps[1].say.endsWith(`${n} times what makes ${pile}?`), at);
+      assert.deepEqual(steps[1].picture.focus, ["line-0", "line-1"], at);
+      // Counting by the plates reaches the pile in as many counts as each plate gets.
       const counting = lines[2].filter(t => t !== ",").map(Number);
       assert.equal(counting.at(-1), pile, at);
-      assert.equal(counting.length, each, at);
       assert.ok(counting.every((c, i) => c === n * (i + 1)), at);
-      const tap = steps.find(s => s.check?.kind === "tap");
-      assert.ok(tap.check.answers.every(a => lines[Number(a[1])][Number(a[3])] === String(n)), `${at}: the tap is the number of plates`);
+      assert.equal(n * counting.length, pile, at);
+      assert.ok(steps[2].say.endsWith(`each plate gets ${counting.length}.`), at);
+      assert.ok(steps.findIndex(s => s.check) <= 3, `${at}: the first check comes late`);
       const { step, picture } = choose(steps);
       const [, p2] = step.say.match(/for (\d+) plates/);
       assert.equal(step.check.answer, picture.count / Number(p2), at);
@@ -83,15 +80,16 @@ describe("3rd grade's teaching scenes", () => {
       const [fives, extra] = [Math.floor(minutes / 5), minutes % 5];
       assert.ok(extra > 0 && fives >= 2, at);
       seen.push(`${hours}:${minutes}`);
-      assert.equal(steps[4].picture.focus, `number-${fives}`, at);
-      assert.ok(steps[4].say.includes(`That is ${minutes - extra} minutes.`), at);
+      assert.equal(steps[2].picture.focus, "minute-hand", at);
       const pad = String(minutes).padStart(2, "0");
-      assert.ok(steps[5].say.endsWith(`That makes ${minutes} minutes, so the time is ${hours}:${pad}.`), at);
-      assert.ok(steps[5].say.includes(`${extra} more little ${extra === 1 ? "mark" : "marks"}`), at);
+      // Counting by 5s up to the number the hand has passed, then the little marks.
+      const counted = Array.from({ length: fives }, (_, i) => 5 * (i + 1)).join(", ");
+      assert.ok(steps[2].say.includes(`Count by 5s to the ${fives}: ${counted}.`), at);
+      assert.ok(steps[2].say.includes(`Add ${extra} little ${extra === 1 ? "mark" : "marks"}: ${minutes}.`), at);
+      assert.ok(steps[2].say.endsWith(`It is ${hours}:${pad}.`), at);
       assert.ok(steps[1].say.includes(`so the hour is ${hours}.`), at);
       assert.ok(steps[1].say.includes(`passed the ${hours} but not reached the ${(hours % 12) + 1},`), at);
-      const tap = steps.find(s => s.check?.kind === "tap");
-      assert.deepEqual(tap.check.answers, ["minute-hand"], at);
+      assert.ok(steps.findIndex(s => s.check) <= 3, `${at}: the first check comes late`);
       const { step, picture } = choose(steps);
       assert.equal(step.check.answer, `${picture.hours}:${String(picture.minutes).padStart(2, "0")}`, at);
       assert.equal(new Set(step.check.choices).size, 4, at);
@@ -203,11 +201,11 @@ describe("3rd grade's teaching scenes", () => {
       assert.equal(lid.shape, "rectangle", at);
       assert.ok(w !== h && !lid.grid, at);
       assert.deepEqual([lid.labels.base, lid.labels.height], [`${w} cm`, `${h} cm`], at);
-      assert.ok(steps[4].say.startsWith(`${w} plus ${w} plus ${h} plus ${h} is ${2 * (w + h)}.`), at);
-      assert.deepEqual(steps[4].picture.lines[0], [`${w}`, "+", `${w}`, "+", `${h}`, "+", `${h}`, "=", `${2 * (w + h)}`], at);
-      // The side with no number, as long as the left one.
-      const tap = steps.find(s => s.check?.kind === "tap");
-      assert.deepEqual(tap.check.answers, ["side-right"], at);
+      assert.ok(steps[1].say.includes(`The top matches the bottom: ${w} centimeters. The right matches the left: ${h} centimeters.`), at);
+      assert.deepEqual(steps[1].picture.focus, ["side-top", "side-right", "side-bottom", "side-left"], at);
+      assert.ok(steps[2].say.includes(`${w} plus ${w} plus ${h} plus ${h} is ${2 * (w + h)}.`), at);
+      assert.deepEqual(steps[2].picture.lines[0], [`${w}`, "+", `${w}`, "+", `${h}`, "+", `${h}`, "=", `${2 * (w + h)}`], at);
+      assert.ok(steps.findIndex(s => s.check) <= 3, `${at}: the first check comes late`);
       const { step, picture } = choose(steps);
       assert.equal(step.check.answer, 2 * (picture.width + picture.height), at);
       assert.equal(new Set(step.check.choices).size, 4, at);

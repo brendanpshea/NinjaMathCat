@@ -60,7 +60,9 @@ These are checked by `tests/scenes.test.js` over 150 examples of every scene,
 unless marked *(by eye)*.
 
 1. **One idea per step.** One line and one change to the picture. A scene
-   has 3 to 8 steps. The picture comes in the first step.
+   has 3 to 7 steps, and fewer is better: playtesters wanted to reach the
+   battle sooner. Bring in a check early, by the fourth step where the idea
+   allows. The picture comes in the first step.
 2. **Short lines.** At most 14 words in kindergarten to 2nd grade, and 28 from
    3rd grade on, for every line, `retry` and `right` included.
 3. **Nothing to read below 3rd grade.** The voice says every line and the
