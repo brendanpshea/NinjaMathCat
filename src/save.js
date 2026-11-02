@@ -21,6 +21,9 @@ const KEY = "ninja-math-cat";
 export const MOST_PLAYERS = 12;
 export const LONGEST_NAME = 20;
 
+/** How many progress codes a teacher's class view keeps (src/classroom.js). */
+export const MOST_CODES = 60;
+
 /**
  * @typedef {object} Player
  * @property {string} id
@@ -46,11 +49,12 @@ export const READ_ALOUD_UP_TO = 2;
  * @property {string | null} current  the id of the player last chosen
  * @property {boolean} muted
  * @property {boolean} locked  the grown-up lock: a grown-up's sum before changing a player, opening chapters or the report
+ * @property {string[]} classCodes  progress codes a teacher pasted into the class view, the newest last
  */
 
 /** @returns {Save} */
 export function newSave() {
-  return { players: [], current: null, muted: false, locked: false };
+  return { players: [], current: null, muted: false, locked: false, classCodes: [] };
 }
 
 /**
@@ -173,7 +177,7 @@ export function loadSave(storage) {
   if (!Array.isArray(stored.players)) {
     // The first save kept one hero, a grade on the half-year ladder, experience and treasures.
     const player = cleanPlayer({ ...stored, id: "p1", name: "Player 1", grade: Math.floor(Number(stored.grade)) }, new Set());
-    return { players: player ? [player] : [], current: player?.id ?? null, muted: stored.muted === true, locked: false };
+    return { players: player ? [player] : [], current: player?.id ?? null, muted: stored.muted === true, locked: false, classCodes: [] };
   }
   /** @type {Set<string>} */
   const seen = new Set();
@@ -188,6 +192,9 @@ export function loadSave(storage) {
     current: players.some(p => p.id === stored.current) ? stored.current : null,
     muted: stored.muted === true,
     locked: stored.locked === true,
+    classCodes: Array.isArray(stored.classCodes)
+      ? stored.classCodes.filter((/** @type {unknown} */ c) => typeof c === "string" && c.startsWith("NMC1-") && c.length < 20000).slice(-MOST_CODES)
+      : [],
   };
 }
 

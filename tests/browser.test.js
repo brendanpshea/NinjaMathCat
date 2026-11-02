@@ -19,17 +19,18 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, played, still, marathon, showHow, grownUps, challenge;
+  let server, played, still, marathon, showHow, grownUps, challenge, classView;
 
   before(async () => {
     server = await startServer();
-    [played, still, marathon, showHow, grownUps, challenge] = await Promise.all([
+    [played, still, marathon, showHow, grownUps, challenge, classView] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
       runScenario(browser, server.origin, "showHow"),
       runScenario(browser, server.origin, "grownUps"),
       runScenario(browser, server.origin, "challenge"),
+      runScenario(browser, server.origin, "classView"),
     ]);
   });
 
@@ -42,6 +43,23 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(showHow.errors, []);
     assert.deepEqual(grownUps.errors, []);
     assert.deepEqual(challenge.errors, []);
+    assert.deepEqual(classView.errors, []);
+  });
+
+  it("gives teachers a class view: this device's players, students added by code, and the topics to work on", () => {
+    assert.equal(classView.heading, "Class view");
+    assert.deepEqual(classView.before.map(r => r[0]), ["Ben", "Maya"]);
+    assert.deepEqual(classView.before[1].slice(1, 3), ["21 of 40", "26"]);
+    assert.match(classView.before[1][3], /^Rounding, Division and Telling time$/);
+    assert.ok(classView.topics.some(t => /^Division: 2 of 2 \(Ben and Maya\)$/.test(t)), classView.topics.join(" | "));
+    assert.match(classView.added, /^Added 1 student\. 1 code didn't work/);
+    assert.deepEqual(classView.after.map(r => r[0]), ["Ben", "Maya", "Zoe from a code"]);
+    assert.equal(classView.updated, "Updated 1.");
+    assert.deepEqual(classView.zoe.slice(1), ["9 of 40", "12", "Division", "12"]);
+    assert.equal(classView.kept, 3, "pasted students stay on this device");
+    assert.match(classView.asks, /^Clear all 1 pasted students/);
+    assert.deepEqual(classView.cleared, ["Ben", "Maya"]);
+    assert.equal(classView.savedCodes, 0);
   });
 
   it("runs the one-minute challenge from 3rd grade: right answers score, a wrong one shows the answer, the best is kept", () => {

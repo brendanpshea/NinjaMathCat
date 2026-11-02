@@ -18,8 +18,17 @@ on-screen stand-in; the real thing is still best done with paper and blocks.
 
 Several children can share a device, each with their own name, hero, grade
 and progress, all saved in the browser after every level; nothing leaves it.
-A grown-up can open a later chapter to match what a class is studying, and a
-quick battle of eight monsters is always there for a few spare minutes.
+Now and then a level's end offers a progress code to keep, in case the
+browser's data is cleared. A grown-up can open a later chapter to match what
+a class is studying, and can turn on a grown-up lock, a multiplication to
+answer before changing a player, opening chapters or the reports. A quick
+battle of eight monsters is always there for a few spare minutes, and from
+3rd grade a one-minute challenge, against the clock and a best score.
+
+For teachers, a class view on the title screen shows everyone on the device,
+and any student whose progress code is pasted in: how far each has got, what
+each needs to practise, and which topics the most children need. There is
+still no server; codes come in by hand, and stay on the teacher's device.
 
 The game learns, from every answer, how well each child knows each kind of
 question. Each level's review goes mostly to what they find hard or haven't
@@ -31,7 +40,8 @@ grown-ups how each topic is going.
 For children still learning to read, questions can be read aloud (on to begin
 with up to 2nd grade), and every question and chapter note has a "Read to me"
 button. Graphs come with their numbers for screen readers, everything can be
-played with the keyboard, nothing is timed, and the stage keeps still for
+played with the keyboard, nothing is timed but the one-minute challenge, which
+is kept off the adventure's path, and the stage keeps still for
 anyone who asks their device for reduced motion. A progress code moves a
 child's hero, levels and treasures to another device, with no account.
 
@@ -81,6 +91,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/scenes.js`, `src/scenes/`, `src/ui/scene_view.js` | Teaching scenes: before a chapter's first battle, its monster shows off its trick and the hero works out how to beat it, step by step over a picture, with checks to try; shown again, over a battle, as "Show me how" after a question is missed twice. One file of scenes per grade; `docs/SCENES.md` says how to write one. |
 | `src/speech.js` | Reading aloud: math as a child hears it ("3/4" is "3 fourths"), and the browser's speech, where it has any. |
 | `src/progress_code.js` | A player's progress as a code to paste into another browser, and back. |
+| `src/challenge.js`, `src/ui/challenge_screen.js` | The one-minute challenge: its questions, scoring and best scores, apart from the page; and the screen that runs its clock. |
+| `src/classroom.js` | The class view for teachers: progress codes pasted in, and the class grade by grade, with what each child and the class need to practise. |
 | `src/mastery.js` | How well a player knows each kind of question, from their answers: a score that follows recent answers, how much a kind needs review, and how hard to pitch it. |
 | `src/sound.js`, `src/zzfx.js` | Sound effects, made by ZzFX as the game runs. |
 | `src/rng.js` | Seeded random numbers. Pass the same seed and you get the same question, which is how the tests replay a failure. |

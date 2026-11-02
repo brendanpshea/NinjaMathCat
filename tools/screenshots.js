@@ -30,6 +30,8 @@ const SHOTS = [
   ["lock", 1000, 900], ["lock", 390, 1000, "phone-"],
   // The one-minute challenge, running and done.
   ["challenge", 1000, 1000], ["challenge", 390, 1300, "phone-"], ["challenge-done", 1000, 1100],
+  // The class view, for teachers.
+  ["class", 1000, 1300], ["class", 390, 1800, "phone-"],
   ["scene-4-check", 390, 1500, "phone-", "screen=scene&chapter=4-decimals&step=5&wrong"],
 ];
 // npm run screens -- scene: only the shots whose screen has "scene" in its name.

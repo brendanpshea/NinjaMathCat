@@ -100,6 +100,23 @@
   }
 
   /**
+   * For the class view: Maya and Ben playing 3rd grade on this device, and a
+   * way to make the progress code of Zoe, on another, with `done` levels done.
+   */
+  async function classSave() {
+    const { encodePlayer } = await import("/src/progress_code.js");
+    const { levelsFor } = await import("/src/adventures.js");
+    const save = await maya();
+    save.players.push({ id: "p2", name: "Ben", heroId: "owl_wizard", grade: 3, xp: 400, played: 6, treasures: [], adventures: {}, mastery: { division: { score: 0.3, seen: 5, last: 6 } } });
+    const zoe = done => encodePlayer({
+      name: "Zoe", heroId: "cat_ninja", grade: 3, xp: 900, played: 12, readAloud: false, treasures: [],
+      adventures: { 3: { done: Object.fromEntries(levelsFor(3).slice(0, done).map(l => [l.id, { stars: 3, firstTry: 8, asked: 8 }])), opened: 0 } },
+      mastery: { division: { score: 0.25, seen: 9, last: 11 } }, challenges: { 3: 12 },
+    });
+    return { save, zoe };
+  }
+
+  /**
    * A save with one player, Sam, who has done every level before a chapter,
    * so its first level, and its opening, are next.
    * @param {string} id  the chapter's id
@@ -373,7 +390,10 @@
       // A chapter's teaching scene (?chapter=), at a step (?step=, from 0), perhaps tried wrong once (?wrong).
       const sceneShot = screen === "scene";
       if (sceneShot || screen === "how") localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "0-teens")));
-      else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify({ ...(await maya()), locked: screen === "lock" }));
+      else if (screen === "class") {
+        const { save, zoe } = await classSave();
+        localStorage.setItem("ninja-math-cat", JSON.stringify({ ...save, classCodes: [zoe(9)] }));
+      } else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify({ ...(await maya()), locked: screen === "lock" }));
       // A challenge a few minutes long, so the shot catches it mid-run.
       await load(screen === "challenge" ? "?test&seed=11&challenge=170" : "?test&seed=11");
       if (screen === "how") {
@@ -430,6 +450,11 @@
         case "lock":
           click("[data-ref=report]");
           await until(() => doc().querySelector("dialog.lock-dialog[open]"), "the grown-up question");
+          break;
+        case "class":
+          click("[data-ref=switch]");
+          await on("title");
+          click("[data-ref=class]");
           break;
         case "challenge":
         case "challenge-done": {
@@ -547,6 +572,52 @@
       click("[data-ref=next]");
       await readyToAnswer();
       report.goesOn = game().battle.question === before && $(".prompt").textContent === before.prompt && $("[data-ref=how]").hidden;
+      report.errors = errors;
+      return report;
+    },
+
+    /** The class view: the players on this device, students added by pasting their codes, a code updated, a reload, and clearing them. */
+    async classView() {
+      const { save, zoe } = await classSave();
+      localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify(save));
+      await load();
+      const report = {};
+      const rows = () => $$(".class-screen tbody tr").map(tr => [...tr.children].map(c => c.textContent.replace(/\s+/g, " ").trim()));
+      click("[data-ref=switch]");
+      await on("title");
+      click("[data-ref=class]");
+      await on("class", "the class view");
+      report.heading = $("h1").textContent;
+      report.before = rows();
+      report.topics = $$(".class-topics li").map(li => li.textContent.replace(/\s+/g, " ").trim());
+      // Codes pasted in, with chat around them and one cut short.
+      $("[data-ref=class-text]").value = `Zoe: ${zoe(5)}\nAnd this one: NMC1-broken`;
+      click("[data-act=add]");
+      await until(() => /Added/.test(text("[data-ref=class-said]")), "the paste to be read");
+      report.added = text("[data-ref=class-said]");
+      report.after = rows();
+      // Zoe sends a newer code.
+      $("[data-ref=class-text]").value = zoe(9);
+      click("[data-act=add]");
+      await until(() => /Updated/.test(text("[data-ref=class-said]")), "the newer code");
+      report.updated = text("[data-ref=class-said]");
+      report.zoe = rows().find(r => r[0].startsWith("Zoe"));
+      // Kept on this device.
+      await load();
+      click("[data-ref=switch]");
+      await on("title");
+      click("[data-ref=class]");
+      await on("class", "the class view after a reload");
+      report.kept = rows().length;
+      click("[data-act=ask]");
+      report.asks = text(".class-codes .remove-ask");
+      click("[data-act=clear]");
+      await until(() => /Cleared/.test(text("[data-ref=class-said]")), "the pasted students to go");
+      report.cleared = rows().map(r => r[0]);
+      report.savedCodes = saved().classCodes.length;
+      click("[data-ref=back]");
+      await on("title");
       report.errors = errors;
       return report;
     },

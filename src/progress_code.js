@@ -1,8 +1,9 @@
 // A player's progress as a code to copy to another device. There is no
 // account and no server: the code is text, to send by email or a class's
-// message board, or paste from one browser into another. It holds the name,
-// hero, grade, experience and treasures, the stars won on every level, and
-// what the game has learned about each kind of question.
+// message board, or paste from one browser into another, or into a teacher's
+// class view (src/classroom.js). It holds the name, hero, grade, experience
+// and treasures, the stars won on every level, what the game has learned
+// about each kind of question, and the best challenge scores.
 //
 // A code that has been cut short or changed is either turned away or put
 // right, as a save from storage is (src/save.js).
@@ -50,6 +51,7 @@ export function encodePlayer(player) {
       [levelsFor(Number(grade)).map(l => progress.done[l.id]?.stars ?? 0).join(""), progress.opened],
     ])),
     m: Object.fromEntries(Object.entries(player.mastery).map(([type, m]) => [type, [Math.round(m.score * 100), m.seen, m.last]])),
+    c: player.challenges,
   };
   return PREFIX + toBase64(JSON.stringify(compact));
 }
@@ -100,5 +102,6 @@ export function decodePlayer(code) {
     treasures: Array.isArray(c.t) ? c.t.map((/** @type {unknown} */ i) => TREASURES[Number(i)]?.id) : [],
     adventures,
     mastery,
+    challenges: c.c,
   };
 }

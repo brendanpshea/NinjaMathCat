@@ -19,7 +19,7 @@ describe("the save", () => {
 
   it("starts with nobody playing yet, and the sound on", () => {
     assert.deepEqual(loadSave(memoryStorage()), newSave());
-    assert.deepEqual(newSave(), { players: [], current: null, muted: false, locked: false });
+    assert.deepEqual(newSave(), { players: [], current: null, muted: false, locked: false, classCodes: [] });
   });
 
   it("adds players, each new one the current one, and names a blank one by number", () => {
@@ -53,7 +53,7 @@ describe("the save", () => {
     let { save, player } = addPlayer(newSave(), owl);
     const level = levelsFor(3)[0];
     const progress = recordLevel(progressIn(player, 3), level, { firstTry: 7, secondTry: 1, missed: 0, knockouts: 0, byType: {} });
-    save = updatePlayer({ ...save, muted: true, locked: true }, player.id, {
+    save = updatePlayer({ ...save, muted: true, locked: true, classCodes: ["NMC1-abc"] }, player.id, {
       xp: 730, treasures: [TREASURES[3].id, TREASURES[0].id], adventures: { 3: progress },
       mastery: { addition: { score: 0.72, seen: 9, last: 4 } }, played: 5, backedUp: 4, challenges: { 3: 17 },
     });
@@ -78,6 +78,7 @@ describe("the save", () => {
         current: "p7",
         muted: "yes",
         locked: "yes",
+        classCodes: ["NMC1-abc", 42, "hello", null],
       }),
     });
     const save = loadSave(storage);
@@ -94,7 +95,7 @@ describe("the save", () => {
       // Best challenge scores are whole numbers, for grades that have an adventure.
       challenges: { 3: 14 },
     });
-    assert.deepEqual([save.current, save.muted, save.locked], [null, false, false]);
+    assert.deepEqual([save.current, save.muted, save.locked, save.classCodes], [null, false, false, ["NMC1-abc"]]);
   });
 
   it("turns a save from before there were players into the first player", () => {
@@ -107,6 +108,7 @@ describe("the save", () => {
       current: "p1",
       muted: true,
       locked: false,
+      classCodes: [],
     });
   });
 

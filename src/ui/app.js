@@ -27,6 +27,7 @@ import { still } from "./sprites.js";
 import { runScene } from "./scene_view.js";
 import { sceneFor } from "../scenes.js";
 import { startChallenge, recordChallenge, CHALLENGE_FROM, CHALLENGE_SECONDS } from "../challenge.js";
+import { classView, codesIn, addCodes, playerFromCode } from "../classroom.js";
 import { createChallengeScreen } from "./challenge_screen.js";
 
 /** @import { Battle } from "../battle.js" */
@@ -36,7 +37,7 @@ import { createChallengeScreen } from "./challenge_screen.js";
 /** @import { SoundSystem } from "../sound.js" */
 /** @import { Speaker } from "../speech.js" */
 
-/** @typedef {"title" | "player" | "map" | "note" | "scene" | "battle" | "level-done" | "training-done" | "victory" | "treasures" | "report" | "challenge" | "challenge-done"} ScreenName */
+/** @typedef {"title" | "player" | "map" | "note" | "scene" | "battle" | "level-done" | "training-done" | "victory" | "treasures" | "report" | "challenge" | "challenge-done" | "class"} ScreenName */
 /** @import { Outcome } from "../mastery.js" */
 
 /** What each kind of level is called on the map. */
@@ -224,6 +225,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         </section>
         <footer class="title-footer">
           <p>Each grade's adventure follows the Common Core math standards, from kindergarten to 6th grade, in forty short levels. It is free, with nothing to sign up for: everyone's progress is saved in this browser only.</p>
+          <p><button type="button" class="link" data-ref="class">For teachers: the class view</button></p>
           <p><a href="https://github.com/brendanpshea/NinjaMathCat">Source code</a> · <a href="legacy/">The original game</a> · Free software (GPL-3.0)</p>
         </footer>
       </section>`);
@@ -241,6 +243,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
       map();
     });
     onTap(part("new-player"), () => playerForm(null));
+    onTap(part("class"), () => grownUp(() => classPage()));
     part("code-in")?.addEventListener("click", event => {
       const act = /** @type {HTMLElement} */ (event.target).closest("button")?.dataset.act;
       if (!act) return;
@@ -1085,13 +1088,95 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         <div class="card lock-card">
           <h2 class="card-title">Grown-up lock</h2>
           <label class="check"><input type="checkbox" data-ref="lock"${save.locked ? " checked" : ""}> Ask a grown-up question first</label>
-          <p class="field-hint">With the lock on, changing a player's choices, opening chapters early and this report first ask a multiplication question. It keeps young children from changing things by accident, on this device. It isn't a password.</p>
+          <p class="field-hint">With the lock on, changing a player's choices, opening chapters early, this report and the class view first ask a multiplication question. It keeps young children from changing things by accident, on this device. It isn't a password.</p>
         </div>
       </section>`);
     onTap(part("training"), () => training());
     onTap(part("print"), () => window.print?.());
     onTap(part("map"), () => map());
     part("lock").addEventListener("change", () => commit({ ...save, locked: /** @type {HTMLInputElement} */ (part("lock")).checked }));
+  }
+
+  // ------------------------------------------------------------ the class view
+
+  /**
+   * For teachers: everyone on this device, and everyone whose progress code
+   * was pasted in, grade by grade, with what each needs to practise and the
+   * topics the most children need.
+   * @param {string} [said]  what the last paste did
+   */
+  function classPage(said = "") {
+    const pasted = save.classCodes.map(code => playerFromCode(code)).filter(p => p !== null);
+    const groups = classView([...save.players.map(player => ({ player, fromCode: false })), ...pasted.map(player => ({ player, fromCode: true }))]);
+    show("class", `
+      <section class="report-screen class-screen">
+        <h1 tabindex="-1">Class view</h1>
+        <p class="tagline">For teachers: everyone who plays on this device, and anyone whose progress code you paste in below. Nothing is sent anywhere.</p>
+        ${groups.length === 0 ? `<p class="report-summary"><strong>No one yet.</strong> Players on this device show here, and students on other devices once their codes are pasted in.</p>` : ""}
+        ${groups.map(({ grade, rows, topics }) => `
+          <div class="card report-table">
+            <table role="table">
+              <caption>${esc(gradeWords(grade)[0].toUpperCase() + gradeWords(grade).slice(1))} · ${rows.length} ${rows.length === 1 ? "student" : "students"}</caption>
+              <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Name</th><th role="columnheader" scope="col">Levels done</th><th role="columnheader" scope="col">Battles</th><th role="columnheader" scope="col">Needs practice with</th><th role="columnheader" scope="col">Challenge best</th></tr></thead>
+              <tbody role="rowgroup">${rows.map(r => `<tr role="row"><th role="rowheader" scope="row">${esc(r.name)}${r.fromCode ? ` <span class="class-from">from a code</span>` : ""}</th>
+                <td role="cell" data-label="Levels done">${r.done} of ${r.levels}</td>
+                <td role="cell" data-label="Battles">${r.played}</td>
+                <td role="cell" data-label="Needs practice with">${r.practise.length > 0 ? esc(list(r.practise.slice(0, 3).map(type => typeById(type).name))) : "Nothing right now"}</td>
+                <td role="cell" data-label="Challenge best">${r.best ?? "–"}</td></tr>`).join("")}</tbody>
+            </table>
+          </div>
+          ${topics.length > 0 ? `<div class="card">
+            <h2 class="card-title">Topics to work on, ${esc(gradeWords(grade))}</h2>
+            <ul class="class-topics">${topics.map(t => `<li><strong>${esc(typeById(t.type).name)}</strong>: ${t.names.length} of ${rows.length} (${esc(list(t.names))})</li>`).join("")}</ul>
+          </div>` : ""}`).join("")}
+        <div class="card class-codes" data-ref="codes">
+          <h2 class="card-title">Add students from other devices</h2>
+          <p class="field-hint">On their own device, each student chooses "Change hero or grade", shows their progress code, and sends it to you, by your class's message board or by email. Paste in as many codes as you like, all at once. A newer code for the same name replaces the older one. Pasted codes stay on this device.</p>
+          <label class="visually-hidden" for="class-codes">Progress codes</label>
+          <textarea id="class-codes" class="code-box" data-ref="class-text" rows="5" spellcheck="false" autocomplete="off"></textarea>
+          <p class="class-said" data-ref="class-said" aria-live="polite">${esc(said)}</p>
+          <div class="actions">
+            <button type="button" class="primary" data-act="add">Add these students</button>
+            ${save.classCodes.length > 0 ? `<button type="button" class="quiet danger" data-act="ask">Clear the pasted students</button>` : ""}
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="quiet" data-ref="print">Print this page</button>
+          <button type="button" class="quiet" data-ref="back">Back</button>
+        </div>
+      </section>`);
+    onTap(part("print"), () => window.print?.());
+    onTap(part("back"), () => title());
+    part("codes").addEventListener("click", event => {
+      const act = /** @type {HTMLElement} */ (event.target).closest("button")?.dataset.act;
+      if (!act) return;
+      sound.play("click");
+      if (act === "add") {
+        const found = codesIn(/** @type {HTMLTextAreaElement} */ (part("class-text")).value);
+        if (found.length === 0) {
+          part("class-said").textContent = "No progress codes there. Each one starts NMC1-.";
+          return;
+        }
+        const { codes, added, replaced, bad } = addCodes(save.classCodes, found);
+        commit({ ...save, classCodes: codes });
+        classPage([
+          added > 0 ? `Added ${added} ${added === 1 ? "student" : "students"}.` : "",
+          replaced > 0 ? `Updated ${replaced}.` : "",
+          bad > 0 ? `${bad} ${bad === 1 ? "code" : "codes"} didn't work: check that all of each was copied.` : "",
+        ].filter(Boolean).join(" "));
+      } else if (act === "ask") {
+        const actions = /** @type {HTMLElement} */ (part("codes").querySelector(".actions"));
+        actions.innerHTML = `<p class="remove-ask">Clear all ${save.classCodes.length} pasted students from this view? Their own devices keep their progress.</p>
+          <button type="button" class="quiet" data-act="keep">Keep them</button>
+          <button type="button" class="quiet danger" data-act="clear">Clear</button>`;
+        /** @type {HTMLElement} */ (actions.querySelector("[data-act=keep]")).focus();
+      } else if (act === "keep") {
+        classPage();
+      } else if (act === "clear") {
+        commit({ ...save, classCodes: [] });
+        classPage("Cleared.");
+      }
+    });
   }
 
   /**
