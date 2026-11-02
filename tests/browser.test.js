@@ -57,13 +57,14 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(marathon.problems, []);
     assert.equal(marathon.levels, 40);
     assert.equal(marathon.saved, 40);
-    // Seven chapters open with a note; Teen numbers opens with its teaching scene.
-    assert.equal(marathon.notes.length, 7);
-    assert.equal(marathon.scenes.length, 1);
-    const [scene] = marathon.scenes;
-    assert.equal(scene.title, "Teen numbers");
-    assert.ok(scene.checks === 1 && scene.wrongTries === 1, "the check was tried wrong, then right");
-    assert.match(scene.lines[0], /^I'm Grumpy Cloud!/);
+    // Every chapter opens with its teaching scene, each played through, checks tried wrong and right.
+    assert.equal(marathon.notes.length, 0);
+    assert.deepEqual(marathon.scenes.map(s => s.title), chaptersFor(0).map(c => c.title));
+    assert.ok(marathon.scenes.every(s => s.checks >= 1 && s.lines.every(Boolean)), "every scene has a check, and a line at every step");
+    assert.ok(marathon.scenes.some(s => s.wrongTries > 0), "some checks were tried wrong first");
+    assert.ok(marathon.scenes.some(s => s.rings > 0), "rings point at the pictures");
+    const teens = marathon.scenes.find(s => s.title === "Teen numbers");
+    assert.match(teens.lines[0], /^I'm Grumpy Cloud!/);
     assert.ok(marathon.wrongOnce > 0 && marathon.wrongTwice > 0, "some answers wrong, so hints and answers were shown");
     assert.ok(Object.keys(marathon.kinds).length >= 6, `pictures of only ${Object.keys(marathon.kinds).join(", ")}`);
   });
@@ -89,7 +90,9 @@ describe("in a real browser", { skip }, () => {
     assert.equal(played.map.continue, `Start Level 1: New topic, ${chaptersFor(2)[0].title}`);
   });
 
-  it("starts a chapter with its note and a worked example", () => {
+  it("starts a chapter with its teaching scene, with its note and a worked example a link away", () => {
+    assert.equal(played.scene.heading, chaptersFor(2)[0].title);
+    assert.ok(played.scene.line && played.scene.steps >= 3 && played.scene.noteLink, JSON.stringify(played.scene));
     assert.equal(played.note.heading, chaptersFor(2)[0].title);
     assert.equal(played.note.text, chaptersFor(2)[0].note);
     assert.ok(played.note.example);

@@ -72,6 +72,13 @@ describe("teaching scenes", () => {
           assert.ok(parts.some(p => !check.answers.includes(p)), `${at}: every part is right, so the check can't be got wrong`);
           // A ring round the answer while asking for it would give it away.
           assert.ok(!step.picture?.focus, `${at}: a tap check that rings part of its picture`);
+          // On a math card, the same number elsewhere is just as right to tap: every copy counts.
+          if (pictures[i].kind === "math") {
+            const { lines } = pictures[i];
+            const texts = new Set(check.answers.map(a => { const [, l, t] = a.match(/^t(\d+)-(\d+)$/); return lines[l][t]; }));
+            const copies = lines.flatMap((line, l) => line.map((token, t) => (texts.has(token) ? `t${l}-${t}` : null))).filter(Boolean);
+            assert.deepEqual([...copies].sort(), [...check.answers].sort(), `${at}: the same thing elsewhere on the card isn't counted right`);
+          }
         } else {
           assert.ok(check.choices.length >= 3 && check.choices.length <= 4, at);
           assert.equal(new Set(check.choices.map(String)).size, check.choices.length, `${at}: the same choice twice`);

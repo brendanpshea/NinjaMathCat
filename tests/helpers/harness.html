@@ -175,6 +175,10 @@
       report.map.continue = text("[data-ref=continue]");
       click("[data-ref=continue]");
 
+      // The chapter opens with its teaching scene; its note is a link away.
+      await on("scene", "the chapter's opening scene");
+      report.scene = { heading: $("h1").textContent, line: text(".scene-line"), steps: $$(".scene-steps li").length, noteLink: Boolean($("[data-ref=note]")) };
+      click("[data-ref=note]");
       await on("note", "the chapter note");
       report.note.heading = $("h1").textContent;
       report.note.text = text(".note-text");
@@ -403,7 +407,12 @@
         case "players": click("[data-ref=switch]"); break;
         case "player": click("[data-ref=edit]"); break;
         case "map": break;
-        case "note": click(".chapter[data-chapter='4'] [data-act=note]"); break;
+        case "note":
+          // From the map, the chapter's scene, and from there its note.
+          click(".chapter[data-chapter='4'] [data-act=note]");
+          await on("scene");
+          click("[data-ref=note]");
+          break;
         case "treasures": click("[data-ref=treasures]"); break;
         case "report": click("[data-ref=report]"); break;
         case "victory":

@@ -8,17 +8,19 @@ with its note instead, and every scene can still lead to that note.
 A scene is also shown again in the middle of a battle. When a child misses a
 question twice and the answer is shown, a "Show me how" button plays the
 scene of the nearest chapter that brings in that kind of question. So a
-scene must make sense on its own, at any point in the chapter, and must
-teach the kind of question the chapter brings in first.
+scene must make sense on its own, at any point in the chapter.
 
 Each grade's scenes are in `src/scenes/grade<N>.js` (0 for kindergarten),
-gathered by `src/scenes.js`. `src/ui/scene_view.js` plays them. The two scenes
-so far are the models to copy:
+gathered by `src/scenes.js`. `src/ui/scene_view.js` plays them. Every chapter
+has one. Good models to copy:
 
 | Chapter | Grade | Picture | What it teaches |
 |---|---|---|---|
 | `0-teens`, Teen numbers | K | two ten frames | a teen number is a full ten and some more |
+| `2-lines`, Rulers and number lines | 2 | a ribbon on a ruler | reading a length that doesn't start at 0 |
+| `3-two-step`, Harder facts | 3 | an area grid of rows | 8 × 6 as 5 rows and 3 rows |
 | `4-decimals`, Fraction stories and decimals | 4 | a hundredths grid, as an ice wall | tenths and hundredths, written as decimals |
+| `6-dividing`, Dividing fractions | 6 | a math card | dividing as "how many fit", then flip and multiply |
 
 ## The shape of a scene
 
@@ -65,10 +67,11 @@ unless marked *(by eye)*.
    picture carries the idea. A check there is a tap on the picture, or a
    choice of numbers, never of words.
 4. **Written to be said.** Read-aloud speaks the line just as it is written,
-   through `speakable` in `src/speech.js`. Use digits for numbers and words
-   for signs: "10 and 4 more make 14", not "10 + 4 = 14". No sign may be left
-   unspoken, so no `+ − × ÷ = < >`, and no `$` or `¢`, in a line. Signs are
-   fine in a math card.
+   through `speakable` in `src/speech.js`, which says signs, fractions and
+   money in words: "3 + 2" as "3 plus 2", "3/4" as "3 fourths". The test
+   checks that nothing is left unspoken. Still, prefer words in a line ("10
+   and 4 more make 14"), and keep the signs for the math card, where children
+   see them written.
 5. **The monster shows its trick; the hero beats it.** The monster opens,
    asks the checks, and ends with a line into the battle, such as "Now,
    let's battle!" The hero explains. Keep the lines in the first and second
@@ -77,17 +80,21 @@ unless marked *(by eye)*.
    `rng`, so a scene watched again is a new example. Each grade's
    `tests/scenes_grade<N>.test.js` works every example through again from its
    picture, independently of how the scene worked it out.
-7. **Teach the chapter's first kind of question.** The example is that kind
-   of question, as its first level asks it, on the same picture where it has
-   one. A chapter's kinds are its `learn` list in `src/adventures.js`.
-   *(by eye)*
+7. **Teach what the chapter's note teaches.** The note (`note` in
+   `src/adventures.js`) says what is new in the chapter. The example is a
+   question of that kind, as the chapter's levels ask it, on the same picture
+   where it has one. Where the chapter brings in more than one kind
+   (`learn`), teach the one the note is about. *(by eye)*
 8. **A check has one right answer among others.** A tap check's answers must
    be parts the picture really has, and at least one part must be wrong. A
    choice check has 3 or 4 different choices, one of them right. Wrong
    choices should be the mistakes children really make, as in the questions:
-   0.6 for 0.06, the digits turned round, or the part left over.
+   0.6 for 0.06, the digits turned round, or the part left over. On a math
+   card, every copy of the answer must count: if 60 is in two lines, either
+   is right to tap. *(Checked.)*
 9. **Never point at the answer while asking for it.** A tap check's step has
-   no ring. *(Checked.)* A `retry` points at where to look without giving
+   no ring. *(Checked.)* A choice check's step may ring its picture, such as
+   the digit it asks about. A `retry` points at where to look without giving
    the answer: "Find the frame with no empty boxes", not "It's the first
    one." *(by eye)*
 10. **Explain any picture you dress up.** If the hundredths grid is an ice
@@ -96,6 +103,12 @@ unless marked *(by eye)*.
 11. **Right for one and for many.** Numbers come out new each time, so check
     the words for 1 as well as for 2 or more: "1 block", "1 hundredth".
     The scene sheet's printed scripts show this quickly.
+12. **A new example each time.** Across 20 viewings, the first picture must
+    come out at least 5 different ways. *(Checked.)*
+13. **One ring, one box.** A ring is one box round everything it names. Name
+    things that sit together, or the box takes in what lies between: the 7
+    shells left of 8 sit in two rows, so a ring round them would take in the
+    crossed-out one too. *(by eye)*
 
 ## Pointing and tapping: the parts of each picture
 
@@ -145,8 +158,11 @@ at a time, so a scene can point at its numbers and signs:
 { kind: "math", lines: [["3", "×", "(", "4", "+", "2", ")"], ["3", "×", "6"], ["18"]], focus: ["t0-2", "t0-6"] }
 ```
 
-Each token is a part, named `t<line>-<index>`. A digit can be a token of its
-own, so `["4", ",", "3", "8", "2"]` lets a scene ring the hundreds digit.
+Each token is a part, named `t<line>-<index>`. Digits, commas and brackets
+sit close together and signs get room, so a digit can be a token of its own:
+`["4", ",", "3", "8", "2"]` reads as 4,382 and lets a scene ring the hundreds
+digit. For a list of numbers, put each number's comma in its own token, as
+`["1,", "2,", "5,", "10"]`, or the numbers run together.
 
 ## Writing and checking a grade's scenes
 
@@ -157,10 +173,11 @@ own, so `["4", ",", "3", "8", "2"]` lets a scene ring the hundreds digit.
    `tests/scenes_grade4.test.js` do. Use `playedScenes(chapter)` from
    `tests/helpers/scenes.js`.
 3. Run `npm test`. It checks every rule above that can be checked.
-4. Run `npm run scene-sheet -- <N>`. It prints every scene's script and draws
-   every step in `out/screens/scenes-<N>.png`, rings included. Read the
-   scripts aloud in your head, and look at every picture. Try another seed
-   (`npm run scene-sheet -- <N> 7`) to see other numbers.
+4. Run `npm run scene-sheet -- <N>`. It prints every scene's script. Read the
+   scripts aloud in your head. Try another seed (`npm run scene-sheet -- <N>
+   7`) to see other numbers. To look at the pictures and rings, draw one
+   chapter at a time, `npm run scene-sheet -- <chapter>`, which writes
+   `out/screens/scenes-<chapter>.png` at a size you can read.
 5. Run `npm run screens -- scene <chapter>` for a scene as it plays in the
    game, a step at a time, on a laptop and a phone.
 6. Run `npm run playthrough -- <N>`. It plays the grade's whole adventure,
