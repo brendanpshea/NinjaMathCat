@@ -221,8 +221,9 @@ export const fractionArithmetic = {
         return {
           prompt: `What is ${a}/${d} ${adding ? "+" : "−"} ${b}/${d}?`,
           answer: write(answer),
-          // Adding or subtracting the bottoms too, or one part out.
-          wrong: wrongFractions(rng, answer, [frac(answer.n, adding ? 2 * d : d + d), frac(adding ? a - b : a + b, d), frac(answer.n + 1, d), frac(answer.n - 1, d), frac(answer.n, d + 1)], write),
+          // Adding the bottoms too (when adding), the other operation, or a part or two out. All but the
+          // first keep the bottom, so the answer can't be picked out as the only one with the same bottom.
+          wrong: wrongFractions(rng, answer, [...(adding ? [frac(answer.n, 2 * d)] : []), frac(adding ? a - b : a + b, d), frac(answer.n + 1, d), frac(answer.n - 1, d), frac(answer.n + 2, d)], write),
           hint: "The parts are the same size, so only the number of parts changes.",
           difficulty: 1 + Number(answer.n >= d),
         };

@@ -51,12 +51,15 @@ const AREAS = [
 export const area = {
   id: "area",
   name: "Area and perimeter",
-  generate(rng, grade) {
+  focuses: { area: "Area only, before perimeter: squares that cover a shape" },
+  generate(rng, grade, focus) {
     const level = atGrade(grade, AREAS);
     const unit = rng.pick(LENGTHS);
     const [w, h] = sides(rng, level.long, level.short);
     const big = (grade >= 4 ? 1 : 0) + Number(w * h > 50);
-    switch (rng.pick(level.kinds)) {
+    const areaOnly = focus === "area";
+    const kinds = areaOnly ? level.kinds.filter(k => k !== "perimeter" && k !== "compare") : level.kinds;
+    switch (rng.pick(kinds)) {
       case "count": return countSquares(rng);
       case "multiply": return {
         prompt: `What is the area of this rectangle, in square ${unit.many}?`,
@@ -76,7 +79,7 @@ export const area = {
         hint: "The perimeter is the distance all the way around: add up all four sides.",
         difficulty: 1 + big,
       };
-      case "missingSide": return missingSide(rng, w, h, unit, big);
+      case "missingSide": return missingSide(rng, w, h, unit, big, areaOnly);
       case "compare": return compareRectangles(rng);
       case "composite": return lShape(rng, unit, grade);
       case "story": return areaStory(rng, w, h);
@@ -123,11 +126,12 @@ function countSquares(rng) {
  * @param {number} h  the side to find
  * @param {Unit} unit
  * @param {number} big
+ * @param {boolean} [areaOnly]  from the area, never the perimeter
  * @returns {Draft}
  */
-function missingSide(rng, w, h, unit, big) {
+function missingSide(rng, w, h, unit, big, areaOnly = false) {
   const visual = rectangle(w, h, `${w} ${unit.short}`, "?");
-  if (rng.chance(0.5)) {
+  if (areaOnly || rng.chance(0.5)) {
     const total = w * h;
     return {
       prompt: `This rectangle has an area of ${total} square ${unit.many}. How long is the side marked "?"`,

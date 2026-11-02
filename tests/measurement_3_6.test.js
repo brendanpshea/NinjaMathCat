@@ -9,6 +9,8 @@ import { parseFraction, multiply, same, frac } from "../src/questions/rational.j
 import { thousandths } from "../src/questions/decimals.js";
 import { gcd } from "../src/questions/rational.js";
 import { questionsOf, numbersIn } from "./helpers.js";
+import { makeQuestion } from "../src/questions/common.js";
+import { createRng } from "../src/rng.js";
 
 /** The number at the start of a label: "8 cm" is 8, "4 1/2 in" is 9/2. */
 const labelValue = label => parseFraction(label.replace(/ [a-z]+$/, ""));
@@ -80,6 +82,15 @@ describe("area and perimeter", () => {
       }
       assert.equal(q.answer, expected, at);
       if (v && /\?$/.test(v.labels.height)) assert.equal(v.height, q.answer, `${at}: the "?" side is drawn to scale`);
+    }
+  });
+
+  it("ask only about area in a chapter about area, before perimeter is taught", () => {
+    for (const grade of [3, 3.5]) {
+      for (let seed = 1; seed <= 300; seed++) {
+        const q = makeQuestion(createRng(seed), area, grade, "area");
+        assert.ok(!/perimeter|around|all the way/i.test(q.prompt), `grade ${grade}, seed ${seed}: ${q.prompt}`);
+      }
     }
   });
 });
