@@ -166,6 +166,23 @@
  */
 
 /**
+ * Bars the same length, one above another, each cut into equal parts with
+ * some shaded, from the left (3.NF.3).
+ * @typedef {object} FractionBars
+ * @property {"fraction_bars"} kind
+ * @property {{ parts: number, shaded: number, label?: string }[]} bars
+ */
+
+/**
+ * Grids of 100 squares, shaded a column of ten at a time, so a whole column
+ * is a tenth and a square a hundredth (4.NF.5-7).
+ * @typedef {object} Hundredths
+ * @property {"hundredths"} kind
+ * @property {number[]} grids  how many squares of each grid are shaded
+ * @property {string[]} [labels]  written under the grids
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -174,7 +191,7 @@
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths} Visual
  */
 
 /**

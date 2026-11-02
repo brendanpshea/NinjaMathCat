@@ -54,7 +54,7 @@ function wrongDecimals(rng, answer, likely) {
   return out;
 }
 
-/** @typedef {"toDecimal" | "toFraction" | "compare" | "tenthsHundredths" | "powers" | "add" | "subtract" | "multiply" | "divide"} Kind */
+/** @typedef {"toDecimal" | "toFraction" | "compare" | "tenthsHundredths" | "grid" | "powers" | "add" | "subtract" | "multiply" | "divide"} Kind */
 
 /**
  * What a grade does with decimals: tenths and hundredths as fractions and
@@ -64,7 +64,7 @@ function wrongDecimals(rng, answer, likely) {
  * @type {readonly [number, Kind[]][]}
  */
 const PLANS = [
-  [4.5, ["toDecimal", "toFraction", "compare", "tenthsHundredths"]],
+  [4.5, ["toDecimal", "toFraction", "compare", "tenthsHundredths", "grid", "grid"]],
   [5.5, ["compare", "powers", "add", "subtract", "multiply", "divide"]],
   [Infinity, ["add", "subtract", "multiply", "divide"]],
 ];
@@ -75,7 +75,7 @@ const PLANS = [
  * @type {Record<string, (grade: number) => Kind[]>}
  */
 const FOCUSED = {
-  "place value": grade => (grade < 5 ? ["toDecimal", "toFraction", "compare", "tenthsHundredths"] : ["compare", "powers"]),
+  "place value": grade => (grade < 5 ? ["toDecimal", "toFraction", "compare", "tenthsHundredths", "grid"] : ["compare", "powers"]),
   dividing: () => ["divide"],
 };
 
@@ -92,6 +92,7 @@ export const decimals = {
       case "toFraction": return toFraction(rng);
       case "compare": return compare(rng, grade >= 5 ? 3 : 2);
       case "tenthsHundredths": return tenthsHundredths(rng);
+      case "grid": return grid(rng);
       case "powers": return powers(rng);
       case "add": return addOrSubtract(rng, big, true);
       case "subtract": return addOrSubtract(rng, big, false);
@@ -118,6 +119,57 @@ function toDecimal(rng) {
     wrong: wrongDecimals(rng, answer, [formatDecimal(n, places + 1), formatDecimal(n, places - 1), formatDecimal(10 * n + 1, 1), formatDecimal(n + den, places)]),
     hint: den === 10 ? "Tenths go in the first place after the point." : "Hundredths fill the first two places after the point.",
     difficulty: 1 + Number(den === 100) + Number(n < 10 && den === 100),
+  };
+}
+
+/**
+ * A hundredths grid read as a decimal or a fraction, or two grids compared
+ * (4.NF.5-7). A whole column is a tenth.
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function grid(rng) {
+  if (rng.chance(0.35)) {
+    // Tenths against hundredths with more digits but less worth, as 0.4 and 0.35.
+    const tenths = rng.int(2, 9);
+    const [a, b] = rng.shuffle([tenths * 10, (tenths - 1) * 10 + rng.int(1, 9)]);
+    const [x, y] = [formatDecimal(a, 2), formatDecimal(b, 2)];
+    const op = a > b ? ">" : "<";
+    return {
+      prompt: `The left grid shows ${x} and the right grid shows ${y}. Which is true?`,
+      visual: { kind: "hundredths", grids: [a, b], labels: [x, y] },
+      answer: `${x} ${op} ${y}`,
+      wrong: rng.shuffle([`${x} ${op === ">" ? "<" : ">"} ${y}`, `${x} = ${y}`, `${y} ${op} ${x}`]),
+      hint: "Compare how much of each grid is shaded. A whole column is a tenth: 4 tenths is 40 hundredths.",
+      difficulty: 2,
+    };
+  }
+  const n = rng.pick([rng.int(1, 9), rng.int(11, 99), rng.int(11, 99)]);
+  const tens = Math.floor(n / 10);
+  const shaded = n % 10 === 0 ? n + 1 : n;
+  // The digits turned round: 0.07 read as 0.7, 0.37 as 0.73.
+  const reversed = Number(String(shaded).padStart(2, "0").split("").reverse().join(""));
+  /** @type {import("./common.js").Visual} */
+  const visual = { kind: "hundredths", grids: [shaded] };
+  if (rng.chance(0.4)) {
+    return {
+      prompt: "What fraction of the grid is shaded?",
+      visual,
+      answer: `${shaded}/100`,
+      wrong: rng.shuffle([`${shaded}/10`, `${100 - shaded}/100`, `${reversed}/100`, `${tens || 1}/10`].filter(f => f !== `${shaded}/100`)),
+      hint: "The grid is cut into 100 equal squares. How many are shaded?",
+      difficulty: 1,
+    };
+  }
+  const answer = formatDecimal(shaded, 2);
+  return {
+    prompt: "What decimal shows how much of the grid is shaded?",
+    visual,
+    answer,
+    // A place out, the part left unshaded, or the digits turned round.
+    wrong: wrongDecimals(rng, answer, [formatDecimal(shaded, 1), formatDecimal(100 - shaded, 2), formatDecimal(reversed, 2), formatDecimal(shaded + 10, 2), formatDecimal(shaded, 3)]),
+    hint: "Each whole column is one tenth. Each small square is one hundredth.",
+    difficulty: 1 + Number(shaded < 10),
   };
 }
 

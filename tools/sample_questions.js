@@ -46,6 +46,8 @@ for (let i = 0; i < Number(countArg); i++) {
     : v.kind === "cubes" ? `box ${v.length} by ${v.width} by ${v.height}${v.cubes ? " of cubes" : ""}${v.labels ? `, labelled ${Object.values(v.labels).join(", ")}` : ""}`
     : v.kind === "angle" ? `${v.degrees}° angle from a ray pointing ${v.base}${v.protractor ? ", on a protractor" : ""}`
     : v.kind === "solid" ? `solid: ${v.solid}`
+    : v.kind === "fraction_bars" ? `bars: ${v.bars.map(b => `${b.shaded} of ${b.parts}${b.label ? ` (${b.label})` : ""}`).join(" / ")}`
+    : v.kind === "hundredths" ? `hundredths: ${v.grids.join(" and ")} shaded`
     : v.kind === "groups" ? `groups: ${v.rows.map(r => `${r.count} ${r.name}`).join(", ")}`
     : v.kind === "scene" ? `a ${v.thing} ${v.place} a ${v.landmark}`
     : v.kind === "lengths" ? `ribbons ${v.ribbons.map(r => `${r.color} ${r.from}+${r.length}`).join(", ")}${v.ruler ? `, ruler in ${v.ruler}` : ""}${v.cubes ? ", cubes" : ""}`

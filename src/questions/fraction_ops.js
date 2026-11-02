@@ -83,6 +83,18 @@ export const fractionCompare = {
       const k = rng.pick([2, 3, 4].filter(x => (grade < 4 ? x * d <= 8 : x * d <= 24)));
       const base = frac(n, d);
       const answer = frac(n * k, d * k);
+      if (grade < 4 && rng.chance(0.5)) {
+        // The same amount shaded on two bars, read off the bottom one (3.NF.3a-b).
+        return {
+          prompt: `Both bars are shaded the same amount. The top bar shows ${plain(base)}. What fraction does the bottom bar show?`,
+          visual: { kind: "fraction_bars", bars: [{ parts: d, shaded: n, label: plain(base) }, { parts: d * k, shaded: n * k }] },
+          answer: plain(answer),
+          // The unshaded parts, shaded against unshaded, or the top bar's shaded parts with the bottom bar's parts.
+          wrong: wrongFractions(rng, base, [frac(d * k - n * k, d * k), frac(n * k, d * k - n * k), frac(n, d * k), frac(n * k, d)], plain, only),
+          hint: "Count the parts in the bottom bar, and how many of them are shaded.",
+          difficulty: 1,
+        };
+      }
       return {
         prompt: `Which fraction is worth the same as ${plain(base)}?`,
         answer: plain(answer),
@@ -143,6 +155,8 @@ export const fractionCompare = {
     const { answer, wrong } = whichIsTrue(rng, a, b);
     return {
       prompt: "Which is true?",
+      // Third grade compares with bars to look at (3.NF.3d).
+      ...(grade < 4 ? { visual: /** @type {const} */ ({ kind: "fraction_bars", bars: [{ parts: a.d, shaded: a.n, label: plain(a) }, { parts: b.d, shaded: b.n, label: plain(b) }] }) } : {}),
       answer,
       wrong,
       hint: kind === "sameBottom" ? "Same size parts: more parts is more."

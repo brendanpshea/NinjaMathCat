@@ -270,6 +270,36 @@ describe("drawing", () => {
     }
   });
 
+  it("fraction bars: the same length, each with its equal parts and as many shaded as it says", () => {
+    for (const { v, svg, at } of rendered("fraction_bars")) {
+      const parts = elementsIn(svg, "rect", "part");
+      v.bars.forEach((bar, j) => {
+        const mine = parts.filter(p => p["data-bar"] === String(j));
+        assert.equal(mine.length, bar.parts, at);
+        assert.equal(mine.filter(p => p["data-shaded"] === "true").length, bar.shaded, at);
+        // Shaded from the left, and spanning the same width as every other bar.
+        assert.ok(mine.every((p, i) => (p["data-shaded"] === "true") === (i < bar.shaded)), at);
+        const span = mine.reduce((sum, p) => sum + Number(p.width), 0);
+        close(span, 400, at);
+      });
+    }
+  });
+
+  it("hundredths grids: 100 squares each, shaded a column at a time", () => {
+    for (const { v, svg, at } of rendered("hundredths")) {
+      const squares = elementsIn(svg, "rect", "square");
+      v.grids.forEach((shaded, g) => {
+        const mine = squares.filter(s => s["data-grid"] === String(g));
+        assert.equal(mine.length, 100, at);
+        assert.equal(mine.filter(s => s["data-shaded"] === "true").length, shaded, at);
+        // Every shaded square is left of, or above, every unshaded one in its column order.
+        const order = s => Number(s.x) * 1000 + Number(s.y);
+        const lastShaded = Math.max(...mine.filter(s => s["data-shaded"] === "true").map(order));
+        assert.ok(mine.filter(s => s["data-shaded"] === "false").every(s => order(s) > lastShaded), at);
+      });
+    }
+  });
+
   it("ten frames: a counter for each one counted, filling the first frame first", () => {
     for (const { v, svg, at } of rendered("ten_frame")) {
       assert.equal(elementsIn(svg, "rect", "frame").length, v.frames, at);

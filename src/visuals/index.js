@@ -4,7 +4,7 @@
 import { objects, pattern, groups, money, clock, shape } from "./pictures.js";
 import { numberLine } from "./number_line.js";
 import { pictureGraph, barGraph, linePlot } from "./graphs.js";
-import { fraction } from "./fractions.js";
+import { fraction, fractionBars, hundredths } from "./fractions.js";
 import { area, cubes, angle, coordinates, lengths } from "./measures.js";
 import { tenFrame, baseTen } from "./counting.js";
 import { solid, scene } from "./solids.js";
@@ -23,6 +23,8 @@ export function renderVisual(v, options = {}) {
     case "objects": return objects(v);
     case "pattern": return pattern(v);
     case "groups": return groups(v);
+    case "fraction_bars": return fractionBars(v);
+    case "hundredths": return hundredths(v);
     case "money": return money(v);
     case "clock": return clock(v);
     case "shape": return shape(v);

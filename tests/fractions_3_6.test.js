@@ -42,6 +42,29 @@ describe("comparing fractions", () => {
     }
   });
 
+  it("reads equal amounts off fraction bars, and draws the fractions compared in third grade (3.NF.3)", () => {
+    let read = 0;
+    for (const { grade, question: q, at } of questionsOf(fractionCompare)) {
+      const v = q.visual;
+      if (q.prompt === "Which is true?" && grade < 4) {
+        // The bars show the two fractions compared, each labelled.
+        const [left, , right] = q.answer.split(" ");
+        const shown = v.bars.map(b => `${b.shaded}/${b.parts}`);
+        assert.deepEqual([...shown].sort(), [left, right].sort(), at);
+        assert.deepEqual(v.bars.map(b => b.label), shown, at);
+      }
+      if (!/^Both bars are shaded the same amount/.test(q.prompt)) continue;
+      read++;
+      assert.ok(grade < 4, at);
+      const [top, bottom] = v.bars;
+      assert.equal(q.answer, `${bottom.shaded}/${bottom.parts}`, at);
+      assert.ok(same(parseFraction(q.answer), frac(top.shaded, top.parts)), `${at}: the bars are not shaded the same amount`);
+      assert.equal(bottom.label, undefined, `${at}: the answer is written on the bar`);
+      for (const c of q.choices) if (c !== q.answer) assert.ok(!same(parseFraction(c), parseFraction(q.answer)), `${at} → ${c}`);
+    }
+    assert.ok(read > 0);
+  });
+
   it("keeps to halves through eighths in third grade (3.NF)", () => {
     for (const { grade, question: q, at } of questionsOf(fractionCompare)) {
       if (grade >= 4) continue;

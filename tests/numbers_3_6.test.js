@@ -123,6 +123,19 @@ describe("decimals", () => {
         const values = q.choices.map(String);
         const sorted = [...values].sort((a, b) => { const [x, y] = common(a, b); return x < y ? -1 : x > y ? 1 : 0; });
         expected = /greatest/.test(p) ? sorted[3] : sorted[0];
+      } else if (/grid/.test(p)) {
+        // Hundredths grids: the answer is read off the squares shaded.
+        const v = q.visual;
+        assert.ok(v.grids.every(n => n > 0 && n < 100), at);
+        if (v.grids.length === 2) {
+          const [x, y] = v.labels;
+          assert.deepEqual([x, y], v.grids.map(n => formatDecimal(n, 2)), at);
+          assert.equal(q.answer, `${x} ${v.grids[0] > v.grids[1] ? ">" : "<"} ${y}`, at);
+        } else {
+          assert.equal(q.answer, /fraction/.test(p) ? `${v.grids[0]}/100` : formatDecimal(v.grids[0], 2), at);
+          for (const c of q.choices) if (c !== q.answer) assert.ok(/\//.test(c) ? c !== q.answer : !sameValue(String(c), String(q.answer)), `${at} → ${c}`);
+        }
+        continue;
       } else if (/\/10 \+ /.test(p)) {
         const [t, , h] = numbersIn(p);
         assert.equal(q.answer, `${10 * t + h}/100`, at);
@@ -147,7 +160,7 @@ describe("decimals", () => {
 
   it("never offer a wrong answer worth the same as the right one", () => {
     for (const { question: q, at } of questionsOf(decimals)) {
-      if (String(q.answer).includes("/")) continue;
+      if (String(q.answer).includes("/") || q.visual?.grids?.length === 2) continue;
       for (const c of q.choices) if (c !== q.answer) assert.ok(!sameValue(String(c), String(q.answer)), `${at} → ${c}`);
     }
   });

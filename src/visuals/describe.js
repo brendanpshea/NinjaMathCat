@@ -104,6 +104,15 @@ export function describeVisual(v) {
       return v.hundreds > 0 ? "Base-ten blocks: hundreds, tens and ones" : "Base-ten blocks: tens and ones";
     case "solid":
       return "A solid shape";
+    case "fraction_bars": {
+      const labels = v.bars.flatMap(b => (b.label ? [b.label] : []));
+      const bars = `${v.bars.length === 2 ? "Two" : v.bars.length} bars the same length, cut into equal parts, some shaded`;
+      return labels.length === 0 ? bars : labels.length === v.bars.length ? `${bars}, labelled ${list(labels)}` : `${bars}; the top one is labelled ${labels[0]}`;
+    }
+    case "hundredths": {
+      const grids = v.grids.length === 1 ? "A grid of 100 squares, some shaded" : `${v.grids.length === 2 ? "Two" : v.grids.length} grids of 100 squares, some shaded`;
+      return v.labels ? `${grids}, labelled ${list(v.labels)}` : grids;
+    }
     case "groups":
       return `Rows of ${list(v.rows.map(r => r.name))}`;
     case "scene":
