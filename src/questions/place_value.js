@@ -50,7 +50,8 @@ function roundWhole(rng, grade) {
       other, roundedTo(place * 10), ...(place > 10 ? [roundedTo(place / 10)] : []),
       answer + place, answer - place, answer + 2 * place, answer - 2 * place, answer + 3 * place, answer - 3 * place,
     ], { step: place, min: 1 }),
-    hint: grade < 4 ? `Is ${fmt(n)} closer to ${fmt(down)} or to ${fmt(up)}?` : `Look at the digit just right of the ${name}s place: 5 or more rounds up.`,
+    hint: grade < 4 ? `Is ${fmt(n)} closer to ${fmt(down)} or to ${fmt(up)}?`
+      : `Look at the digit just right of the ${name}s place, the ${Math.floor(n / (place / 10)) % 10}: 5 or more rounds up.`,
     difficulty: 1 + Number(n - down === place / 2) + Number(place >= 1000),
   };
 }
@@ -86,7 +87,7 @@ function roundDecimal(rng) {
     prompt: `Round ${formatDecimal(units, places)} to the nearest ${DECIMAL_PLACES[to]}.`,
     answer,
     wrong,
-    hint: `Look at the digit just right of the ${to === 0 ? "ones" : `${DECIMAL_PLACES[to]}s`} place: 5 or more rounds up.`,
+    hint: `Look at the digit just right of the ${to === 0 ? "ones" : `${DECIMAL_PLACES[to]}s`} place, the ${Math.floor(units / 10 ** (places - to - 1)) % 10}: 5 or more rounds up.`,
     difficulty: 2 + Number(to > 0),
   };
 }

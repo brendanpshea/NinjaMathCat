@@ -6,7 +6,28 @@ import assert from "node:assert/strict";
 import { CURRICULUM } from "../src/curriculum.js";
 import { createRng } from "../src/rng.js";
 import { makeQuestion, isCorrect } from "../src/questions/common.js";
-import { gradesFor, questionsOf } from "./helpers.js";
+import { gradesFor, questionsOf, numbersIn } from "./helpers.js";
+
+/**
+ * Kinds of question whose hints take the first step with the question's own
+ * numbers, and so could say the answer by mistake. Elsewhere a hint names a
+ * fact, such as a graph's scale or a full turn of 360°, that is sometimes the
+ * answer by chance.
+ */
+const WORKED_HINTS = new Set([
+  "addition", "subtraction", "multiplication", "division", "missing_number", "equal_sign", "tens_and_ones",
+  "number_line", "time", "fraction_arithmetic", "fraction_stories", "decimals", "word_addition", "word_subtraction",
+]);
+
+/**
+ * Whether some text says this answer, as a whole: "2/7" is not in "12/7".
+ * @param {string} text
+ * @param {string | number} answer
+ */
+function says(text, answer) {
+  const escaped = String(answer).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[\\s(])${escaped}(?=$|[\\s.,;:?)])`).test(text);
+}
 
 for (const { type } of CURRICULUM) {
   describe(`${type.name} questions`, () => {
@@ -23,6 +44,26 @@ for (const { type } of CURRICULUM) {
         assert.equal(q.type, type.id, at);
         assert.ok(q.prompt.length > 0 && q.hint.length > 0, at);
         assert.ok([1, 2, 3].includes(q.difficulty), `${at} → difficulty ${q.difficulty}`);
+      }
+    });
+
+    it("have a hint that takes a step without saying the answer", () => {
+      if (!WORKED_HINTS.has(type.id)) return;
+      for (const { question: q, at } of questionsOf(type)) {
+        // Small numbers turn up in hints by chance ("6 take away 8" when the answer is 8), so only 10 and up.
+        const whole = typeof q.answer === "number" ? q.answer : /^\d+$/.test(q.answer) ? Number(q.answer) : null;
+        const said = whole !== null
+          ? whole >= 10 && numbersIn(q.hint).includes(whole) && !numbersIn(q.prompt).includes(whole)
+          : /\d/.test(String(q.answer)) && says(q.hint, q.answer) && !says(q.prompt, q.answer);
+        assert.ok(!said, `${at} → hint: ${q.hint}`);
+      }
+    });
+
+    it("speak to children below second grade in words they know", () => {
+      for (const { grade, question: q, at } of questionsOf(type)) {
+        if (grade >= 2) continue;
+        const words = `${q.prompt} ${q.hint}`.match(/\b(true|shaded|difference|digits?|regroup\w*|carry\w*|denominator|numerator|brackets|expression|equation)\b/i);
+        assert.equal(words, null, `${at} → hint: ${q.hint}`);
       }
     });
 

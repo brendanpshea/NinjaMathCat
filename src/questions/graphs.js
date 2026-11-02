@@ -146,7 +146,10 @@ function graphQuestion(rng, grade, style) {
       answer: difference,
       // Adding instead, giving one of the two numbers, or a gridline out.
       wrong: wrongNumbers(rng, difference, [a.value + b.value, a.value, b.value, difference + scale, difference - scale], { spread: scale, min: 1 }),
-      hint: "Find both numbers, then take the smaller one from the bigger one.",
+      // With a picture for each one, the rows can be matched up, as children compare groups.
+      hint: style === "picture" && scale === 1
+        ? `Match up the ${a.label} row with the ${b.label} row. How many pictures are left over?`
+        : `Find the ${a.label} number and the ${b.label} number, then take the smaller from the bigger.`,
       difficulty: Math.min(3, 2 + scaled),
     };
   }

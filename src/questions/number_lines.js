@@ -73,7 +73,8 @@ export const numberLine = {
         answer: end,
         // A tick too far or too short, the jump alone, or not moving at all.
         wrong: wrongNumbers(rng, end, [end + tick, end - tick, length, start, end + label], { spread: tick }),
-        hint: `Start at ${start} and count on ${length}.`,
+        // Counting the steps, not their total, which is the answer when the jump starts at 0.
+        hint: `The jump starts at ${start}. Each small step is ${tick}: count the steps it covers.`,
         difficulty: Math.min(3, 2 + Number(tick > 1)),
       };
     }
@@ -86,7 +87,7 @@ export const numberLine = {
       answer: point,
       // Miscounting the ticks, or rounding to the nearest label.
       wrong: wrongNumbers(rng, point, [point + tick, point - tick, point + 2 * tick, point - 2 * tick, nearestLabel], { spread: tick }),
-      hint: `The labels go up by ${label}. Each small step is ${tick}.`,
+      hint: `The labels go up by ${label}, in ${label / tick} small steps. What is each step worth?`,
       difficulty: 1 + Number(tick > 1) + Number(span >= 200),
     };
   },

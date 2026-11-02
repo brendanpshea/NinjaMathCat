@@ -260,7 +260,7 @@ export const comparison = {
           ...wrongOps.map(o => `${sum} ${o} ${other}`),
           op === "=" ? `${sum} = ${other + rng.int(1, 3)}` : `${other} ${op} ${sum}`,
         ],
-        hint: "Work out the part in brackets first.",
+        hint: `First work out ${a} + ${b}. Then compare it with ${other}.`,
         difficulty: 3,
       };
     }
@@ -280,7 +280,8 @@ export const comparison = {
       prompt: grade < 2 ? "Which one is right?" : "Which is true?",
       answer: `${x} ${op} ${y}`,
       wrong: [`${x} ${flipped} ${y}`, `${x} = ${y}`, `${y} ${op} ${x}`],
-      hint: top > 1000 ? "Compare the digits place by place, starting from the biggest place." : "The open side of < or > faces the bigger number.",
+      hint: top > 1000 ? "Compare the digits place by place, starting from the biggest place."
+        : `Which is bigger, ${x} or ${y}? Then find the sign whose open side faces it.`,
       difficulty: Math.min(3, 1 + Number(Math.floor(a / 10) === Math.floor(b / 10)) + Number(top > 100) + Number(top > 10000)),
     };
   },

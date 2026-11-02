@@ -4,7 +4,7 @@
 // (rational.js), and no wrong answer is ever worth the same as the right one.
 
 import { atGrade } from "./common.js";
-import { frac, simplify, add, subtract, multiply, divide, same, compare, formatFraction } from "./rational.js";
+import { frac, simplify, add, subtract, multiply, divide, same, compare, formatFraction, lcm } from "./rational.js";
 
 /** @import { QuestionType } from "./common.js" */
 /** @import { Fraction } from "./rational.js" */
@@ -15,6 +15,20 @@ import { frac, simplify, add, subtract, multiply, divide, same, compare, formatF
  * @param {Fraction} f
  */
 const plain = f => `${f.n}/${f.d}`;
+
+/**
+ * A hint for adding or taking away fractions with different denominators:
+ * the denominator to change both to, not just that they need one.
+ * @param {number} d1
+ * @param {number} d2
+ */
+export function sameBottom(d1, d2) {
+  const both = lcm(d1, d2);
+  const [small, big] = d1 < d2 ? [d1, d2] : [d2, d1];
+  return both === big
+    ? `${small} goes into ${big}, so first write both fractions with ${big} as the denominator.`
+    : `${d1} and ${d2} both go into ${both}, so first write both fractions with ${both} as the denominator.`;
+}
 
 /**
  * Wrong fractions, written out: never worth the same as the answer or as
@@ -224,7 +238,7 @@ export const fractionArithmetic = {
           // Adding the bottoms too (when adding), the other operation, or a part or two out. All but the
           // first keep the bottom, so the answer can't be picked out as the only one with the same bottom.
           wrong: wrongFractions(rng, answer, [...(adding ? [frac(answer.n, 2 * d)] : []), frac(adding ? a - b : a + b, d), frac(answer.n + 1, d), frac(answer.n - 1, d), frac(answer.n + 2, d)], write),
-          hint: "The parts are the same size, so only the number of parts changes.",
+          hint: `The parts are the same size, so ${adding ? "add" : "take away"} the tops: ${a} ${adding ? "+" : "−"} ${b}. The bottom stays ${d}.`,
           difficulty: 1 + Number(answer.n >= d),
         };
       }
@@ -274,7 +288,7 @@ export const fractionArithmetic = {
             subtract(answer, frac(1, x.d * y.d)),
             adding ? subtract(x, y) : add(x, y),
           ], write),
-          hint: "Give both fractions the same denominator first.",
+          hint: sameBottom(x.d, y.d),
           difficulty: 3,
         };
       }

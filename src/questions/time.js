@@ -155,12 +155,21 @@ function elapsed(rng) {
   const crossesHour = Math.floor(start / 60) !== Math.floor(end / 60);
   /** @param {number} m */
   const fits = m => m > 0 && m !== length;
+  // The hints take the first step with the story's own times: the whole hours, or up to the next o'clock.
+  const [hours, minutes] = [Math.floor(length / 60), length % 60];
+  const hoursText = `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  const oClock = formatTime(Math.ceil(start / 60) * 60);
+  // Going on past an o'clock, but not ending on one, which would be the answer.
+  const past = crossesHour && end % 60 !== 0;
   if (rng.chance(0.5)) {
     return {
       prompt: `${activity} starts at ${formatTime(start)} and ends at ${formatTime(end)}. How long does it last?`,
       answer: formatDuration(length),
       wrong: rng.shuffle([length + 10, length - 10, length + 60, length - 60, length + 5, length - 5].filter(fits)).map(formatDuration),
-      hint: "Count the whole hours first, then the minutes left over.",
+      hint: hours > 0 && minutes > 0 ? `From ${formatTime(start)} to ${formatTime(start + 60 * hours)} is ${hoursText}. Then count the minutes on to ${formatTime(end)}.`
+        : hours > 0 ? `Count the whole hours from ${formatTime(start)} to ${formatTime(end)}.`
+        : past ? `Count the minutes from ${formatTime(start)} up to ${oClock}, then on to ${formatTime(end)}.`
+        : `Count the minutes from ${formatTime(start)} to ${formatTime(end)}, in 5-minute steps.`,
       difficulty: 2 + Number(crossesHour),
     };
   }
@@ -168,7 +177,10 @@ function elapsed(rng) {
     prompt: `${activity} starts at ${formatTime(start)} and lasts ${formatDuration(length)}. When does it end?`,
     answer: formatTime(end),
     wrong: rng.shuffle([end + 10, end - 10, end + 60, end - 60, end + 5, end - 5]).map(formatTime),
-    hint: "Add the hours first, then the minutes.",
+    hint: hours > 0 && minutes > 0 ? `${formatTime(start)} and ${hoursText} is ${formatTime(start + 60 * hours)}. Then add the ${minutes} minutes.`
+      : hours > 0 ? `Count on ${hoursText} from ${formatTime(start)}.`
+      : past ? `Count on from ${formatTime(start)} up to ${oClock}, then add the rest of the ${minutes} minutes.`
+      : `Count on ${minutes} minutes from ${formatTime(start)}.`,
     difficulty: 2 + Number(crossesHour),
   };
 }

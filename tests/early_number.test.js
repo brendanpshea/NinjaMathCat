@@ -91,7 +91,7 @@ describe("the equal sign", () => {
   it("has one true equation among the choices, and balances both sides", () => {
     for (const { question: q, at } of questionsOf(equalSign)) {
       const p = q.prompt;
-      if (p === "Which of these is true?") {
+      if (p === "Which of these is true?" || p === "Which one is right?") {
         for (const c of q.choices) assert.equal(holds(c), c === q.answer, `${at} → ${c}`);
         continue;
       }

@@ -159,7 +159,7 @@ function blocks(rng, hundreds) {
     visual: { kind: "base_ten", hundreds: h, tens: t, ones: o },
     answer: n,
     wrong: wrongNumbers(rng, n, likely.filter(v => v !== n), { min: 1 }),
-    hint: hundreds ? "Each big square is 100, each long block 10, and each little cube 1." : "Each long block is 10, and each little cube is 1. Count the tens first.",
+    hint: hundreds ? "Each big square is a hundred, each long block a ten, and each little cube a one." : "Each long block is a ten, and each little cube is a one. Count the tens first.",
     difficulty: 1 + Number(o === 0 || t === 0) + Number(hundreds),
   };
 }
@@ -177,7 +177,7 @@ function tensOnes(rng) {
     answer: n,
     // Turned round, added up, or written as the two numbers side by side.
     wrong: wrongNumbers(rng, n, [10 * o + t, t + o, 100 * t + o, n + 10, n - 10, n + 1].filter(v => v !== n), { min: 1 }),
-    hint: `${t} ${t === 1 ? "ten is" : "tens are"} ${10 * t}. Then add the ones.`,
+    hint: o === 0 ? "Count by tens, once for each ten. There are no ones to add." : `${t} ${t === 1 ? "ten is" : "tens are"} ${10 * t}. Then add the ones.`,
     difficulty: 1 + Number(o === 0),
   };
 }
@@ -197,7 +197,8 @@ function howManyTens(rng) {
     answer,
     // The other digit, or the tens as their value.
     wrong: wrongNumbers(rng, answer, [tens ? o : t, tens ? 10 * t : n, answer + 1, answer - 1].filter(v => v !== answer), { min: 0 }),
-    hint: `In ${n}, the ${t} is in the tens place and the ${o} is in the ones place.`,
+    // Where to look, not what is there.
+    hint: tens ? `In ${n}, the tens come first, on the left.` : `In ${n}, the ones come last, on the right.`,
     difficulty: 1,
   };
 }
@@ -220,7 +221,7 @@ function moreOrLess(rng, step, low, high) {
     answer,
     // A one instead of a ten, the wrong way, or the other place.
     wrong: wrongNumbers(rng, answer, [more ? n + 1 : n - 1, more ? n - step : n + step, more ? n + other : n - other].filter(v => v > 0), { min: 1 }),
-    hint: `Only the ${step === 10 ? "tens" : "hundreds"} digit changes, by one.`,
+    hint: `${step} ${more ? "more" : "less"} is one ${step === 10 ? "ten" : "hundred"} ${more ? "more" : "fewer"}, so only the ${step === 10 ? "tens" : "hundreds"} change.`,
     difficulty: 1 + Number(step === 100),
   };
 }
@@ -239,7 +240,7 @@ function tensTakeAway(rng) {
     answer,
     // Leaving off the zero, adding instead, or a ten out.
     wrong: wrongNumbers(rng, answer, [answer / 10, a + b, answer + 10, answer - 10].filter(v => v > 0 && v !== answer), { min: 1, spread: 10 }),
-    hint: `Think in tens: ${a / 10} tens take away ${b / 10} tens.`,
+    hint: `Think in tens: ${a / 10} tens take away ${b / 10} ${b === 10 ? "ten" : "tens"}.`,
     difficulty: 1,
   };
 }
@@ -260,7 +261,8 @@ function addToTwoDigit(rng) {
     answer,
     // Tens added to the ones, a ten not made, or one out.
     wrong: wrongNumbers(rng, answer, (tens ? [a + b / 10, answer + 10, answer - 10, answer + 1] : [ones + b >= 10 ? answer - 10 : answer + 10, answer + 1, answer - 1, a + 10 * b]).filter(v => v !== answer && v > 0), { min: 1 }),
-    hint: tens ? `Add the tens: ${Math.floor(a / 10)} tens and ${b / 10} more.` : ones + b >= 10 ? `The ones make more than 10: ${ones} + ${b} = ${ones + b}.` : "Add the ones.",
+    hint: tens ? `Add the tens: ${Math.floor(a / 10)} tens and ${b / 10} more ${b === 10 ? "ten" : "tens"}.`
+      : ones + b >= 10 ? `The ones make a new ten: ${ones} + ${b} = ${ones + b}.` : `Add the ones: ${ones} + ${b}. The tens stay the same.`,
     difficulty: 1 + Number(!tens && ones + b >= 10),
   };
 }
@@ -278,7 +280,8 @@ function placeNames(rng) {
     answer: n,
     // A zero left out, two places swapped, or a place out.
     wrong: wrongNumbers(rng, n, [10 * h + o, 100 * h + 10 * o + t, 100 * t + 10 * h + o, n + 10, n - 10, n + 100].filter(v => v !== n && v > 0), { min: 1 }),
-    hint: `${h} ${h === 1 ? "hundred is" : "hundreds are"} ${100 * h}. Then add the tens and the ones.`,
+    hint: t === 0 && o === 0 ? "Count by hundreds, once for each hundred. There are no tens or ones to add."
+      : `${h} ${h === 1 ? "hundred is" : "hundreds are"} ${100 * h}. Then add the tens and the ones.`,
     difficulty: 1 + Number(t === 0 || o === 0),
   };
 }
@@ -437,10 +440,10 @@ export const equalSign = {
         const truths = [`${a} + ${b} = ${sum}`, `${sum} = ${a} + ${b}`, `${a} + ${b} = ${b} + ${a}`, `${sum} − ${b} = ${a}`, `${a} + ${b} = ${a + 1} + ${b - 1}`];
         const falsehoods = [`${a} + ${b} = ${sum + 1}`, `${sum} = ${a} + ${b + 1}`, `${a} + ${b} = ${a} + ${b + 2}`, `${sum} − ${b} = ${a + 1}`, `${a} = ${a} + ${b}`];
         return {
-          prompt: "Which of these is true?",
+          prompt: grade < 2 ? "Which one is right?" : "Which of these is true?",
           answer: rng.pick(truths),
           wrong: rng.shuffle(falsehoods),
-          hint: "Work out each side of the equal sign. True means both sides are the same amount.",
+          hint: "Work out each side of the equal sign. Both sides must make the same number.",
           difficulty: 2,
         };
       }

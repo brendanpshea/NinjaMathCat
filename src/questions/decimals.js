@@ -291,7 +291,8 @@ function addOrSubtract(rng, big, adding) {
     wrong: wrongDecimals(rng, answer, [
       formatDecimal(misaligned, 2), formatDecimal(answerUnits + 10, 2), formatDecimal(answerUnits - 10, 2), formatDecimal(answerUnits + 100, 2), formatDecimal(answerUnits - 1, 2),
     ]),
-    hint: "Line up the decimal points first. Write in zeros to fill the empty places if it helps.",
+    // Both written to hundredths, the step children skip when they line the numbers up on the right.
+    hint: `Write both in hundredths, ${twoPlaces(a)} and ${twoPlaces(b)}, with the points lined up. Then ${adding ? "add" : "subtract"} as usual.`,
     difficulty: 2 + Number(big),
   };
 }
@@ -303,6 +304,14 @@ function addOrSubtract(rng, big, adding) {
  */
 function rightAligned(text) {
   return Number(text.replace(".", ""));
+}
+
+/**
+ * A number of hundredths written to both places, zeros kept: 9.80, 5.00.
+ * @param {number} units
+ */
+function twoPlaces(units) {
+  return `${Math.floor(units / 100)}.${String(units % 100).padStart(2, "0")}`;
 }
 
 /**

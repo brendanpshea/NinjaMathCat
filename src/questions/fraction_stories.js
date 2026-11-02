@@ -4,7 +4,7 @@
 
 import { atGrade } from "./common.js";
 import { frac, simplify, add, subtract, multiply, compare, formatFraction } from "./rational.js";
-import { wrongFractions } from "./fraction_ops.js";
+import { wrongFractions, sameBottom } from "./fraction_ops.js";
 
 /** @import { Draft, QuestionType } from "./common.js" */
 /** @import { Fraction } from "./rational.js" */
@@ -44,7 +44,7 @@ export const fractionStories = {
           prompt: rng.pick(ADDING)(show(a), show(b)),
           // Tops and bottoms both added, or the bottoms kept apart.
           ...answered(rng, fifth ? answer : frac(a.n + b.n, a.d), [frac(a.n + b.n, a.d + b.d), frac(a.n + b.n, Math.max(a.d, b.d))], write),
-          hint: a.d === b.d ? "The parts are the same size, so add how many there are." : `Write both with the same denominator first, such as ${common(a, b)}.`,
+          hint: a.d === b.d ? "The parts are the same size, so add how many there are." : sameBottom(a.d, b.d),
           difficulty: 1 + Number(a.d !== b.d) + Number(fifth && compare(answer, frac(1, 2)) > 0),
         };
       }
@@ -54,7 +54,7 @@ export const fractionStories = {
         return {
           prompt: rng.pick(SUBTRACTING)(show(a), show(b)),
           ...answered(rng, fifth ? answer : frac(a.n - b.n, a.d), [frac(a.n - b.n, Math.abs(a.d - b.d) || a.d), add(a, b), frac(Math.abs(a.n - b.n) || 1, Math.max(a.d, b.d))], write),
-          hint: a.d === b.d ? "The parts are the same size, so take away how many there are." : "Change both to the same size of part before taking away.",
+          hint: a.d === b.d ? "The parts are the same size, so take away how many there are." : sameBottom(a.d, b.d),
           difficulty: 1 + Number(a.d !== b.d),
         };
       }
@@ -126,7 +126,7 @@ function share(rng, write) {
     prompt: `${people} friends share ${wholes === 1 ? `1 ${each}` : `${wholes} ${thing}`} equally. How much ${each.startsWith("pound") ? "clay, in pounds," : each} does each friend get?`,
     // Turned upside down, or one share of one whole.
     ...answered(rng, frac(wholes, people), [frac(people, wholes), frac(1, people), frac(wholes, people + wholes)], write),
-    hint: `Sharing ${wholes} among ${people} is ${wholes} ÷ ${people}, which is the fraction ${wholes}/${people}.`,
+    hint: `Sharing ${wholes} among ${people} is ${wholes} ÷ ${people}. A division can be written as a fraction, with what is shared on top.`,
     difficulty: wholes > people ? 3 : 2,
   };
 }

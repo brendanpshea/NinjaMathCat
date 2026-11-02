@@ -94,6 +94,41 @@ function withDigits(rng, digits) {
   return rng.int(10 ** (digits - 1) + 1, 10 ** digits - 1);
 }
 
+/**
+ * A hint for adding, with the child's own numbers: count on from the bigger
+ * number when the other is small, make a ten within 20, and past that, the
+ * first column of the written method.
+ * @param {number} a
+ * @param {number} b
+ */
+function addingHint(a, b) {
+  const [big, small] = a >= b ? [a, b] : [b, a];
+  if (big + small <= 10 || small <= 3 || (big + small <= 20 && big >= 10)) return `Start at ${fmt(big)} and count on ${small}.`;
+  if (big + small <= 20) return `Make a ten first: ${big} and ${10 - big} more make 10. Then add the rest of the ${small}.`;
+  const start = `${big >= 1000 ? "Line the numbers up by place. " : ""}Start with the ones: ${a % 10} + ${b % 10}.`;
+  return (a % 10) + (b % 10) >= 10 ? `${start} Ten ones make a new ten, to add with the tens.`
+    : carries(a, b) > 0 ? `${start} When a place makes 10 or more, carry 1 to the next place.`
+    : `${start} Then add the tens${big >= 1000 ? ", the hundreds and the thousands" : big >= 100 ? ", then the hundreds" : ""}.`;
+}
+
+/**
+ * A hint for taking away, with the child's own numbers: count back a few,
+ * count up when the two are close, and past 20, the first column of the
+ * written method.
+ * @param {number} a
+ * @param {number} b
+ */
+function takingHint(a, b) {
+  if (a === b) return `Start with ${fmt(a)} and take all of it away.`;
+  if (a <= 10 || b <= 3) return `Start at ${fmt(a)} and count back ${b}.`;
+  if (a - b <= 3 || (a <= 20 && a - b <= b)) return `Count up from ${fmt(b)} to ${fmt(a)}.`;
+  if (a <= 20) return `Start at ${a} and count back ${b}.`;
+  const start = `${a >= 1000 ? "Line the numbers up by place. " : ""}Start with the ones: ${a % 10} take away ${b % 10}`;
+  return a % 10 < b % 10 ? `${start}? Not enough ones, so trade a ten for ten ones first.`
+    : smallerFromLarger(a, b) !== a - b ? `${start}. When a place runs short, trade from the next place.`
+    : `${start}. Then the tens${a >= 1000 ? ", the hundreds and the thousands" : a >= 100 ? ", then the hundreds" : ""}.`;
+}
+
 /** @type {QuestionType} */
 export const addition = {
   id: "addition",
@@ -114,10 +149,7 @@ export const addition = {
       wrong: wrongNumbers(rng, sum, [
         sum + 1, sum - 1, carried > 0 ? addingWithoutCarrying(a, b) : sum + 10, sum - 10, ...(max >= 1000 ? [sum + 100, sum - 100] : []), Math.abs(a - b),
       ]),
-      hint: max <= 10 ? "Start at the bigger number and count on."
-        : max >= 10000 ? "Line the numbers up by place, then add from the ones, carrying as you go."
-        : carried > 0 ? "Add the ones first. Ten ones make a ten."
-        : "Add the ones, then add the tens.",
+      hint: addingHint(a, b),
       difficulty: 1 + Number(carried > 0) + Number(sum > max / 2),
     };
   },
@@ -145,10 +177,7 @@ export const subtraction = {
         difference + 1, difference - 1, smallerFromLarger(a, b), a + b, regroups ? difference + 10 : difference - 10,
         ...(max >= 1000 ? [difference + 100, difference - 100] : []),
       ]),
-      hint: max <= 10 ? "Start at the bigger number and count back."
-        : max >= 10000 ? "Line the numbers up by place, and subtract from the ones, regrouping when you need to."
-        : regroups ? "Not enough ones? Trade a ten for ten ones."
-        : "Take away the ones, then the tens.",
+      hint: takingHint(a, b),
       difficulty: 1 + Number(regroups) + Number(a > max / 2),
     };
   },
@@ -443,7 +472,7 @@ export const multiplication = {
       wrong: wrongNumbers(rng, product, kind[1] === 1
         ? [multiplyingWithoutCarrying(a, b), product + a, product - a, product + 10, product - 10]
         : [a * ones + a * Math.floor(b / 10), a * ones, product + a, product - a, product + 100], { spread: 9 }),
-      hint: kind[1] === 1 ? `Multiply each place by ${b}, starting with the ones, and carry.`
+      hint: kind[1] === 1 ? `Start with the ones: ${a % 10} × ${b}. Then multiply each place by ${b}, adding on anything carried.`
         : `Multiply ${fmt(a)} by ${ones}, then by ${b - ones}, and add the two parts.`,
       difficulty: 2 + Number(product >= 10000),
     };
@@ -465,6 +494,19 @@ const QUOTIENTS = [[3.5, "facts"], [4.5, "remainders"], [Infinity, "long"]];
  */
 export function withRemainder(quotient, remainder) {
   return remainder === 0 ? String(quotient) : `${quotient} R ${remainder}`;
+}
+
+/**
+ * The first step of dividing by one digit, as it is written out: the place to
+ * start in, and the leading digits the divisor first fits into.
+ * @param {number} dividend
+ * @param {number} divisor
+ */
+function firstDivision(dividend, divisor) {
+  const digits = String(dividend);
+  let [lead, used] = [0, 0];
+  while (used < digits.length && lead < divisor) lead = 10 * lead + Number(digits[used++]);
+  return `Start with the ${["ones", "tens", "hundreds", "thousands"][digits.length - used]}: how many ${divisor}s fit into ${lead}?`;
 }
 
 /** @type {QuestionType} */
@@ -512,7 +554,7 @@ export const division = {
         prompt: `What is ${dividend} ÷ ${divisor}?`,
         answer: quotient,
         wrong: wrongNumbers(rng, quotient, [quotient + 1, quotient - 1, quotient + 10, quotient - 10], { min: 1 }),
-        hint: `How many ${divisor}s fit into ${dividend}? Divide one place at a time.`,
+        hint: `${firstDivision(dividend, divisor)} Then bring down the next digit and go on.`,
         difficulty: 2,
       };
     }
@@ -528,7 +570,7 @@ export const division = {
         withRemainder(quotient, remainder + 1 < divisor ? remainder + 1 : remainder - 1),
         String(quotient),
       ]),
-      hint: `How many ${divisor}s fit into ${dividend}? What is left over is the remainder.`,
+      hint: `${firstDivision(dividend, divisor)} What is left over at the end is the remainder.`,
       difficulty: 3,
     };
   },
