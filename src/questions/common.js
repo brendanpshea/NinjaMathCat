@@ -118,6 +118,7 @@
  * @property {"ten_frame"} kind
  * @property {number} filled
  * @property {1 | 2} frames
+ * @property {number} [focus]  a frame to ring, for a teaching scene to point at
  */
 
 /**
@@ -180,6 +181,7 @@
  * @property {"hundredths"} kind
  * @property {number[]} grids  how many squares of each grid are shaded
  * @property {string[]} [labels]  written under the grids
+ * @property {{ column?: number, square?: number }} [focus]  a column or a square of the first grid to ring, for a teaching scene to point at
  */
 
 /**

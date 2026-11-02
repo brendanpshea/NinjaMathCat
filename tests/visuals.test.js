@@ -407,6 +407,25 @@ describe("drawing", () => {
     }
   });
 
+  it("for teaching scenes: a ring round the part pointed at, and every part to tap marked", () => {
+    const frames = renderVisual({ kind: "ten_frame", frames: 2, filled: 14, focus: 1 });
+    assert.deepEqual(elementsIn(frames, "rect", "frame").map(f => f["data-part"]), ["frame-0", "frame-1"]);
+    const [ring] = elementsIn(frames, "rect", "focus");
+    const second = elementsIn(frames, "rect", "frame")[1];
+    assert.ok(Number(ring.x) < Number(second.x) && Number(ring.x) + Number(ring.width) > Number(second.x) + Number(second.width), "the ring goes round the second frame");
+    assert.equal(elementsIn(renderVisual({ kind: "ten_frame", frames: 2, filled: 14 }), "rect", "focus").length, 0);
+
+    const grid = renderVisual({ kind: "hundredths", grids: [37], focus: { column: 3 } });
+    const columns = elementsIn(grid, "rect", "column");
+    assert.deepEqual(columns.map(c => c["data-part"]), Array.from({ length: 10 }, (_, c) => `column-${c}`));
+    const [around] = elementsIn(grid, "rect", "focus");
+    close(Number(around.x) + 3, Number(columns[3].x), "the ring goes round the fourth column");
+    const square = elementsIn(renderVisual({ kind: "hundredths", grids: [37], focus: { square: 36 } }), "rect", "focus")[0];
+    const last = elementsIn(grid, "rect", "square").filter(s => s["data-shaded"] === "true").pop();
+    close(Number(square.x) + 3, Number(last.x), "the ring goes round the last square shaded");
+    close(Number(square.y) + 3, Number(last.y), "the ring goes round the last square shaded");
+  });
+
   it("ten frames: a counter for each one counted, filling the first frame first", () => {
     for (const { v, svg, at } of rendered("ten_frame")) {
       assert.equal(elementsIn(svg, "rect", "frame").length, v.frames, at);

@@ -78,6 +78,7 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasure collection. |
 | `src/save.js` | What the browser remembers: each player, with their hero, grade, experience, treasures and progress in every grade's adventure. A save from before there were players becomes the first player. |
 | `src/adventures.js` | Each grade's adventure: its chapters, with their notes and the question types each brings in; the levels in each chapter, what each asks (pitched by the player's mastery) and which monsters it fights; training levels; and progress, stars and which levels are open. |
+| `src/scenes.js`, `src/ui/scene_view.js` | Teaching scenes: before a chapter's first battle, its monster shows off its trick and the hero works out how to beat it, step by step over a picture, with checks to try. So far a pilot in two chapters; `docs/SCENES.md` says how to write one. |
 | `src/speech.js` | Reading aloud: math as a child hears it ("3/4" is "3 fourths"), and the browser's speech, where it has any. |
 | `src/progress_code.js` | A player's progress as a code to paste into another browser, and back. |
 | `src/mastery.js` | How well a player knows each kind of question, from their answers: a score that follows recent answers, how much a kind needs review, and how hard to pitch it. |

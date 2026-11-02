@@ -42,7 +42,13 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(marathon.problems, []);
     assert.equal(marathon.levels, 40);
     assert.equal(marathon.saved, 40);
-    assert.equal(marathon.notes.length, 8);
+    // Seven chapters open with a note; Teen numbers opens with its teaching scene.
+    assert.equal(marathon.notes.length, 7);
+    assert.equal(marathon.scenes.length, 1);
+    const [scene] = marathon.scenes;
+    assert.equal(scene.title, "Teen numbers");
+    assert.ok(scene.checks === 1 && scene.wrongTries === 1, "the check was tried wrong, then right");
+    assert.match(scene.lines[0], /^I'm Grumpy Cloud!/);
     assert.ok(marathon.wrongOnce > 0 && marathon.wrongTwice > 0, "some answers wrong, so hints and answers were shown");
     assert.ok(Object.keys(marathon.kinds).length >= 6, `pictures of only ${Object.keys(marathon.kinds).join(", ")}`);
   });

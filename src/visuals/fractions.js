@@ -76,9 +76,17 @@ export function hundredths(v) {
       fill: i < shaded ? SHADE : COLORS.paper, stroke: COLORS.line, "stroke-width": 1,
       class: "square", "data-grid": g, "data-shaded": String(i < shaded),
     }));
-    const frame = el("rect", { x: x0, y: 10, width: size, height: size, fill: "none", stroke: COLORS.ink, "stroke-width": 2.5 });
+    const frame = el("rect", { x: x0, y: 10, width: size, height: size, fill: "none", stroke: COLORS.ink, "stroke-width": 2.5, "pointer-events": "none" });
     const label = v.labels ? [text({ x: x0 + size / 2, y: 10 + size + 26, "font-size": 22, "font-weight": 700, "text-anchor": "middle", fill: COLORS.ink }, v.labels[g])] : [];
-    return [...squares, frame, ...label];
+    // Each column as a whole, to tap in a teaching scene: a tenth.
+    const prefix = v.grids.length === 1 ? "" : `grid${g}-`;
+    const columns = Array.from({ length: 10 }, (_, c) => el("rect", { x: x0 + c * cell, y: 10, width: cell, height: size, fill: "transparent", class: "column", "data-part": `${prefix}column-${c}`, "aria-label": `column ${c + 1}` }));
+    const ring = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ w, /** @type {number} */ h) => el("rect", { x: x - 3, y: y - 3, width: w + 6, height: h + 6, fill: "none", stroke: COLORS.accent, "stroke-width": 5, class: "focus", "pointer-events": "none" });
+    const focus = g > 0 || !v.focus ? []
+      : v.focus.column !== undefined ? [ring(x0 + v.focus.column * cell, 10, cell, size)]
+      : v.focus.square !== undefined ? [ring(x0 + Math.floor(v.focus.square / 10) * cell, 10 + (v.focus.square % 10) * cell, cell, cell)]
+      : [];
+    return [...squares, ...columns, frame, ...label, ...focus];
   });
   return svg("hundredths", 20 + v.grids.length * size + (v.grids.length - 1) * gap, size + 20 + below, describeVisual(v), body);
 }

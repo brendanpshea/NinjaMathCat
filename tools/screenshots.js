@@ -19,7 +19,12 @@ const SHOTS = [
   ["battle", 390, 1400, "phone-"], ["level-done", 390, 1300, "phone-"], ["report", 390, 1500, "phone-"],
   // A school laptop's window: is everything needed to play in sight without scrolling?
   ["map", 1366, 650, "laptop-"], ["battle", 1366, 650, "laptop-"],
+  // Teaching scenes: a step pointing at the picture, and a check after a wrong try.
+  ["scene-k", 1000, 1150], ["scene-k-check", 1000, 1150], ["scene-4", 1000, 1150], ["scene-4-check", 1000, 1300],
+  ["scene-k", 390, 1300, "phone-"], ["scene-4-check", 390, 1500, "phone-"],
 ];
+// npm run screens -- scene: only the shots whose screen has "scene" in its name.
+const only = process.argv[2];
 
 const browser = findBrowser();
 if (!browser) {
@@ -29,7 +34,7 @@ if (!browser) {
 mkdirSync("out/screens", { recursive: true });
 const server = await startServer();
 try {
-  for (const [screen, width, height, prefix = ""] of SHOTS) {
+  for (const [screen, width, height, prefix = ""] of SHOTS.filter(([screen]) => !only || String(screen).includes(only))) {
     const profile = mkdtempSync(join(tmpdir(), "ninja-shot-"));
     const file = resolve(`out/screens/${prefix}${screen}.png`);
     await promisify(execFile)(browser, [

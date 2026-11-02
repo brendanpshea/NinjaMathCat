@@ -93,13 +93,14 @@ export class Speaker {
 
   /**
    * @param {string} text
-   * @param {{ ratios?: boolean }} [options]  as for speakable
+   * @param {{ ratios?: boolean, pitch?: number }} [options]  ratios as for speakable; pitch from 0 to 2, 1 as usual, so a monster can sound unlike the hero
    */
   say(text, options) {
     if (!this.available || !this.synth) return;
     this.synth.cancel();
     const utterance = new SpeechSynthesisUtterance(speakable(text, options));
     utterance.rate = 0.9;
+    if (options?.pitch !== undefined) utterance.pitch = options.pitch;
     this.synth.speak(utterance);
   }
 

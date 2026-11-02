@@ -16,7 +16,7 @@ import { levelForXp } from "../combat.js";
 import { TREASURES } from "../treasures.js";
 import {
   ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, planTraining, settingFor, exampleFor,
-  recordLevel, levelStates, nextLevel, openChapter, starsFor,
+  recordLevel, levelStates, nextLevel, openChapter, starsFor, residents,
 } from "../adventures.js";
 import { learn, strength } from "../mastery.js";
 import { loadSave, writeSave, addPlayer, importPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME, READ_ALOUD_UP_TO } from "../save.js";
@@ -24,6 +24,8 @@ import { encodePlayer, decodePlayer } from "../progress_code.js";
 import { escapeXml as esc } from "../visuals/svg.js";
 import { createBattleScreen, choiceHtml, pictureHtml } from "./battle_screen.js";
 import { still } from "./sprites.js";
+import { runScene } from "./scene_view.js";
+import { sceneFor } from "../scenes.js";
 
 /** @import { Battle } from "../battle.js" */
 /** @import { Level } from "../adventures.js" */
@@ -32,7 +34,7 @@ import { still } from "./sprites.js";
 /** @import { SoundSystem } from "../sound.js" */
 /** @import { Speaker } from "../speech.js" */
 
-/** @typedef {"title" | "player" | "map" | "note" | "battle" | "level-done" | "training-done" | "victory" | "treasures" | "report"} ScreenName */
+/** @typedef {"title" | "player" | "map" | "note" | "scene" | "battle" | "level-done" | "training-done" | "victory" | "treasures" | "report"} ScreenName */
 /** @import { Outcome } from "../mastery.js" */
 
 /** What each kind of level is called on the map. */
@@ -448,7 +450,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
               }).join("")}</ol>
               <div class="chapter-more" data-ref="more-${c}">${locked
                 ? `<button type="button" class="link" data-act="open-ask" data-chapter="${c}">Open this chapter early (for grown-ups)</button>`
-                : `<button type="button" class="link" data-act="note" data-chapter="${c}">Read the chapter note</button>`}</div>
+                : `<button type="button" class="link" data-act="note" data-chapter="${c}">${sceneFor(chapters[c].id) ? "Watch the chapter's opening scene" : "Read the chapter note"}</button>`}</div>
             </div>
           </li>`;
         }).join("")}</ol>
@@ -480,7 +482,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
       switch (button.dataset.act) {
         case "note": {
           const mine = levels.filter(l => l.chapter === c);
-          note(mine.find(l => states[levels.indexOf(l)] === "open") ?? mine[0]);
+          opening(mine.find(l => states[levels.indexOf(l)] === "open") ?? mine[0]);
           break;
         }
         case "open-ask":
@@ -503,12 +505,49 @@ export function createApp(root, { storage, sound, speech, rng }) {
   // ------------------------------------------------------- a chapter's note
 
   /**
-   * Start a level: a chapter's first level comes after its note.
+   * Start a level: a chapter's first level comes after its opening.
    * @param {Level} level
    */
   function begin(level) {
-    if (level.step === 1) note(level);
+    if (level.step === 1) opening(level);
     else play(level);
+  }
+
+  /**
+   * A chapter's opening: its teaching scene, where it has one, or else its note.
+   * @param {Level} level  the level to start from here
+   */
+  function opening(level) {
+    if (sceneFor(chaptersFor(level.grade)[level.chapter].id)) scene(level);
+    else note(level);
+  }
+
+  /**
+   * The chapter's first monster shows off its trick, and the hero works out
+   * how to beat it, before the level.
+   * @param {Level} level  the level to start from here
+   */
+  function scene(level) {
+    const chapter = chaptersFor(level.grade)[level.chapter];
+    const setup = /** @type {import("../scenes.js").Scene} */ (sceneFor(chapter.id));
+    const monster = residents(settingFor(level.grade, level.chapter))[0];
+    const hero = heroOf(me());
+    show("scene", "");
+    runScene(screenEl, {
+      kicker: `Chapter ${level.chapter + 1}`,
+      title: chapter.title,
+      steps: setup.steps(rng, { monster: monster.name, hero: hero.name }),
+      hero,
+      monster,
+      speech,
+      sound,
+      readAloud: me().readAloud && !save.muted,
+      startLabel: `Start ${levelName(level)}`,
+      onStart: () => play(level),
+      onNote: () => note(level),
+      onMap: () => map(),
+    });
+    screenEl.querySelector("h1")?.focus();
   }
 
   /**

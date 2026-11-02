@@ -18,14 +18,18 @@ export function tenFrame(v) {
   const parts = [];
   for (let f = 0; f < v.frames; f++) {
     const left = pad + f * (5 * cell + gap);
-    parts.push(el("rect", { x: left, y: pad, width: 5 * cell, height: 2 * cell, fill: COLORS.paper, stroke: COLORS.ink, "stroke-width": 3, rx: 4, class: "frame" }));
+    parts.push(el("rect", { x: left, y: pad, width: 5 * cell, height: 2 * cell, fill: COLORS.paper, stroke: COLORS.ink, "stroke-width": 3, rx: 4, class: "frame", "data-part": `frame-${f}`, "aria-label": f === 0 ? "the first frame" : "the second frame" }));
     for (let i = 1; i < 5; i++) parts.push(el("line", { x1: left + i * cell, y1: pad, x2: left + i * cell, y2: pad + 2 * cell, stroke: COLORS.ink, "stroke-width": 2 }));
     parts.push(el("line", { x1: left, y1: pad + cell, x2: left + 5 * cell, y2: pad + cell, stroke: COLORS.ink, "stroke-width": 2 }));
     const here = Math.max(0, Math.min(10, v.filled - 10 * f));
     for (let i = 0; i < here; i++) {
       const [col, row] = [i % 5, Math.floor(i / 5)];
-      parts.push(el("circle", { cx: left + (col + 0.5) * cell, cy: pad + (row + 0.5) * cell, r: 18, fill: COLORS.point, stroke: COLORS.ink, "stroke-width": 2, class: "counter" }));
+      parts.push(el("circle", { cx: left + (col + 0.5) * cell, cy: pad + (row + 0.5) * cell, r: 18, fill: COLORS.point, stroke: COLORS.ink, "stroke-width": 2, class: "counter", "pointer-events": "none" }));
     }
+  }
+  if (v.focus !== undefined) {
+    const left = pad + v.focus * (5 * cell + gap);
+    parts.push(el("rect", { x: left - 6, y: pad - 6, width: 5 * cell + 12, height: 2 * cell + 12, rx: 8, fill: "none", stroke: COLORS.accent, "stroke-width": 6, class: "focus", "pointer-events": "none" }));
   }
   return svg("ten_frame", 2 * pad + v.frames * 5 * cell + (v.frames - 1) * gap, 2 * pad + 2 * cell, describeVisual(v), parts);
 }

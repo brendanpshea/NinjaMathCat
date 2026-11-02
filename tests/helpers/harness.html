@@ -89,6 +89,23 @@
     };
   }
 
+  /**
+   * A save with one player, Sam, who has done every level before the first
+   * chapter of the grade that opens with a teaching scene.
+   * @param {number} grade
+   */
+  async function sceneSave(grade) {
+    const { levelsFor, chaptersFor } = await import("/src/adventures.js");
+    const { sceneFor } = await import("/src/scenes.js");
+    const chapter = chaptersFor(grade).findIndex(c => sceneFor(c.id));
+    const done = Object.fromEntries(levelsFor(grade).filter(l => l.chapter < chapter).map(l => [l.id, { stars: 3, firstTry: 7, asked: 8 }]));
+    return {
+      players: [{ id: "p1", name: "Sam", heroId: "cat_ninja", grade, readAloud: false, xp: grade ? 2600 : 900, treasures: [], adventures: { [grade]: { done, opened: 0 } } }],
+      current: "p1",
+      muted: false,
+    };
+  }
+
   const scenarios = {
     /** A new player, from the title through a level and around the map, then a second player and a reload. */
     async adventure() {
@@ -299,8 +316,26 @@
       frame.style.width = `${params.get("width") ?? 1000}px`;
       frame.style.height = `${params.get("height") ?? 900}px`;
       localStorage.clear();
-      if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify(await maya()));
+      // A teaching scene: kindergarten's or 4th grade's, at a step pointing at the picture, or at a check.
+      const sceneShot = screen.match(/^scene-(k|4)(-check)?$/);
+      if (sceneShot) localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(sceneShot[1] === "k" ? 0 : 4)));
+      else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify(await maya()));
       await load("?test&seed=11");
+      if (sceneShot) {
+        click("[data-ref=continue]");
+        await on("scene");
+        await until(() => $$(".scene-actor .still.is-ready").length === 2, "both stills to load");
+        const checking = Boolean(sceneShot[2]);
+        for (let i = 0; i < 10; i++) {
+          if (checking ? $("[data-ref=next]").disabled : $(".scene-picture .focus")) break;
+          click("[data-ref=next]");
+          await wait(30);
+        }
+        // One wrong try, or a right one if the last choice happens to be right.
+        if (checking) [...$$(".scene-picture .tappable"), ...$$(".scene-choices .choice")].pop()?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await wait(200);
+        return {};
+      }
       await wait(300);
       switch (screen) {
         case "title": return {};
@@ -396,8 +431,35 @@
       const chance = p => ((roll = (roll * 16807) % 2147483647) / 2147483647) < p;
       await on("map");
       click("[data-ref=continue]");
+      report.scenes = [];
       while (report.levels < most) {
-        await until(() => ["note", "battle"].includes(game().screen), "a note or a battle");
+        await until(() => ["note", "scene", "battle"].includes(game().screen), "a note, a scene or a battle");
+        if (game().screen === "scene") {
+          // Every step, and each check tried a part or a choice at a time, last first, until one is right.
+          const seen = { title: $("h1").textContent, steps: $$(".scene-steps li").length, checks: 0, wrongTries: 0, lines: [] };
+          for (let i = 0; i < 20 && game().screen === "scene"; i++) {
+            seen.lines.push(text(".scene-line"));
+            if (!text(".scene-line")) problem(`scene "${seen.title}": a step with no line`);
+            const next = $("[data-ref=next]");
+            if (next.disabled) {
+              seen.checks++;
+              const tries = $$(".scene-picture .tappable").length ? $$(".scene-picture .tappable") : $$(".scene-choices .choice");
+              if (tries.length === 0) { problem(`scene "${seen.title}": a check with nothing to tap or choose`); break; }
+              for (const t of tries.reverse()) {
+                t.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+                await wait(20);
+                if (!next.disabled) break;
+                seen.wrongTries++;
+                if (!text(".scene-line")) problem(`scene "${seen.title}": no pointer after a wrong try`);
+              }
+              if (next.disabled) { problem(`scene "${seen.title}": no right answer to its check`); break; }
+            }
+            next.click();
+            await wait(20);
+          }
+          if (game().screen !== "battle") problem(`scene "${seen.title}" did not lead into the battle`);
+          report.scenes.push(seen);
+        }
         if (game().screen === "note") {
           report.notes.push({ heading: $("h1").textContent, example: Boolean(text(".example-answer strong")) });
           if (!text(".note-text") || !text(".example-answer strong")) problem(`note "${$("h1").textContent}" has no text or example`);

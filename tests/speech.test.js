@@ -63,4 +63,21 @@ describe("reading aloud", () => {
     speaker.say("Hello");
     speaker.stop();
   });
+
+  it("cuts off what it was saying, and can speak higher or lower, as a monster and a hero do", () => {
+    const spoken = [];
+    let cancels = 0;
+    const synth = /** @type {any} */ ({ speak: u => spoken.push(u), cancel: () => { cancels++; } });
+    const before = globalThis.SpeechSynthesisUtterance;
+    globalThis.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; this.pitch = 1; } };
+    try {
+      const speaker = new Speaker(synth);
+      speaker.say("I rain 3/4 of the dots!", { pitch: 0.75 });
+      speaker.say("Not too many for me!");
+      assert.deepEqual(spoken.map(u => [u.text, u.pitch]), [["I rain 3 fourths of the dots!", 0.75], ["Not too many for me!", 1]]);
+      assert.equal(cancels, 2);
+    } finally {
+      globalThis.SpeechSynthesisUtterance = before;
+    }
+  });
 });
