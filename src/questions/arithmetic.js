@@ -8,12 +8,14 @@ import { atGrade, wrongNumbers, formatNumber as fmt } from "./common.js";
 
 /**
  * The largest number a grade adds and subtracts within: 5 and then 10 in
- * kindergarten (K.OA.5), 20 in first grade (1.OA.6), 100 and then 1000 in
- * second (2.NBT.5, 2.NBT.7), 1000 all through third (3.NBT.2), and 10,000 and
- * then a million in fourth (4.NBT.4).
+ * kindergarten (K.OA.5), 20 all through first grade (1.OA.6), 100 and then
+ * 1000 in second (2.NBT.5, 2.NBT.7), 1000 all through third (3.NBT.2), and
+ * 10,000 and then a million in fourth (4.NBT.4). First grade's bigger numbers
+ * are only a two-digit number and some ones or tens (1.NBT.4), and tens from
+ * tens (1.NBT.6), which the tens and ones questions ask.
  * @type {readonly [number, number][]}
  */
-export const WITHIN = [[0, 5], [0.5, 10], [1, 20], [1.5, 50], [2, 100], [2.5, 500], [3.5, 1000], [4, 10000], [Infinity, 1000000]];
+export const WITHIN = [[0, 5], [0.5, 10], [1.5, 20], [2, 100], [2.5, 500], [3.5, 1000], [4, 10000], [Infinity, 1000000]];
 
 /**
  * The largest factor in a grade's times tables: equal groups up to 5 × 5 in

@@ -28,6 +28,16 @@ describe("addition", () => {
   });
 });
 
+describe("first grade", () => {
+  it("adds, takes away and finds missing numbers within 20, all year (1.OA.6, 1.OA.8)", () => {
+    for (const type of [addition, subtraction, missingNumber]) {
+      for (const { grade, question: q, at } of questionsOf(type)) {
+        if (grade >= 1 && grade < 2) assert.ok(Math.max(...numbersIn(q.prompt)) <= 20, at);
+      }
+    }
+  });
+});
+
 describe("subtraction", () => {
   it("asks for a difference that is never below zero", () => {
     for (const { grade, question: q, at } of questionsOf(subtraction)) {
