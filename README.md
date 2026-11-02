@@ -8,10 +8,13 @@ the order a school year usually takes them, with forty short levels in all:
 a few hours of play, meant to be spread over many class sessions. A chapter
 opens with a note on its topic and a worked example, brings the topic in with
 its easiest questions, practises it, reviews it with what came before, and
-ends with a boss. Questions follow the Common Core math standards, with
-pictures to read where the standards call for them: clocks, graphs, number
-lines, fraction models, areas, boxes of cubes, protractors and coordinate
-grids.
+ends with a boss. Every Common Core math standard from kindergarten to 6th
+grade has questions, with pictures to read where the standards call for them:
+ten frames, clocks, coins, rulers, jugs and scales, graphs and box plots,
+number lines, fraction bars and hundredths grids, areas, nets, boxes of cubes,
+protractors and coordinate grids. The few standards that are really about
+doing things with hands, like writing numerals or building shapes, get an
+on-screen stand-in; the real thing is still best done with paper and blocks.
 
 Several children can share a device, each with their own name, hero, grade
 and progress, all saved in the browser after every level; nothing leaves it.
