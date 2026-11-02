@@ -1,5 +1,6 @@
-// Flat shapes: naming them, counting sides and corners, what is true of them,
-// their lines of symmetry, and how quadrilaterals fit inside one another.
+// Shapes: naming flat and solid ones, saying where things are, counting
+// sides, corners and faces, rows and columns of squares, what is true of a
+// shape, its lines of symmetry, and how quadrilaterals fit inside one another.
 
 import { atGrade, wrongNumbers } from "./common.js";
 
@@ -56,6 +57,45 @@ const SHAPES_AT = [
 
 /** What any shape with this many sides is called (2.G.1). */
 export const NAMES_BY_SIDES = new Map([[3, "triangle"], [4, "quadrilateral"], [5, "pentagon"], [6, "hexagon"], [8, "octagon"]]);
+
+/** The solid shapes kindergarten names (K.G.2), and the flat ones they are told apart from (K.G.3). */
+export const SOLIDS = /** @type {const} */ (["cube", "sphere", "cone", "cylinder"]);
+export const FLAT = ["circle", "triangle", "square", "rectangle"];
+
+/** Things in the world, and the solid shape each is shaped like (K.G.1). None has the answer in its name. */
+export const SHAPED_LIKE = [
+  ["a ball", "sphere"], ["an orange", "sphere"], ["a globe", "sphere"],
+  ["a can of soup", "cylinder"], ["a drum", "cylinder"], ["a candle", "cylinder"],
+  ["a party hat", "cone"], ["a wizard's hat", "cone"],
+  ["a toy block", "cube"],
+];
+
+/** Clues that fit exactly one of the shapes kindergarten knows (K.G.4). */
+export const CLUES = [
+  ["Which solid shape is round all over, with no flat faces?", "sphere"],
+  ["Which solid shape has 6 flat faces, and every one is a square?", "cube"],
+  ["Which solid shape has a point at the top and a flat circle at the bottom?", "cone"],
+  ["Which solid shape has a flat circle at each end?", "cylinder"],
+  ["Which flat shape has no corners?", "circle"],
+  ["Which flat shape has 3 sides and 3 corners?", "triangle"],
+  ["Which flat shape has 4 sides, all the same length?", "square"],
+  ["Which flat shape has 4 sides, two long and two short?", "rectangle"],
+];
+
+/** Words for where something is (K.G.1), and what is placed in the pictures. */
+export const PLACES = /** @type {const} */ (["above", "below", "next to", "in front of", "behind"]);
+const THINGS = /** @type {const} */ (["cat", "dog", "bunny", "ball", "bear"]);
+const LANDMARKS = /** @type {const} */ (["box", "chair", "basket"]);
+
+/**
+ * Solids in second grade, with their faces and corners, and how many of each
+ * the picture shows; the rest are hidden at the back (2.G.1).
+ */
+export const SOLID_PARTS = {
+  cube: { faces: 6, corners: 8, edges: 12, facesSeen: 3, cornersSeen: 7 },
+  box: { faces: 6, corners: 8, edges: 12, facesSeen: 3, cornersSeen: 7 },
+  pyramid: { faces: 5, corners: 5, edges: 8, facesSeen: 2, cornersSeen: 4 },
+};
 
 /** @typedef {{ text: string, test: (s: Shape) => boolean, about?: (s: Shape) => boolean }} Trait */
 
@@ -118,8 +158,65 @@ export const shapes = {
     const shape = rng.pick(known);
     const visual = /** @type {const} */ ({ kind: "shape", shape: shape.id });
 
-    // Kindergarten: name it.
+    // Kindergarten: name flat and solid shapes (K.G.2), tell them apart
+    // (K.G.3), match them to clues (K.G.4) and things in the world, and say
+    // where something is (K.G.1).
     if (grade < 1) {
+      const kind = rng.pick(["flat", "flat", "solid", "flatOrSolid", "shapedLike", "clue", "where", "where"]);
+      const otherSolids = (/** @type {string} */ answer) => rng.shuffle(SOLIDS.filter(s => s !== answer));
+      if (kind === "solid") {
+        const solid = rng.pick(SOLIDS);
+        return {
+          prompt: "What is this solid shape called?",
+          visual: { kind: "solid", solid },
+          answer: solid,
+          wrong: otherSolids(solid),
+          hint: "Could it roll? Does it have flat faces, or a point?",
+          difficulty: 1,
+        };
+      }
+      if (kind === "flatOrSolid") {
+        const solid = rng.chance(0.5);
+        const [answer, others] = solid ? [rng.pick(SOLIDS), FLAT] : [rng.pick(FLAT), SOLIDS];
+        return {
+          prompt: `Which of these is a ${solid ? "solid" : "flat"} shape?`,
+          answer,
+          wrong: rng.shuffle([...others]),
+          hint: "A flat shape lies flat on paper. A solid shape is one you could pick up and hold.",
+          difficulty: 1,
+        };
+      }
+      if (kind === "shapedLike") {
+        const [thing, answer] = rng.pick(SHAPED_LIKE);
+        return {
+          prompt: `What solid shape is ${thing} shaped like?`,
+          answer,
+          wrong: otherSolids(answer),
+          hint: "Picture holding it. Could it roll? Does it have flat faces, or a point?",
+          difficulty: 1,
+        };
+      }
+      if (kind === "clue") {
+        const [prompt, answer] = rng.pick(CLUES);
+        return {
+          prompt,
+          answer,
+          wrong: FLAT.includes(answer) ? rng.shuffle(FLAT.filter(s => s !== answer)) : otherSolids(answer),
+          hint: "Picture each shape, and check it against every part of the clue.",
+          difficulty: 1,
+        };
+      }
+      if (kind === "where") {
+        const [thing, landmark, place] = [rng.pick(THINGS), rng.pick(LANDMARKS), rng.pick(PLACES)];
+        return {
+          prompt: `Where is the ${thing}?`,
+          visual: { kind: "scene", thing, landmark, place },
+          answer: `${place} the ${landmark}`,
+          wrong: rng.shuffle(PLACES.filter(p => p !== place)).map(p => `${p} the ${landmark}`),
+          hint: `Is the ${thing} higher, lower, beside the ${landmark}, or partly hidden by it? In front means it covers part of the ${landmark}.`,
+          difficulty: 1,
+        };
+      }
       return {
         prompt: "What shape is this?",
         visual,
@@ -141,6 +238,51 @@ export const shapes = {
         wrong: wrongNumbers(rng, answer, [answer + 1, answer - 1, answer + 2], { spread: 2 }),
         hint: `Touch each ${sides ? "side" : "corner"} as you count it.`,
         difficulty: 1 + Number(answer > 4),
+      };
+    }
+
+    // Second grade: rows and columns of same-size squares (2.G.2), and the
+    // faces and corners of solids, hidden ones too (2.G.1).
+    if (grade < 3 && rng.chance(0.5)) {
+      if (rng.chance(0.5)) {
+        // Arrays of up to 5 rows and 5 columns, as in 2.OA.4, never square, so rows and columns differ.
+        const [width, height] = rng.shuffle([2, 3, 4, 5]);
+        const ask = rng.pick(["total", "total", "rows", "columns", "inRow"]);
+        const visual = /** @type {const} */ ({ kind: "area", shape: "rectangle", width, height, grid: true });
+        if (ask === "total") {
+          const total = width * height;
+          return {
+            prompt: "The rectangle is split into rows of same-size squares. How many squares are there in all?",
+            visual,
+            answer: total,
+            wrong: wrongNumbers(rng, total, [width + height, total + width, total - height, total + height], { min: 1 }),
+            hint: "Count the squares in one row. Then add that many again for each row.",
+            difficulty: 1 + Number(total > 12),
+          };
+        }
+        const answer = ask === "rows" ? height : width;
+        return {
+          prompt: ask === "rows" ? "How many rows of squares are there?" : ask === "columns" ? "How many columns of squares are there?" : "How many squares are in each row?",
+          visual,
+          answer,
+          // Rows and columns mixed up, or every square counted.
+          wrong: wrongNumbers(rng, answer, [ask === "rows" ? width : height, answer + 1, answer - 1, width * height], { min: 1 }),
+          hint: "Rows go across, from side to side. Columns go up and down.",
+          difficulty: 1,
+        };
+      }
+      const solid = rng.pick(/** @type {const} */ (["cube", "box", "pyramid"]));
+      const parts = SOLID_PARTS[solid];
+      const faces = rng.chance(0.65);
+      const answer = faces ? parts.faces : parts.corners;
+      return {
+        prompt: `How many ${faces ? "faces" : "corners"} does this solid shape have? Count the hidden ones too.`,
+        visual: { kind: "solid", solid },
+        answer,
+        // Only the ones in sight, or the other part counted.
+        wrong: wrongNumbers(rng, answer, faces ? [parts.facesSeen, parts.corners, answer + 1] : [parts.cornersSeen, parts.faces, parts.edges], { min: 1 }),
+        hint: `The dashed lines are edges hidden at the back. Count the ${faces ? "faces" : "corners"} you can see, then the ones you can't.`,
+        difficulty: 2,
       };
     }
 

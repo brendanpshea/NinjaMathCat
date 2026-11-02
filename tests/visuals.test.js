@@ -9,7 +9,7 @@ import { linear, niceStep } from "../src/visuals/scale.js";
 import { escapeXml } from "../src/visuals/svg.js";
 import { rulerText } from "../src/questions/rational.js";
 import { CURRICULUM } from "../src/curriculum.js";
-import { SHAPES } from "../src/questions/shapes.js";
+import { SHAPES, SOLID_PARTS } from "../src/questions/shapes.js";
 import { questionsOf, elementsIn, wellFormed } from "./helpers.js";
 
 /** Every visual the questions make, with its question. */
@@ -274,6 +274,38 @@ describe("drawing", () => {
       assert.equal(elementsIn(svg, "rect", "flat").length, v.hundreds, at);
       assert.equal(elementsIn(svg, "rect", "rod").length, v.tens, at);
       assert.equal(elementsIn(svg, "rect", "unit").length, v.ones, at);
+    }
+  });
+
+  it("solids: the faces, corners and edges in sight, and a dashed line for each edge hidden at the back", () => {
+    for (const solid of ["cube", "box", "sphere", "cylinder", "cone", "pyramid"]) {
+      const v = { kind: "solid", solid };
+      const svg = renderVisual(v);
+      assert.ok(wellFormed(svg) && svg.includes(`data-solid="${solid}"`), solid);
+      assert.ok(!describeVisual(v).includes(solid), `${solid}: the description names it`);
+      const parts = SOLID_PARTS[solid];
+      if (!parts) continue;
+      const faces = elementsIn(svg, "polygon", "face").map(f => f.points.split(" "));
+      const hidden = elementsIn(svg, "line", "hidden-edge").map(l => [`${l.x1},${l.y1}`, `${l.x2},${l.y2}`]);
+      assert.equal(faces.length, parts.facesSeen, solid);
+      assert.equal(new Set(faces.flat()).size, parts.cornersSeen, solid);
+      // Every edge, once: the sides of the faces in sight, shared or not, and the dashed ones.
+      const edges = new Set([...faces.flatMap(f => f.map((p, i) => [p, f[(i + 1) % f.length]])), ...hidden].map(pair => pair.sort().join(" ")));
+      assert.equal(edges.size, parts.edges, solid);
+      assert.equal(new Set([...faces.flat(), ...hidden.flat()]).size, parts.corners, solid);
+    }
+  });
+
+  it("scenes: the thing where it is placed, drawn before the landmark only when it is behind it", () => {
+    for (const place of ["above", "below", "next to", "in front of", "behind"]) {
+      const v = { kind: "scene", thing: "cat", landmark: "box", place };
+      const svg = renderVisual(v);
+      assert.ok(wellFormed(svg), place);
+      const [thing, landmark] = [svg.indexOf('class="thing"'), svg.indexOf('class="landmark"')];
+      assert.ok(thing > 0 && landmark > 0, place);
+      assert.equal(thing < landmark, place === "behind", place);
+      assert.ok(svg.includes(`data-place="${place}"`), place);
+      assert.equal(describeVisual(v), "A cat and a box", `${place}: the description must not say where`);
     }
   });
 

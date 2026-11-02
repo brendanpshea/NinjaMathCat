@@ -143,6 +143,22 @@
  */
 
 /**
+ * A solid shape, drawn with a little depth and its hidden edges dashed.
+ * @typedef {object} Solid
+ * @property {"solid"} kind
+ * @property {"cube" | "box" | "sphere" | "cylinder" | "cone" | "pyramid"} solid
+ */
+
+/**
+ * A thing placed somewhere around a landmark, to say where it is (K.G.1).
+ * @typedef {object} Scene
+ * @property {"scene"} kind
+ * @property {"cat" | "dog" | "bunny" | "ball" | "bear"} thing
+ * @property {"box" | "chair" | "basket"} landmark
+ * @property {"above" | "below" | "next to" | "in front of" | "behind"} place
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -151,7 +167,7 @@
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene} Visual
  */
 
 /**

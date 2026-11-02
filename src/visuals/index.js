@@ -7,6 +7,7 @@ import { pictureGraph, barGraph, linePlot } from "./graphs.js";
 import { fraction } from "./fractions.js";
 import { area, cubes, angle, coordinates, lengths } from "./measures.js";
 import { tenFrame, baseTen } from "./counting.js";
+import { solid, scene } from "./solids.js";
 
 /** @import { Visual } from "../questions/common.js" */
 
@@ -34,6 +35,8 @@ export function renderVisual(v, options = {}) {
     case "angle": return angle(v);
     case "coordinates": return coordinates(v);
     case "lengths": return lengths(v);
+    case "solid": return solid(v);
+    case "scene": return scene(v);
     case "ten_frame": return tenFrame(v);
     case "base_ten": return baseTen(v);
   }

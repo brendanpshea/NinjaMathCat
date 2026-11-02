@@ -102,6 +102,10 @@ export function describeVisual(v) {
       return v.frames === 2 ? "Two ten frames with counters" : "A ten frame with counters";
     case "base_ten":
       return v.hundreds > 0 ? "Base-ten blocks: hundreds, tens and ones" : "Base-ten blocks: tens and ones";
+    case "solid":
+      return "A solid shape";
+    case "scene":
+      return `A ${v.thing} and a ${v.landmark}`;
     case "lengths": {
       const names = list(v.ribbons.map(r => r.color));
       const ribbons = v.ribbons.length === 1 ? `A ${names} ribbon` : `Ribbons: ${names}`;

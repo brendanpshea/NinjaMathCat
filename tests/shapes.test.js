@@ -1,7 +1,7 @@
 // tests/shapes.test.js — flat shapes (src/questions/shapes.js).
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { shapes, SHAPES, TRAITS, NAMES_BY_SIDES, shapeById } from "../src/questions/shapes.js";
+import { shapes, SHAPES, TRAITS, NAMES_BY_SIDES, SOLID_PARTS, shapeById } from "../src/questions/shapes.js";
 import { SHAPE_CORNERS } from "../src/visuals/pictures.js";
 import { questionsOf } from "./helpers.js";
 
@@ -29,6 +29,15 @@ describe("shape facts", () => {
       { triangle: 3, hexagon: 6, pentagon: 5, octagon: 8 },
     );
   });
+
+  it("give solids faces, corners and edges that fit together", () => {
+    for (const [id, p] of Object.entries(SOLID_PARTS)) {
+      // Euler: faces + corners - edges = 2 for any solid like these.
+      assert.equal(p.faces + p.corners - p.edges, 2, id);
+      assert.ok(p.facesSeen < p.faces && p.cornersSeen < p.corners, `${id}: some are hidden`);
+    }
+    assert.deepEqual(Object.fromEntries(Object.entries(SOLID_PARTS).map(([id, p]) => [id, [p.faces, p.corners]])), { cube: [6, 8], box: [6, 8], pyramid: [5, 5] });
+  });
 });
 
 describe("shape questions", () => {
@@ -45,7 +54,7 @@ describe("shape questions", () => {
   it("count sides and corners correctly", () => {
     for (const { question: q, at } of questionsOf(shapes)) {
       const asked = q.prompt.match(/^How many (sides|corners)/)?.[1];
-      if (!asked) continue;
+      if (!asked || q.visual.kind !== "shape") continue;
       assert.equal(q.answer, shapeById(q.visual.shape)[asked], at);
     }
   });
@@ -71,6 +80,108 @@ describe("shape questions", () => {
       }
     }
     assert.ok(asked > 0);
+  });
+});
+
+describe("solid shapes and where things are", () => {
+  /** The shapes kindergarten knows, described again independently. */
+  const SOLID = {
+    sphere: { flatFaces: 0, squareFaces: 0, circles: 0, point: false },
+    cube: { flatFaces: 6, squareFaces: 6, circles: 0, point: false },
+    cone: { flatFaces: 1, squareFaces: 0, circles: 1, point: true },
+    cylinder: { flatFaces: 2, squareFaces: 0, circles: 2, point: false },
+  };
+  const FLAT = {
+    circle: { sides: 0, corners: 0, equal: false },
+    triangle: { sides: 3, corners: 3, equal: true },
+    square: { sides: 4, corners: 4, equal: true },
+    rectangle: { sides: 4, corners: 4, equal: false },
+  };
+  /** What each clue asks for, worked out from the descriptions above. */
+  const CLUE_FITS = [
+    [/round all over, with no flat faces/, s => SOLID[s]?.flatFaces === 0],
+    [/6 flat faces, and every one is a square/, s => SOLID[s]?.squareFaces === 6],
+    [/a point at the top and a flat circle at the bottom/, s => SOLID[s]?.point === true && SOLID[s].circles === 1],
+    [/a flat circle at each end/, s => SOLID[s]?.circles === 2],
+    [/flat shape has no corners/, s => FLAT[s]?.corners === 0],
+    [/flat shape has 3 sides and 3 corners/, s => FLAT[s]?.sides === 3 && FLAT[s].corners === 3],
+    [/flat shape has 4 sides, all the same length/, s => FLAT[s]?.sides === 4 && FLAT[s].equal],
+    [/flat shape has 4 sides, two long and two short/, s => FLAT[s]?.sides === 4 && !FLAT[s].equal],
+  ];
+  const SHAPED_LIKE = {
+    "a ball": "sphere", "an orange": "sphere", "a globe": "sphere",
+    "a can of soup": "cylinder", "a drum": "cylinder", "a candle": "cylinder",
+    "a party hat": "cone", "a wizard's hat": "cone", "a toy block": "cube",
+  };
+  const PLACES = ["above", "below", "next to", "in front of", "behind"];
+
+  it("name solids, tell them from flat shapes, match them to clues and things, and say where things are", () => {
+    const seen = new Set();
+    for (const { grade, question: q, at } of questionsOf(shapes)) {
+      const p = q.prompt;
+      let kind;
+      if (p === "What is this solid shape called?") {
+        kind = "solid";
+        assert.equal(q.answer, q.visual.solid, at);
+        for (const c of q.choices) assert.ok(c in SOLID, `${at} → ${c}`);
+      } else if (/^Which of these is a (solid|flat) shape\?$/.test(p)) {
+        kind = "flatOrSolid";
+        const asked = p.includes("solid") ? SOLID : FLAT;
+        for (const c of q.choices) assert.equal(c in asked, c === q.answer, `${at} → ${c}`);
+      } else if (/^What solid shape is .+ shaped like\?$/.test(p)) {
+        kind = "shapedLike";
+        const thing = p.match(/^What solid shape is (.+) shaped like\?$/)[1];
+        assert.equal(q.answer, SHAPED_LIKE[thing], at);
+        assert.ok(!thing.includes(q.answer), `${at}: the thing's name gives the answer away`);
+      } else if (/^Which (solid|flat) shape /.test(p)) {
+        kind = "clue";
+        const fits = CLUE_FITS.find(([pattern]) => pattern.test(p));
+        assert.ok(fits, `${at}: no check for this clue`);
+        for (const c of q.choices) assert.equal(fits[1](c), c === q.answer, `${at} → ${c}`);
+      } else if (/^Where is the \w+\?$/.test(p)) {
+        kind = "where";
+        const v = q.visual;
+        assert.equal(p, `Where is the ${v.thing}?`, at);
+        assert.equal(q.answer, `${v.place} the ${v.landmark}`, at);
+        const places = q.choices.map(c => c.replace(` the ${v.landmark}`, ""));
+        assert.ok(places.every(place => PLACES.includes(place)), at);
+        assert.equal(new Set(places).size, 4, at);
+      } else continue;
+      seen.add(kind);
+      assert.ok(grade < 1, `${at}: ${kind} is for kindergarten`);
+    }
+    assert.equal(seen.size, 5);
+  });
+
+  it("count squares in rows and columns, and the faces and corners of solids, hidden ones too", () => {
+    /** Each solid's faces and corners, written out again. */
+    const PARTS = { cube: { faces: 6, corners: 8 }, box: { faces: 6, corners: 8 }, pyramid: { faces: 5, corners: 5 } };
+    const seen = new Set();
+    for (const { grade, question: q, at } of questionsOf(shapes)) {
+      const p = q.prompt;
+      const v = q.visual;
+      let kind;
+      if (p.endsWith("How many squares are there in all?")) {
+        kind = "total";
+        assert.equal(q.answer, v.width * v.height, at);
+      } else if (p === "How many rows of squares are there?") {
+        kind = "rows";
+        assert.equal(q.answer, v.height, at);
+      } else if (p === "How many columns of squares are there?" || p === "How many squares are in each row?") {
+        kind = "columns";
+        assert.equal(q.answer, v.width, at);
+      } else if (/^How many (faces|corners) does this solid shape have\?/.test(p)) {
+        kind = "parts";
+        assert.equal(q.answer, PARTS[v.solid][p.match(/faces|corners/)[0]], at);
+      } else continue;
+      seen.add(kind);
+      assert.ok(grade >= 2 && grade < 3, `${at}: ${kind} is for second grade`);
+      if (kind !== "parts") {
+        assert.ok(v.kind === "area" && v.shape === "rectangle" && v.grid, at);
+        assert.ok(v.width !== v.height && Math.max(v.width, v.height) <= 5, `${at}: up to 5 rows and 5 columns, never a square`);
+      }
+    }
+    assert.equal(seen.size, 4);
   });
 });
 

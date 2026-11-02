@@ -38,7 +38,7 @@ export const ADVENTURES = {
   0: [
     { id: "0-counting", setting: "meadow", title: "Counting", at: 0, learn: ["counting"], note: "Touch each thing once as you count. The last number you say tells how many there are." },
     { id: "0-next", setting: "attic", title: "What comes next", at: 0, learn: ["sequence", "patterns", "skip_counting"], note: "Numbers always come in the same order, and a pattern repeats the same way again and again. Say them to find what comes next." },
-    { id: "0-shapes", setting: "kitchen", title: "Shapes", at: 0, learn: ["shapes"], note: "Every shape has a name. Count its sides and corners to tell which one it is." },
+    { id: "0-shapes", setting: "kitchen", title: "Shapes", at: 0, learn: ["shapes"], note: "Flat shapes lie flat on paper: count their sides and corners to name them. Solid shapes, like a ball or a block, you can pick up. Words like above, below and behind say where things are." },
     { id: "0-more", setting: "farm", title: "More and fewer, longer and shorter", at: 0, learn: ["comparison", "measuring"], note: "When you count, the number you say later is the bigger one. To see which is longer, line things up at one end." },
     { id: "0-adding", setting: "candy", title: "Adding", at: 0, learn: ["addition", "word_addition"], note: "Adding puts groups together. Count them all to find how many there are now." },
     { id: "0-taking", setting: "seaside", title: "Taking away", at: 0, learn: ["subtraction", "word_subtraction"], note: "Taking away makes a group smaller. Count what is left." },

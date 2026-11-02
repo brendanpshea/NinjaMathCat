@@ -67,7 +67,7 @@ export const CURRICULUM = [
   { type: tensAndOnes, from: 0.5, to: 2.5, standards: ["K.NBT.1", "1.NBT.2", "1.NBT.4", "1.NBT.5", "1.NBT.6", "2.NBT.1", "2.NBT.3", "2.NBT.8"] },
   { type: equalSign, from: 1, to: 2.5, standards: ["1.OA.3", "1.OA.7"] },
   { type: oddEven, from: 2, to: 2.5, standards: ["2.OA.3"] },
-  { type: shapes, from: 0, to: 5.5, standards: ["K.G.2", "1.G.1", "2.G.1", "3.G.1", "4.G.2", "4.G.3", "5.G.3", "5.G.4"] },
+  { type: shapes, from: 0, to: 5.5, standards: ["K.G.1", "K.G.2", "K.G.3", "K.G.4", "1.G.1", "2.G.1", "2.G.2", "3.G.1", "4.G.2", "4.G.3", "5.G.3", "5.G.4"] },
   { type: addition, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.OA.2", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
   { type: subtraction, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.OA.2", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
   { type: missingNumber, from: 1, to: 4.5, standards: ["1.OA.4", "1.OA.8", "3.OA.4", "3.OA.5", "3.OA.6"] },
