@@ -30,6 +30,37 @@ function deepFreeze(value) {
   return value;
 }
 
+describe("choosing questions", () => {
+  it("brings in each kind it is told to open with, one of each, before any others", () => {
+    const mix = typesForGrade(3).slice(0, 6).map(t => ({ type: t.id, grade: 3, weight: 1, most: 3 }));
+    const opening = [mix[4].type, mix[1].type, mix[5].type];
+    for (let seed = 1; seed <= 20; seed++) {
+      let { rng, battle } = begin({ grade: 3, mix, opening, adventure: [goblin, goblin, goblin] }, seed);
+      const kinds = [];
+      while (battle.question && kinds.length < 3) {
+        kinds.push(battle.question.type);
+        battle = answer(battle, right(battle), rng).battle;
+      }
+      assert.deepEqual(kinds, opening, `seed ${seed}`);
+      assert.deepEqual(battle.opening, [], `seed ${seed}`);
+    }
+  });
+
+  it("never asks the same question twice in a battle, even where there are few", () => {
+    // Kindergarten counting has only a handful of questions at its easiest.
+    const mix = [{ type: "counting", grade: 0, weight: 1, most: 3 }];
+    for (let seed = 1; seed <= 20; seed++) {
+      let { rng, battle } = begin({ grade: 0, mix, adventure: [duck] }, seed);
+      const asked = [];
+      while (battle.question) {
+        asked.push(`${battle.question.prompt} ${JSON.stringify(battle.question.visual)}`);
+        battle = answer(battle, right(battle), rng).battle;
+      }
+      assert.equal(new Set(asked).size, asked.length, `seed ${seed}: ${asked.join(" / ")}`);
+    }
+  });
+});
+
 describe("starting a battle", () => {
   it("puts a new hero at full health against the first monster, with a question for the grade", () => {
     const { battle } = begin();

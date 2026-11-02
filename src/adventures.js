@@ -264,7 +264,7 @@ const LEAST_NEED = 0.25;
  * @param {Level} level
  * @param {Mastery} [mastery]
  * @param {number} [now]  battles the player has played
- * @returns {{ mix: Mix, adventure: Monster[], pitch: number[], toughness: number[] }}
+ * @returns {{ mix: Mix, adventure: Monster[], pitch: number[], toughness: number[], opening: string[] }}
  */
 export function planLevel(level, mastery = {}, now = 0) {
   const chapters = chaptersFor(level.grade);
@@ -292,6 +292,8 @@ export function planLevel(level, mastery = {}, now = 0) {
     adventure: plan.foes.map(i => who[i]),
     pitch: plan.pitch,
     toughness: plan.toughness,
+    // A learn level brings in each of the chapter's topics before anything else.
+    opening: level.kind === "learn" ? fresh : [],
   };
 }
 

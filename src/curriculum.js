@@ -165,15 +165,26 @@ export function typeById(id) {
 const TRIES_FOR_DIFFICULTY = 24;
 
 /**
+ * What makes a question the same as another: its words, its picture and its
+ * answer. "How many are there?" over 4 apples and over 5 are different.
+ * @param {Question} q
+ */
+export function questionKey(q) {
+  return `${q.prompt}|${q.visual ? JSON.stringify(q.visual) : ""}|${q.answer}`;
+}
+
+/**
  * A question from a mix: a part picked by weight, then a question of its type
- * in the part's range of difficulty, where one comes up in a few tries, or
- * else the nearest to it.
+ * in the part's range of difficulty and not asked already, where one comes up
+ * in a few tries, or else the nearest to it. Kindergarten's questions are
+ * few enough that the same one would otherwise come up twice in a battle.
  * @param {Rng} rng
  * @param {Mix} mix
  * @param {string} [avoid]  a type not to ask, usually the last one
+ * @param {readonly string[]} [asked]  questions already asked, by questionKey
  * @returns {Question}
  */
-export function pickQuestion(rng, mix, avoid) {
+export function pickQuestion(rng, mix, avoid, asked = []) {
   const others = mix.filter(p => p.type !== avoid && p.weight > 0);
   const parts = others.length > 0 ? others : mix;
   if (parts.length === 0) throw new RangeError("A mix needs at least one part");
@@ -181,8 +192,9 @@ export function pickQuestion(rng, mix, avoid) {
   const part = parts.find(p => (roll -= p.weight) < 0) ?? parts[parts.length - 1];
   const type = typeById(part.type);
   const least = part.least ?? 1;
-  /** How far a question's difficulty is outside the part's range. */
-  const off = (/** @type {Question} */ q) => Math.max(0, least - q.difficulty, q.difficulty - part.most);
+  const seen = new Set(asked);
+  /** How far a question's difficulty is outside the part's range, and much further if it was asked already. */
+  const off = (/** @type {Question} */ q) => Math.max(0, least - q.difficulty, q.difficulty - part.most) + (seen.has(questionKey(q)) ? 10 : 0);
   let nearest = makeQuestion(rng, type, part.grade, part.focus);
   for (let i = 1; i < TRIES_FOR_DIFFICULTY && off(nearest) > 0; i++) {
     const another = makeQuestion(rng, type, part.grade, part.focus);

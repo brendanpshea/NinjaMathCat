@@ -4,7 +4,7 @@
 // round and asks for the next answer when it is ready. (The old game ran its
 // rules on timers, which is where its races came from.)
 
-import { mixForGrade, pickQuestion } from "./curriculum.js";
+import { mixForGrade, pickQuestion, questionKey } from "./curriculum.js";
 import { isCorrect } from "./questions/common.js";
 import { heroStats, monsterStats, monsterLevel, hitDamage, streakMultiplier, XP, levelForXp, victoryHeal } from "./combat.js";
 import { pickTreasure } from "./treasures.js";
@@ -60,6 +60,8 @@ export const TRIES = 2;
  * @property {Question | null} question  null once all are beaten
  * @property {Answer[]} ruledOut  wrong choices already tried on this question
  * @property {{ type: string, in: number }[]} again  kinds of question to ask again soon, each after `in` more questions
+ * @property {string[]} opening  kinds of question still to bring in, one of each, before any others
+ * @property {string[]} asked  every question asked so far, by questionKey, so none comes up twice
  * @property {number} streak  questions right the first time in a row
  * @property {string[]} treasures  ids of every treasure collected, in earlier battles too
  * @property {Tally} tally
@@ -97,11 +99,12 @@ export const TRIES = 2;
  * @param {Mix} [setup.mix]
  * @param {number[]} [setup.pitch]  for each monster
  * @param {number[]} [setup.toughness]  for each monster
+ * @param {string[]} [setup.opening]  kinds of question to ask one of each first, in order, as a level that brings in new topics does
  * @param {{ level: number, xp: number }} [setup.hero]  carried over from earlier battles; a new player starts at level 1
  * @param {string[]} [setup.treasures]  collected in earlier battles
  * @returns {Battle}
  */
-export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), pitch, toughness, hero = { level: 1, xp: 0 }, treasures = [] }) {
+export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), pitch, toughness, opening = [], hero = { level: 1, xp: 0 }, treasures = [] }) {
   if (adventure.length === 0) throw new RangeError("An adventure needs at least one monster");
   const setup = {
     pitch: adventure.map((m, i) => pitch?.[i] ?? m.tier - 1),
@@ -116,9 +119,8 @@ export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), p
     adventure,
     beaten: 0,
     foe: meet(setup, adventure, 0, hero.level),
-    question: pickQuestion(rng, mix),
+    ...ask(rng, { mix, opening, asked: [] }, undefined, []),
     ruledOut: [],
-    again: [],
     streak: 0,
     treasures: [...treasures],
     tally: { firstTry: 0, secondTry: 0, missed: 0, knockouts: 0, byType: {}, answers: [] },
@@ -187,7 +189,7 @@ function strike(battle, question, foe, rng) {
   const drop = defeatedFoe && foe.dropsTreasure ? pickTreasure(rng, battle.treasures) : null;
   const nextFoe = !defeatedFoe ? { ...foe, hp: foeHp } : won ? null : meet(battle, battle.adventure, beaten, battle.startLevel);
   const outcome = secondTry ? "secondTry" : "firstTry";
-  const next = won ? { question: null, again: [] } : ask(rng, battle.mix, question.type, queueAgain(battle.again, question.type, outcome));
+  const next = won ? { question: null, again: [], opening: [], asked: battle.asked } : ask(rng, battle, question.type, queueAgain(battle.again, question.type, outcome));
 
   return {
     battle: {
@@ -195,9 +197,8 @@ function strike(battle, question, foe, rng) {
       hero: { level, xp, hp },
       beaten,
       foe: nextFoe,
-      question: next.question,
+      ...next,
       ruledOut: [],
-      again: next.again,
       streak,
       treasures: drop && !battle.treasures.includes(drop.id) ? [...battle.treasures, drop.id] : battle.treasures,
       tally: record(battle.tally, question, outcome),
@@ -238,16 +239,15 @@ function takeHit(battle, question, foe, choice, rng) {
   const ruledOut = [...battle.ruledOut, choice];
   const again = ruledOut.length < TRIES;
   const tally = { ...battle.tally, knockouts: battle.tally.knockouts + Number(knockedOut) };
-  const next = again ? { question, again: battle.again } : ask(rng, battle.mix, question.type, queueAgain(battle.again, question.type, "missed"));
+  const next = again ? { question, again: battle.again, opening: battle.opening, asked: battle.asked } : ask(rng, battle, question.type, queueAgain(battle.again, question.type, "missed"));
 
   return {
     battle: {
       ...battle,
       hero: { ...battle.hero, hp },
       foe: knockedOut ? { ...foe, dropsTreasure: false } : foe,
-      question: next.question,
+      ...next,
       ruledOut: again ? ruledOut : [],
-      again: next.again,
       streak: 0,
       tally: again ? tally : record(tally, question, "missed"),
     },
@@ -286,20 +286,27 @@ function queueAgain(again, type, outcome) {
 }
 
 /**
- * The next question: a kind that is due to be asked again, if there is one,
- * or else one from the mix that isn't the kind just asked.
+ * The next question: a kind due to be asked again, then a kind still to be
+ * brought in, then any from the mix but the last kind, and never one asked
+ * already if another can be found.
  * @param {Rng} rng
- * @param {Mix} mix
- * @param {string} last  the kind just asked
+ * @param {Pick<Battle, "mix" | "opening" | "asked">} battle
+ * @param {string | undefined} last  the kind just asked
  * @param {Battle["again"]} again
- * @returns {{ question: Question, again: Battle["again"] }}
+ * @returns {Pick<Battle, "question" | "again" | "opening" | "asked"> & { question: Question }}
  */
-function ask(rng, mix, last, again) {
+function ask(rng, { mix, opening, asked }, last, again) {
   const counted = again.map(a => ({ ...a, in: a.in - 1 }));
   const due = counted.find(a => a.in <= 0 && mix.some(p => p.type === a.type));
-  const part = due && mix.find(p => p.type === due.type);
-  if (due && part) return { question: pickQuestion(rng, [{ ...part, weight: 1 }]), again: counted.filter(a => a !== due) };
-  return { question: pickQuestion(rng, mix, last), again: counted };
+  const kind = due?.type ?? opening.find(type => mix.some(p => p.type === type));
+  const part = kind && mix.find(p => p.type === kind);
+  const question = part ? pickQuestion(rng, [{ ...part, weight: 1 }], undefined, asked) : pickQuestion(rng, mix, last, asked);
+  return {
+    question,
+    again: due ? counted.filter(a => a !== due) : counted,
+    opening: opening.filter(type => type !== question.type),
+    asked: [...asked, questionKey(question)],
+  };
 }
 
 /**
