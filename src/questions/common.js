@@ -112,6 +112,24 @@
  */
 
 /**
+ * One ten frame, or two side by side for numbers up to 20, with counters
+ * filling the first frame's top row, then its bottom row, then the next.
+ * @typedef {object} TenFrame
+ * @property {"ten_frame"} kind
+ * @property {number} filled
+ * @property {1 | 2} frames
+ */
+
+/**
+ * Base-ten blocks: flats for hundreds, rods for tens, cubes for ones.
+ * @typedef {object} BaseTen
+ * @property {"base_ten"} kind
+ * @property {number} hundreds
+ * @property {number} tens
+ * @property {number} ones
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -120,7 +138,7 @@
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen} Visual
  */
 
 /**

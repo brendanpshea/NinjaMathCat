@@ -69,7 +69,7 @@ describe("the curriculum", () => {
   it("places kindergarten in counting and shapes, not money or times tables", () => {
     const k = typesForGrade(0).map(t => t.id);
     assert.ok(k.includes("counting") && k.includes("shapes"));
-    for (const later of ["money", "time", "multiplication", "division", "word_addition"]) {
+    for (const later of ["money", "time", "multiplication", "division", "word_multiplication"]) {
       assert.ok(!k.includes(later), `kindergarten asks ${later}`);
     }
   });

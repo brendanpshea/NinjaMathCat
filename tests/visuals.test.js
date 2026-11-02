@@ -246,6 +246,21 @@ describe("drawing", () => {
     }
   });
 
+  it("ten frames: a counter for each one counted, filling the first frame first", () => {
+    for (const { v, svg, at } of rendered("ten_frame")) {
+      assert.equal(elementsIn(svg, "rect", "frame").length, v.frames, at);
+      assert.equal(elementsIn(svg, "circle", "counter").length, v.filled, at);
+    }
+  });
+
+  it("base-ten blocks: a flat for each hundred, a rod for each ten, a cube for each one", () => {
+    for (const { v, svg, at } of rendered("base_ten")) {
+      assert.equal(elementsIn(svg, "rect", "flat").length, v.hundreds, at);
+      assert.equal(elementsIn(svg, "rect", "rod").length, v.tens, at);
+      assert.equal(elementsIn(svg, "rect", "unit").length, v.ones, at);
+    }
+  });
+
   it("fraction models: the right number of equal parts, the right number shaded", () => {
     for (const { v, svg, at } of rendered("fraction")) {
       const parts = elementsIn(svg, v.model === "bar" ? "rect" : "(?:path|circle)", "part");

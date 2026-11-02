@@ -189,12 +189,39 @@ const SHARING = [
   },
 ];
 
+/**
+ * Putting three groups together, from first grade (1.OA.2).
+ * @type {readonly ((c: Cast, a: number, b: number, d: number) => string)[]}
+ */
+const JOINING_THREE = [
+  (c, a, b, d) => `${c.name} has ${a} red ${c.thing}, ${b} blue ${c.thing} and ${d} green ${c.thing}. How many ${c.thing} does ${c.name} have?`,
+  (c, a, b, d) => `There are ${a} ${c.thing} in one box, ${b} in another and ${d} in a third. How many ${c.thing} are there in all?`,
+  (c, a, b, d) => `${c.name} read ${a} pages on Monday, ${b} on Tuesday and ${d} on Wednesday. How many pages did ${c.name} read?`,
+];
+
 /** @type {QuestionType} */
 export const wordAddition = {
   id: "word_addition",
   name: "Adding stories",
   generate(rng, grade) {
     const max = atGrade(grade, STORY_WITHIN);
+    if (grade >= 1 && grade < 3 && rng.chance(0.3)) {
+      // Three numbers whose sum is within 20 (1.OA.2).
+      const top = Math.min(max, 20);
+      const a = rng.int(2, top - 4);
+      const b = rng.int(2, top - a - 2);
+      const d = rng.int(2, top - a - b);
+      const sum = a + b + d;
+      const c = cast(rng);
+      return {
+        prompt: rng.pick(JOINING_THREE)(c, a, b, d),
+        answer: sum,
+        // Only two of the three, or one out.
+        wrong: wrongNumbers(rng, sum, [a + b, b + d, a + d, sum + 1, sum - 1]),
+        hint: "Add two of the numbers first, then add the third.",
+        difficulty: 2,
+      };
+    }
     const a = rng.int(2, max - 2);
     const b = rng.int(2, max - a);
     const sum = a + b;

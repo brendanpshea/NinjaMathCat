@@ -23,6 +23,7 @@ import { ratios } from "./questions/ratios.js";
 import { integers } from "./questions/integers.js";
 import { statistics } from "./questions/statistics.js";
 import { area, volume, conversions } from "./questions/measurement.js";
+import { tensAndOnes, numberPairs, equalSign, oddEven } from "./questions/early_number.js";
 import { angles, coordinates } from "./questions/geometry.js";
 import { linePlot, dataDisplays } from "./questions/plots.js";
 import { fractionStories } from "./questions/fraction_stories.js";
@@ -60,18 +61,22 @@ export const CURRICULUM = [
   { type: skipCounting, from: 0, to: 4.5, standards: ["K.CC.1", "2.NBT.2", "3.OA.9", "4.OA.5"] },
   { type: comparison, from: 0, to: 4.5, standards: ["K.CC.6", "K.CC.7", "1.NBT.3", "2.NBT.4", "4.NBT.2"] },
   { type: patterns, from: 0, to: 1.5, standards: [] },
+  { type: numberPairs, from: 0, to: 1, standards: ["K.OA.3", "K.OA.4"] },
+  { type: tensAndOnes, from: 0.5, to: 2.5, standards: ["K.NBT.1", "1.NBT.2", "1.NBT.4", "1.NBT.5", "1.NBT.6", "2.NBT.1", "2.NBT.3", "2.NBT.8"] },
+  { type: equalSign, from: 1, to: 2.5, standards: ["1.OA.3", "1.OA.7"] },
+  { type: oddEven, from: 2, to: 2.5, standards: ["2.OA.3"] },
   { type: shapes, from: 0, to: 5.5, standards: ["K.G.2", "1.G.1", "2.G.1", "3.G.1", "4.G.2", "4.G.3", "5.G.3", "5.G.4"] },
-  { type: addition, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
-  { type: subtraction, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
-  { type: missingNumber, from: 1, to: 4.5, standards: ["1.OA.8", "3.OA.4", "3.OA.5", "3.OA.6"] },
-  { type: wordAddition, from: 1, to: 4.5, standards: ["1.OA.1", "2.OA.1"] },
-  { type: wordSubtraction, from: 1, to: 4.5, standards: ["1.OA.1", "2.OA.1"] },
+  { type: addition, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.OA.2", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
+  { type: subtraction, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.OA.2", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
+  { type: missingNumber, from: 1, to: 4.5, standards: ["1.OA.4", "1.OA.8", "3.OA.4", "3.OA.5", "3.OA.6"] },
+  { type: wordAddition, from: 0, to: 4.5, standards: ["K.OA.2", "1.OA.1", "1.OA.2", "2.OA.1"] },
+  { type: wordSubtraction, from: 0, to: 4.5, standards: ["K.OA.2", "1.OA.1", "2.OA.1"] },
   { type: time, from: 1, to: 4, standards: ["1.MD.3", "2.MD.7", "3.MD.1", "4.MD.2"] },
-  { type: money, from: 1, to: 4, standards: ["2.MD.8", "4.MD.2"] },
+  { type: money, from: 2, to: 4, standards: ["2.MD.8", "4.MD.2"] },
   { type: pictureGraph, from: 1, to: 3.5, standards: ["1.MD.4", "2.MD.10", "3.MD.3"] },
   { type: fractions, from: 1, to: 3.5, standards: ["1.G.3", "2.G.3", "3.NF.1", "3.G.2"] },
   { type: barGraph, from: 2, to: 3.5, standards: ["2.MD.10", "3.MD.3"] },
-  { type: numberLine, from: 2, to: 3.5, standards: ["2.MD.6"] },
+  { type: numberLine, from: 1, to: 3.5, standards: ["1.OA.5", "2.MD.6"] },
   { type: wordMultiplication, from: 2, to: 4.5, standards: ["2.OA.4", "3.OA.1", "3.OA.3", "4.OA.1", "4.OA.2"] },
   { type: multiplication, from: 2.5, to: 5.5, standards: ["2.OA.4", "3.OA.7", "3.NBT.3", "4.NBT.5", "5.NBT.5"] },
   { type: division, from: 3, to: 6.5, standards: ["3.OA.7", "4.NBT.6", "5.NBT.6", "6.NS.2"] },

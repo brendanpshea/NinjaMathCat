@@ -99,7 +99,8 @@ export const addition = {
   id: "addition",
   name: "Addition",
   generate(rng, grade) {
-    const max = atGrade(grade, WITHIN);
+    // In second grade, some facts within 20, to know by heart (2.OA.2).
+    const max = grade >= 2 && grade < 3 && rng.chance(0.3) ? 20 : atGrade(grade, WITHIN);
     const a = rng.int(1, max - 1);
     const b = rng.int(1, max - a);
     const sum = a + b;
@@ -125,7 +126,8 @@ export const subtraction = {
   id: "subtraction",
   name: "Subtraction",
   generate(rng, grade) {
-    const max = atGrade(grade, WITHIN);
+    // In second grade, some facts within 20, to know by heart (2.OA.2).
+    const max = grade >= 2 && grade < 3 && rng.chance(0.3) ? 20 : atGrade(grade, WITHIN);
     const a = rng.int(2, max);
     // Now and then all of it, so 4 − 4 = 0 comes up, but not a third of the
     // time, as drawing b from 1 to a would make it in kindergarten.
@@ -209,6 +211,18 @@ export const missingNumber = {
       };
     }
     const max = Math.min(atGrade(grade, WITHIN), 1000);
+    if (grade >= 1 && grade < 3 && rng.chance(0.25)) {
+      // Taking away, thought of as adding on (1.OA.4).
+      const whole = rng.int(11, Math.min(max, 20));
+      const part = rng.int(2, 9);
+      return {
+        prompt: `To work out ${whole} − ${part}, think: ${part} + □ = ${whole}. What number goes in the box?`,
+        answer: whole - part,
+        wrong: wrongNumbers(rng, whole - part, [whole + part, whole - part + 1, whole - part - 1, whole, part]),
+        hint: `Count on from ${part} until you reach ${whole}.`,
+        difficulty: 2,
+      };
+    }
     const total = rng.int(2, max);
     const part = rng.int(1, total - 1);
     const missing = total - part;

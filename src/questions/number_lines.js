@@ -18,6 +18,29 @@ const LINES = [
 ];
 
 /**
+ * Counting on, or back, from a dot on a line from 0 to 20 (1.OA.5).
+ * Counting the number you start on is the slip to catch.
+ * @param {import("../rng.js").Rng} rng
+ * @returns {import("./common.js").Draft}
+ */
+function countOnOrBack(rng) {
+  const on = rng.chance(0.5);
+  const steps = rng.int(2, 6);
+  // Landing inside the line, with room for a near miss either side.
+  const start = on ? rng.int(1, 17 - steps) : rng.int(steps + 1, 19);
+  const answer = on ? start + steps : start - steps;
+  return {
+    prompt: `The dot is on ${start}. Count ${on ? "on" : "back"} ${steps}. Which number do you land on?`,
+    visual: { kind: "number_line", den: 1, from: 0, to: 20, tick: 1, label: 5, points: [start], jumps: [] },
+    answer,
+    // Counting the start as one, going the wrong way, or one too far.
+    wrong: wrongNumbers(rng, answer, [on ? answer - 1 : answer + 1, on ? start - steps : start + steps, on ? answer + 1 : answer - 1, steps].filter(v => v >= 0 && v !== answer && v <= 20)),
+    hint: `Start on ${start}, and say the next number as you take each step ${on ? "forward" : "back"}.`,
+    difficulty: 1 + Number(!on),
+  };
+}
+
+/**
  * @param {number} from
  * @param {number} to
  * @param {number} step
@@ -31,6 +54,7 @@ export const numberLine = {
   id: "number_line",
   name: "Number lines",
   generate(rng, grade) {
+    if (grade < 2) return countOnOrBack(rng);
     const { tick, label, span, upTo } = rng.pick(atGrade(grade, LINES));
     const from = label * rng.int(0, Math.floor((upTo - span) / label));
     const to = from + span;

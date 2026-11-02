@@ -71,7 +71,8 @@ describe("adding and subtracting", () => {
 describe("missing numbers", () => {
   it("have an answer that makes the equation true, and only one", () => {
     /** Both sides of the equation with a number in the box, worked out. */
-    const sides = (q, n) => q.prompt.replace("What number goes in the box? ", "").replace("□", String(n)).split(" = ")
+    const equation = q => q.prompt.match(/think: (.+)\. What number goes in the box\?$/)?.[1] ?? q.prompt.replace("What number goes in the box? ", "");
+    const sides = (q, n) => equation(q).replace("□", String(n)).split(" = ")
       .map(side => Function(`return ${side.replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-")};`)());
     for (const { grade, question: q, at } of questionsOf(missingNumber)) {
       const [left, right] = sides(q, q.answer);

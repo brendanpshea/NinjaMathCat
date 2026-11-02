@@ -98,6 +98,10 @@ export function describeVisual(v) {
       return v.labels ? `A box with edges labelled ${list([v.labels.length, v.labels.width, v.labels.height])}` : "A box built of small cubes";
     case "angle":
       return v.protractor ? "An angle on a protractor" : "An angle";
+    case "ten_frame":
+      return v.frames === 2 ? "Two ten frames with counters" : "A ten frame with counters";
+    case "base_ten":
+      return v.hundreds > 0 ? "Base-ten blocks: hundreds, tens and ones" : "Base-ten blocks: tens and ones";
     case "coordinates":
       return `A coordinate grid with ${v.shape ? "a shape with corners" : "points"} ${list(v.points.map(p => p.label))}`;
   }

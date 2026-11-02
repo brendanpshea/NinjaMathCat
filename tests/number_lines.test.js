@@ -11,12 +11,27 @@ const valueOf = text => {
 };
 
 describe("whole-number lines", () => {
+  it("count on and back from the dot in first grade (1.OA.5)", () => {
+    let asked = 0;
+    for (const { grade, question: q, at } of questionsOf(numberLine)) {
+      const counting = q.prompt.match(/^The dot is on (\d+)\. Count (on|back) (\d+)\. Which number do you land on\?$/);
+      assert.equal(Boolean(counting), grade < 2, at);
+      if (!counting) continue;
+      asked++;
+      const [, start, way, steps] = counting;
+      assert.deepEqual(q.visual.points, [Number(start)], at);
+      assert.equal(q.answer, way === "on" ? Number(start) + Number(steps) : Number(start) - Number(steps), at);
+      assert.ok(q.answer > 0 && q.answer < 20, `${at}: lands inside the line`);
+    }
+    assert.ok(asked > 0);
+  });
+
   it("put the dot on an unlabelled tick, and ask for it", () => {
     for (const { question: q, at } of questionsOf(numberLine)) {
       const v = q.visual;
       assert.equal(v.from % v.label, 0, at);
       assert.equal(v.to % v.label, 0, at);
-      if (v.jumps.length > 0) continue;
+      if (v.jumps.length > 0 || q.prompt.startsWith("The dot is on")) continue;
       const [point] = v.points;
       assert.equal(q.answer, point, at);
       assert.equal((point - v.from) % v.tick, 0, `${at}: off the ticks`);

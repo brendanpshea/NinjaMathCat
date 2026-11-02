@@ -5,11 +5,17 @@ import { wordAddition, wordSubtraction, wordMultiplication, wordDivision, wordTw
 import { questionsOf, numbersIn } from "./helpers.js";
 
 describe("story problems", () => {
-  it("adding stories: the answer is the total", () => {
-    for (const { question: q, at } of questionsOf(wordAddition)) {
-      const [a, b] = numbersIn(q.prompt);
-      assert.equal(q.answer, a + b, at);
+  it("adding stories: the answer is the total, of two numbers or three", () => {
+    let three = 0;
+    for (const { grade, question: q, at } of questionsOf(wordAddition)) {
+      const numbers = numbersIn(q.prompt);
+      assert.equal(q.answer, numbers.reduce((a, b) => a + b, 0), at);
+      if (numbers.length === 3) {
+        three++;
+        assert.ok(grade >= 1 && q.answer <= 20, `${at}: three numbers come in first grade, with a sum within 20 (1.OA.2)`);
+      }
     }
+    assert.ok(three > 0);
   });
 
   it("taking-away stories: the answer is the difference", () => {
