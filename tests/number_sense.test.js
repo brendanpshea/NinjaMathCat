@@ -6,12 +6,29 @@ import { counting, sequence, skipCounting, comparison } from "../src/questions/n
 import { questionsOf, numbersIn } from "./helpers.js";
 
 describe("counting", () => {
-  it("shows as many pictures as the answer", () => {
+  it("shows as many pictures as the answer, or sorts a mixed row and counts a kind (K.MD.3)", () => {
+    let sorted = 0;
     for (const { grade, question: q, at } of questionsOf(counting)) {
+      if (q.visual.kind === "pattern") {
+        sorted++;
+        const items = q.visual.items;
+        assert.ok(!items.includes(null), at);
+        const count = kind => items.filter(i => i === kind).length;
+        const kinds = [...new Set(items)];
+        assert.equal(kinds.length, 4, at);
+        if (q.prompt === "Which is there the most of?") {
+          for (const c of q.choices) assert.ok(c === q.answer ? count(c) > Math.max(...kinds.filter(k => k !== c).map(count)) : count(c) < count(q.answer), `${at} → ${c}`);
+        } else {
+          const [, kind] = q.prompt.match(/^How many (.+) are there\?$/);
+          assert.equal(q.answer, count(kind), at);
+        }
+        continue;
+      }
       assert.equal(q.visual.kind, "objects", at);
       assert.equal(q.visual.count, q.answer, at);
       assert.ok(q.answer >= 1 && q.answer <= (grade === 0 ? 5 : 10), at);
     }
+    assert.ok(sorted > 0);
   });
 });
 

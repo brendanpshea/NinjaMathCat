@@ -72,9 +72,9 @@ describe("drawing", () => {
     for (const { v, svg, at } of rendered("objects")) assert.equal(elementsIn(svg, "text", "counter").length, v.count, at);
   });
 
-  it("patterns: every picture, and one gap", () => {
+  it("rows of pictures: every picture, and a gap where one is missing", () => {
     for (const { v, svg, at } of rendered("pattern")) {
-      assert.equal(elementsIn(svg, "g", "gap").length, 1, at);
+      assert.equal(elementsIn(svg, "g", "gap").length, v.items.filter(i => i === null).length, at);
       // A picture for each item, and a "?" in the gap, which is one of them.
       assert.equal(elementsIn(svg, "text").length, v.items.length, at);
     }
@@ -243,6 +243,22 @@ describe("drawing", () => {
       const expected = v.kind === "picture_graph" ? v.rows.map(r => r.value) : v.kind === "bar_graph" ? v.bars.map(b => b.value) : v.counts;
       assert.deepEqual(rows.map(r => r[1]), expected, at);
       assert.ok(table.includes(`<caption>${escapeXml(v.title)}</caption>`), at);
+    }
+  });
+
+  it("ribbons: drawn to scale, each named, with a cube for each unit and a tick for each mark", () => {
+    for (const { v, svg, at } of rendered("lengths")) {
+      const ribbons = elementsIn(svg, "rect", "ribbon");
+      assert.equal(ribbons.length, v.ribbons.length, at);
+      assert.equal(elementsIn(svg, "text", "ribbon-label").length, v.ribbons.length, at);
+      const unit = Number(ribbons[0].width) / v.ribbons[0].length;
+      ribbons.forEach((r, i) => close(Number(r.width), v.ribbons[i].length * unit, at));
+      // Every ribbon starts where the scale says.
+      const zero = Number(ribbons[0].x) - v.ribbons[0].from * unit;
+      ribbons.forEach((r, i) => close(Number(r.x), zero + v.ribbons[i].from * unit, at));
+      assert.equal(elementsIn(svg, "rect", "cube").length, v.cubes ? v.ribbons[0].length : 0, at);
+      assert.equal(elementsIn(svg, "line", "tick").length, v.ruler ? v.span + 1 : 0, at);
+      if (v.ruler) for (const tick of elementsIn(svg, "line", "tick")) close(Number(tick.x1), zero + Number(tick["data-at"]) * unit, at);
     }
   });
 

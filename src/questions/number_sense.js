@@ -13,6 +13,7 @@ export const counting = {
   id: "counting",
   name: "Counting",
   generate(rng, grade) {
+    if (rng.chance(0.3)) return sortAndCount(rng);
     const top = atGrade(grade, [[0, 5], [Infinity, 10]]); // K.CC.5
     const count = rng.int(1, top);
     return {
@@ -25,6 +26,40 @@ export const counting = {
     };
   },
 };
+
+/**
+ * A row of things of four kinds, mixed up: how many of one kind, or which
+ * kind there is the most of (K.MD.3).
+ * @param {import("../rng.js").Rng} rng
+ * @returns {import("./common.js").Draft}
+ */
+function sortAndCount(rng) {
+  const kinds = rng.shuffle(OBJECTS).slice(0, 4);
+  // Different counts, so one kind is the most.
+  const counts = rng.shuffle([1, 2, 3, 4]);
+  const items = rng.shuffle(kinds.flatMap((k, i) => Array(counts[i]).fill(k)));
+  if (rng.chance(0.5)) {
+    const i = rng.int(0, 3);
+    return {
+      prompt: `How many ${kinds[i]} are there?`,
+      visual: { kind: "pattern", items },
+      answer: counts[i],
+      // Everything counted, or one out.
+      wrong: wrongNumbers(rng, counts[i], [items.length, counts[i] + 1, counts[i] - 1, counts[i] + 2].filter(n => n !== counts[i]), { min: 1 }),
+      hint: `Touch each ${kinds[i]} as you count it, and skip the others.`,
+      difficulty: 1,
+    };
+  }
+  const most = counts.indexOf(Math.max(...counts));
+  return {
+    prompt: "Which is there the most of?",
+    visual: { kind: "pattern", items },
+    answer: kinds[most],
+    wrong: kinds.filter((_, i) => i !== most),
+    hint: "Count each kind. Which count is the biggest?",
+    difficulty: 2,
+  };
+}
 
 /** @type {QuestionType} */
 export const sequence = {

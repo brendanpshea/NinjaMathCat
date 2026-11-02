@@ -130,6 +130,19 @@
  */
 
 /**
+ * Ribbons laid out to compare or measure, one above another, each starting at
+ * a whole unit and a whole number of units long; perhaps above a ruler, or
+ * with cubes laid end to end along the first. Each ribbon has its color's
+ * name written beside it.
+ * @typedef {object} Lengths
+ * @property {"lengths"} kind
+ * @property {{ color: "red" | "blue" | "green" | "orange", from: number, length: number }[]} ribbons
+ * @property {"inches" | "centimeters" | null} ruler
+ * @property {boolean} cubes
+ * @property {number} span  how many units the picture is across
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -138,7 +151,7 @@
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths} Visual
  */
 
 /**

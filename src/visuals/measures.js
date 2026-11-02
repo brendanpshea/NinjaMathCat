@@ -4,7 +4,7 @@
 import { svg, el, text, COLORS, num } from "./svg.js";
 import { describeVisual } from "./describe.js";
 
-/** @import { AreaFigure, CubeBox, AngleFigure, CoordinateGrid } from "../questions/common.js" */
+/** @import { AreaFigure, CubeBox, AngleFigure, CoordinateGrid, Lengths } from "../questions/common.js" */
 
 /** @param {number[][]} corners */
 function points(corners) {
@@ -174,6 +174,59 @@ export function angle(v) {
   }
   parts.push(ray(from), ray(to), mark, ...numbers, el("circle", { cx, cy, r: 5, fill: COLORS.ink }));
   return svg("angle", 2 * cx, cy + 20, describeVisual(v), parts);
+}
+
+/** Ribbon colors, each named beside its ribbon too, so color isn't the only way to tell them apart. */
+const RIBBONS = { red: "#ef4444", blue: "#3b82f6", green: "#16a34a", orange: "#f97316" };
+
+/**
+ * Ribbons to compare or measure, one above another, drawn to scale. Under
+ * them, perhaps, a ruler, with dashed lines down from each ribbon's ends to
+ * help read it; or cubes laid end to end along the first ribbon.
+ * @param {Lengths} v
+ */
+export function lengths(v) {
+  const left = 30;
+  const unit = Math.min(44, 480 / v.span);
+  const row = 46;
+  const parts = [];
+  v.ribbons.forEach((ribbon, i) => {
+    const y = 16 + i * row;
+    const [x, width] = [left + ribbon.from * unit, ribbon.length * unit];
+    parts.push(
+      el("rect", { x, y, width, height: 26, rx: 13, fill: RIBBONS[ribbon.color], stroke: COLORS.ink, "stroke-width": 2, class: "ribbon", "data-from": ribbon.from, "data-length": ribbon.length }),
+      text({ x: x + width + 8, y: y + 13, "font-size": 16, "font-weight": 700, "dominant-baseline": "central", class: "ribbon-label" }, ribbon.color),
+    );
+  });
+  let bottom = 16 + v.ribbons.length * row;
+  if (v.cubes) {
+    const ribbon = v.ribbons[0];
+    const size = Math.min(unit, 34);
+    for (let k = 0; k < ribbon.length; k++) {
+      parts.push(el("rect", { x: left + (ribbon.from + k) * unit, y: bottom - 10 + (unit - size) / 2, width: unit, height: size, fill: "#fde68a", stroke: COLORS.ink, "stroke-width": 1.5, class: "cube" }));
+    }
+    bottom += size;
+  }
+  if (v.ruler) {
+    const top = bottom + 8;
+    for (const ribbon of v.ribbons) {
+      for (const end of [ribbon.from, ribbon.from + ribbon.length]) {
+        parts.push(el("line", { x1: left + end * unit, y1: 16 + v.ribbons.indexOf(ribbon) * row + 26, x2: left + end * unit, y2: top, stroke: COLORS.muted, "stroke-width": 1.5, "stroke-dasharray": "4 4" }));
+      }
+    }
+    parts.push(el("rect", { x: left - 14, y: top, width: v.span * unit + 28, height: 50, rx: 4, fill: "#fef3c7", stroke: COLORS.ink, "stroke-width": 2, class: "ruler" }));
+    for (let k = 0; k <= v.span; k++) {
+      const x = left + k * unit;
+      parts.push(
+        el("line", { x1: x, y1: top, x2: x, y2: top + 16, stroke: COLORS.ink, "stroke-width": 2, class: "tick", "data-at": k }),
+        text({ x, y: top + 32, "font-size": 15, "font-weight": 600, "text-anchor": "middle", class: "tick-label" }, k),
+      );
+      if (k < v.span && v.ruler === "inches") parts.push(el("line", { x1: x + unit / 2, y1: top, x2: x + unit / 2, y2: top + 9, stroke: COLORS.ink, "stroke-width": 1.5 }));
+    }
+    parts.push(text({ x: left + v.span * unit + 10, y: top + 46, "font-size": 11, fill: COLORS.muted, "text-anchor": "end" }, v.ruler));
+    bottom = top + 50;
+  }
+  return svg("lengths", left + v.span * unit + 80, bottom + 12, describeVisual(v), parts);
 }
 
 /**

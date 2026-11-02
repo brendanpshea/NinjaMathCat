@@ -5,7 +5,7 @@ import { objects, pattern, money, clock, shape } from "./pictures.js";
 import { numberLine } from "./number_line.js";
 import { pictureGraph, barGraph, linePlot } from "./graphs.js";
 import { fraction } from "./fractions.js";
-import { area, cubes, angle, coordinates } from "./measures.js";
+import { area, cubes, angle, coordinates, lengths } from "./measures.js";
 import { tenFrame, baseTen } from "./counting.js";
 
 /** @import { Visual } from "../questions/common.js" */
@@ -33,6 +33,7 @@ export function renderVisual(v, options = {}) {
     case "cubes": return cubes(v);
     case "angle": return angle(v);
     case "coordinates": return coordinates(v);
+    case "lengths": return lengths(v);
     case "ten_frame": return tenFrame(v);
     case "base_ten": return baseTen(v);
   }

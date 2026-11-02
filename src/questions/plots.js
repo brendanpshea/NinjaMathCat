@@ -18,12 +18,13 @@ const MEASURED = [
 ];
 
 /**
- * What a grade's line plots measure to, and what they ask. Third grade
- * measures to halves and fourths (3.MD.4); fourth adds eighths and
+ * What a grade's line plots measure to, and what they ask. Second grade
+ * measures in whole inches (2.MD.9); third grade to halves and fourths (3.MD.4); fourth adds eighths and
  * subtracts lengths (4.MD.4); fifth adds and multiplies them (5.MD.2).
  * @type {readonly [number, { dens: number[], positions: [number, number], kinds: string[] }][]}
  */
 const LINE_PLOTS = [
+  [2.5, { dens: [1], positions: [5, 7], kinds: ["count", "count", "total", "most", "more"] }],
   [3.5, { dens: [2, 4, 4], positions: [5, 7], kinds: ["count", "count", "total", "most", "more"] }],
   [4.5, { dens: [2, 4, 8], positions: [6, 8], kinds: ["count", "most", "longer", "spread", "spread", "endToEnd"] }],
   [Infinity, { dens: [4, 8, 8], positions: [6, 9], kinds: ["longer", "spread", "endToEnd", "endToEnd", "allTogether"] }],
@@ -65,8 +66,9 @@ export const linePlot = {
     const thing = rng.pick(MEASURED);
     const den = rng.pick(plan.dens);
     const positions = rng.int(...plan.positions);
-    // Lengths from half an inch to 5 inches.
-    const from = rng.int(Math.max(1, den / 2), 5 * den - positions + 1);
+    // Lengths from half an inch to 5 inches; in whole inches, up to a foot.
+    const longest = den === 1 ? 12 : 5;
+    const from = rng.int(Math.max(1, den / 2), longest * den - positions + 1);
     const counts = plotCounts(rng, positions, rng.int(3, 5));
     /** @type {LinePlot} */
     const visual = { kind: "line_plot", title: thing.title, den, from, counts };

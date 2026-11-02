@@ -24,6 +24,7 @@ import { integers } from "./questions/integers.js";
 import { statistics } from "./questions/statistics.js";
 import { area, volume, conversions } from "./questions/measurement.js";
 import { tensAndOnes, numberPairs, equalSign, oddEven } from "./questions/early_number.js";
+import { measuring } from "./questions/measuring.js";
 import { angles, coordinates } from "./questions/geometry.js";
 import { linePlot, dataDisplays } from "./questions/plots.js";
 import { fractionStories } from "./questions/fraction_stories.js";
@@ -56,7 +57,8 @@ export const GRADES = [
  * @type {readonly { type: QuestionType, from: number, to: number, standards: string[] }[]}
  */
 export const CURRICULUM = [
-  { type: counting, from: 0, to: 0.5, standards: ["K.CC.4", "K.CC.5"] },
+  { type: counting, from: 0, to: 0.5, standards: ["K.CC.4", "K.CC.5", "K.MD.3"] },
+  { type: measuring, from: 0, to: 2.5, standards: ["K.MD.2", "1.MD.1", "1.MD.2", "2.MD.1", "2.MD.2", "2.MD.3", "2.MD.4", "2.MD.5"] },
   { type: sequence, from: 0, to: 1.5, standards: ["K.CC.2", "1.NBT.1"] },
   { type: skipCounting, from: 0, to: 4.5, standards: ["K.CC.1", "2.NBT.2", "3.OA.9", "4.OA.5"] },
   { type: comparison, from: 0, to: 4.5, standards: ["K.CC.6", "K.CC.7", "1.NBT.3", "2.NBT.4", "4.NBT.2"] },
@@ -86,7 +88,7 @@ export const CURRICULUM = [
   { type: rounding, from: 3, to: 5.5, standards: ["3.NBT.1", "4.NBT.3", "5.NBT.4"] },
   { type: fractionCompare, from: 3, to: 4.5, standards: ["3.NF.3", "4.NF.1", "4.NF.2"] },
   { type: area, from: 3, to: 6.5, standards: ["3.MD.5", "3.MD.6", "3.MD.7", "3.MD.8", "4.MD.3", "6.G.1"] },
-  { type: linePlot, from: 3, to: 5.5, standards: ["3.MD.4", "4.MD.4", "5.MD.2"] },
+  { type: linePlot, from: 2, to: 5.5, standards: ["2.MD.9", "3.MD.4", "4.MD.4", "5.MD.2"] },
   { type: conversions, from: 3, to: 5.5, standards: ["3.MD.2", "4.MD.1", "5.MD.1"] },
   { type: placeValue, from: 4, to: 5.5, standards: ["4.NBT.1", "4.NBT.2", "5.NBT.1", "5.NBT.3"] },
   { type: decimals, from: 4, to: 6.5, standards: ["4.NF.5", "4.NF.6", "4.NF.7", "5.NBT.2", "5.NBT.3", "5.NBT.7", "6.NS.3"] },

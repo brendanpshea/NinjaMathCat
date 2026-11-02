@@ -65,7 +65,7 @@ export function describeVisual(v) {
     case "objects":
       return `Pictures of ${v.emoji} to count`;
     case "pattern":
-      return "A row of pictures with one missing";
+      return v.items.includes(null) ? "A row of pictures with one missing" : "A row of pictures to sort and count";
     case "money":
       return `Money: ${list(v.items.map(id => moneyById(id).name))}`;
     case "clock":
@@ -102,6 +102,11 @@ export function describeVisual(v) {
       return v.frames === 2 ? "Two ten frames with counters" : "A ten frame with counters";
     case "base_ten":
       return v.hundreds > 0 ? "Base-ten blocks: hundreds, tens and ones" : "Base-ten blocks: tens and ones";
+    case "lengths": {
+      const names = list(v.ribbons.map(r => r.color));
+      const ribbons = v.ribbons.length === 1 ? `A ${names} ribbon` : `Ribbons: ${names}`;
+      return v.ruler ? `${ribbons}, above a ruler in ${v.ruler}` : v.cubes ? `${ribbons}, with cubes laid along it` : ribbons;
+    }
     case "coordinates":
       return `A coordinate grid with ${v.shape ? "a shape with corners" : "points"} ${list(v.points.map(p => p.label))}`;
   }
