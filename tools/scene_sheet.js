@@ -1,7 +1,7 @@
 // A sheet for reviewing teaching scenes: every step of a grade's scenes, or
 // of one chapter's, on one page, with each step's speaker, line and picture,
 // what it points at ringed, and what each check takes. It prints the scripts,
-// writes out/scene-sheet.html, and takes a picture of the page in headless
+// writes out/scene-sheet-<grade or chapter>.html, and takes a picture of the page in headless
 // Chrome or Edge: out/screens/scenes-<grade or chapter>.png.
 //
 //   npm run scene-sheet -- 2          every 2nd grade scene
@@ -116,7 +116,7 @@ if (!browser) {
   process.exit(1);
 }
 mkdirSync("out/screens", { recursive: true });
-writeFileSync("out/scene-sheet.html", page);
+writeFileSync(`out/scene-sheet-${what}.html`, page);
 const server = await startServer();
 const profile = mkdtempSync(join(tmpdir(), "ninja-scenes-"));
 try {
@@ -124,9 +124,9 @@ try {
   await promisify(execFile)(browser, [
     "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", "--hide-scrollbars",
     `--user-data-dir=${profile}`, `--window-size=1340,${120 + picked.length * 60 + rows * 380}`, "--virtual-time-budget=20000",
-    `--screenshot=${file}`, `${server.origin}/out/scene-sheet.html`,
+    `--screenshot=${file}`, `${server.origin}/out/scene-sheet-${what}.html`,
   ], { timeout: 120000 });
-  console.log(`\nWrote out/scene-sheet.html and out/screens/scenes-${what}.png`);
+  console.log(`\nWrote out/scene-sheet-${what}.html and out/screens/scenes-${what}.png`);
 } finally {
   await server.close();
   rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
