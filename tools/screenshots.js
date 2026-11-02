@@ -26,6 +26,8 @@ const SHOTS = [
   ["scene-4-check", 1000, 1300, "", "screen=scene&chapter=4-decimals&step=4&wrong"],
   ["scene-k", 390, 1300, "phone-", "screen=scene&chapter=0-teens&step=1"],
   ["how", 1000, 1150], ["how", 390, 1400, "phone-"],
+  // The grown-up lock's question, over the map.
+  ["lock", 1000, 900], ["lock", 390, 1000, "phone-"],
   ["scene-4-check", 390, 1500, "phone-", "screen=scene&chapter=4-decimals&step=5&wrong"],
 ];
 // npm run screens -- scene: only the shots whose screen has "scene" in its name.

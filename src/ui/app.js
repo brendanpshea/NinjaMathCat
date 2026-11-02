@@ -112,6 +112,8 @@ export function createApp(root, { storage, sound, speech, rng }) {
   const session = { battles: 0, asked: 0, firstTry: 0, started: Date.now(), restSuggested: false };
   /** How long play has gone on since the game was opened, before a break is suggested, in minutes. */
   const REST_AFTER = 15;
+  /** How many battles go by before a level's end suggests keeping a copy of the progress again. */
+  const BACKUP_EVERY = 8;
 
   root.innerHTML = `
     <header class="top">
@@ -259,6 +261,87 @@ export function createApp(root, { storage, sound, speech, rng }) {
     });
   }
 
+  // ------------------------------------------- keeping a copy, and grown-ups
+
+  /**
+   * Wire up a box that shows the player's progress code and copies it: a
+   * "show" button, then the code and a "copy" button. Showing it counts as
+   * keeping a copy, so the reminder to keep one waits a while.
+   * @param {HTMLElement | null} box
+   */
+  function offerCode(box) {
+    box?.addEventListener("click", async event => {
+      const button = /** @type {HTMLElement} */ (event.target).closest("button");
+      const act = button?.dataset.act;
+      if (act !== "show" && act !== "copy") return;
+      sound.play("click");
+      const player = me();
+      if (act === "show") {
+        button?.insertAdjacentHTML("afterend", `<label class="visually-hidden" for="code-out">${esc(player.name)}'s progress code</label>
+          <textarea id="code-out" class="code-box" data-ref="code-text" rows="4" readonly>${esc(encodePlayer(player))}</textarea>
+          <div class="actions"><button type="button" class="quiet" data-act="copy">Copy the code</button><span class="code-copied" data-ref="code-copied" aria-live="polite"></span></div>`);
+        button?.remove();
+        /** @type {HTMLTextAreaElement} */ (box.querySelector("[data-ref=code-text]")).select();
+        change({ backedUp: player.played });
+      } else {
+        const code = /** @type {HTMLTextAreaElement} */ (box.querySelector("[data-ref=code-text]"));
+        const said = /** @type {HTMLElement} */ (box.querySelector("[data-ref=code-copied]"));
+        code.select();
+        try {
+          await navigator.clipboard.writeText(code.value);
+          said.textContent = "Copied!";
+        } catch {
+          said.textContent = "Select the code and copy it.";
+        }
+      }
+    });
+  }
+
+  /**
+   * Go on to something for grown-ups: at once, or, with the grown-up lock on,
+   * once a multiplication a young child can't do has been answered. The lock
+   * keeps children from changing things by accident; it is no password.
+   * @param {() => void} then
+   */
+  function grownUp(then) {
+    if (!save.locked) {
+      then();
+      return;
+    }
+    const [a, b] = [rng.int(12, 19), rng.int(3, 9)];
+    const dialog = document.createElement("dialog");
+    dialog.className = "lock-dialog";
+    dialog.innerHTML = `<form class="lock-form" data-ref="lock-form">
+        <h2 class="card-title">For grown-ups</h2>
+        <label for="lock-answer">What is ${a} × ${b}?</label>
+        <input id="lock-answer" class="name-input" data-ref="lock-answer" type="text" inputmode="numeric" autocomplete="off">
+        <p class="code-error" data-ref="lock-error" aria-live="polite"></p>
+        <div class="actions"><button type="submit" class="primary">Go on</button>
+        <button type="button" class="quiet" data-ref="lock-cancel">Cancel</button></div>
+      </form>`;
+    root.append(dialog);
+    const input = /** @type {HTMLInputElement} */ (dialog.querySelector("[data-ref=lock-answer]"));
+    const close = () => {
+      dialog.close();
+      dialog.remove();
+    };
+    dialog.querySelector("form")?.addEventListener("submit", event => {
+      event.preventDefault();
+      if (Number(input.value.trim()) === a * b) {
+        sound.play("click");
+        close();
+        then();
+      } else {
+        /** @type {HTMLElement} */ (dialog.querySelector("[data-ref=lock-error]")).textContent = "That isn't it. This part is for grown-ups.";
+        input.select();
+      }
+    });
+    onTap(dialog.querySelector("[data-ref=lock-cancel]"), close);
+    dialog.addEventListener("cancel", event => { event.preventDefault(); close(); });
+    dialog.showModal();
+    input.focus();
+  }
+
   // ------------------------------------------------- a new player, or a change
 
   /**
@@ -307,8 +390,8 @@ export function createApp(root, { storage, sound, speech, rng }) {
           <button type="button" class="quiet" data-ref="back">Back</button>
         </div>
         ${player ? `<div class="card" data-ref="code-out">
-          <h2 class="card-title">Move to another device</h2>
-          <p class="field-hint">A progress code carries ${esc(player.name)}'s hero, levels and treasures to another browser. Choose "Have a progress code from another device?" there, and paste it in.</p>
+          <h2 class="card-title">Keep a copy, or move to another device</h2>
+          <p class="field-hint">A progress code carries ${esc(player.name)}'s hero, levels and treasures. Keep it in a note, or email it to yourself, in case this browser's data is ever cleared. To move to another browser, choose "Have a progress code from another device?" there, and paste it in.</p>
           <button type="button" class="quiet" data-act="show">Show the progress code</button>
         </div>` : ""}
         ${player ? `<div class="card remove" data-ref="remove">
@@ -354,28 +437,7 @@ export function createApp(root, { storage, sound, speech, rng }) {
       map();
     });
     onTap(part("back"), () => (player ? map() : title()));
-    part("code-out")?.addEventListener("click", async event => {
-      const act = /** @type {HTMLElement} */ (event.target).closest("button")?.dataset.act;
-      if (!act || !player) return;
-      sound.play("click");
-      if (act === "show") {
-        const button = /** @type {HTMLElement} */ (event.target).closest("button");
-        button?.insertAdjacentHTML("afterend", `<label class="visually-hidden" for="code-out">${esc(player.name)}'s progress code</label>
-          <textarea id="code-out" class="code-box" data-ref="code-text" rows="4" readonly>${esc(encodePlayer(currentPlayer(save) ?? player))}</textarea>
-          <div class="actions"><button type="button" class="quiet" data-act="copy">Copy the code</button><span class="code-copied" data-ref="code-copied" aria-live="polite"></span></div>`);
-        button?.remove();
-        /** @type {HTMLTextAreaElement} */ (part("code-text")).select();
-      } else if (act === "copy") {
-        const box = /** @type {HTMLTextAreaElement} */ (part("code-text"));
-        box.select();
-        try {
-          await navigator.clipboard.writeText(box.value);
-          part("code-copied").textContent = "Copied!";
-        } catch {
-          part("code-copied").textContent = "Select the code and copy it.";
-        }
-      }
-    });
+    offerCode(part("code-out"));
     // Removing asks first, in place, as leaving a battle does.
     part("remove")?.addEventListener("click", event => {
       const act = /** @type {HTMLElement} */ (event.target).closest("button")?.dataset.act;
@@ -464,8 +526,8 @@ export function createApp(root, { storage, sound, speech, rng }) {
     onTap(part("training"), () => training());
     onTap(part("quick"), () => quickBattle());
     onTap(part("treasures"), () => treasures());
-    onTap(part("report"), () => report());
-    onTap(part("edit"), () => playerForm(player));
+    onTap(part("report"), () => grownUp(report));
+    onTap(part("edit"), () => grownUp(() => playerForm(player)));
     onTap(part("switch"), () => title());
     screenEl.querySelector(".chapters")?.addEventListener("click", event => {
       const target = /** @type {HTMLElement} */ (event.target);
@@ -489,10 +551,12 @@ export function createApp(root, { storage, sound, speech, rng }) {
           break;
         }
         case "open-ask":
-          box.innerHTML = `<p class="open-ask">Open Chapter ${c + 1}, ${esc(chapters[c].title)}, early? The chapters before it open too.</p>
-            <div class="actions"><button type="button" class="quiet" data-act="open" data-chapter="${c}">Open it</button>
-            <button type="button" class="quiet" data-act="open-no" data-chapter="${c}">Not now</button></div>`;
-          /** @type {HTMLElement} */ (box.querySelector("[data-act=open]")).focus();
+          grownUp(() => {
+            box.innerHTML = `<p class="open-ask">Open Chapter ${c + 1}, ${esc(chapters[c].title)}, early? The chapters before it open too.</p>
+              <div class="actions"><button type="button" class="quiet" data-act="open" data-chapter="${c}">Open it</button>
+              <button type="button" class="quiet" data-act="open-no" data-chapter="${c}">Not now</button></div>`;
+            /** @type {HTMLElement} */ (box.querySelector("[data-act=open]")).focus();
+          });
           break;
         case "open":
           change({ adventures: { ...player.adventures, [grade]: openChapter(progress, c) } });
@@ -787,6 +851,8 @@ export function createApp(root, { storage, sound, speech, rng }) {
     const minutes = Math.round((Date.now() - session.started) / 60000);
     const rest = minutes >= REST_AFTER && !session.restSuggested;
     if (rest) session.restSuggested = true;
+    // Progress lives in this browser only, so now and then a level's end offers a copy to keep.
+    const backup = player.played - player.backedUp >= BACKUP_EVERY;
     show("level-done", `
       <section class="victory-screen level-done">
         <div class="banner">
@@ -807,6 +873,10 @@ export function createApp(root, { storage, sound, speech, rng }) {
         ${rest ? `<div class="card rest-offer">
           <p><strong>That's ${minutes} minutes of play.</strong> A good time for a stretch, a drink of water, or a break. Everything is saved.</p>
         </div>` : ""}
+        ${backup ? `<div class="card backup-offer" data-ref="backup">
+          <p><strong>For grown-ups: keep a copy of ${esc(player.name)}'s progress.</strong> It is saved in this browser only, so clearing the browser's data would lose it. A progress code is a copy: keep it in a note, or email it to yourself.</p>
+          <button type="button" class="quiet" data-act="show">Show the progress code</button>
+        </div>` : ""}
         ${stars === 1 ? `<div class="card training-offer">
           <p>That was a tough one. The training ground practises what's been tricky, a little at a time.</p>
           <button type="button" class="quiet" data-ref="training">Go to the training ground</button>
@@ -824,6 +894,11 @@ export function createApp(root, { storage, sound, speech, rng }) {
     if (next) onTap(part("next"), () => begin(next));
     onTap(part("training"), () => training());
     onTap(part("map"), () => map());
+    if (backup) {
+      // Offered once, whether or not the code is shown, so it never nags.
+      change({ backedUp: player.played });
+      offerCode(part("backup"));
+    }
   }
 
   /**
@@ -918,10 +993,16 @@ export function createApp(root, { storage, sound, speech, rng }) {
           <button type="button" class="quiet" data-ref="print">Print this page</button>
           <button type="button" class="quiet" data-ref="map">Back to the map</button>
         </div>
+        <div class="card lock-card">
+          <h2 class="card-title">Grown-up lock</h2>
+          <label class="check"><input type="checkbox" data-ref="lock"${save.locked ? " checked" : ""}> Ask a grown-up question first</label>
+          <p class="field-hint">With the lock on, changing a player's choices, opening chapters early and this report first ask a multiplication question. It keeps young children from changing things by accident, on this device. It isn't a password.</p>
+        </div>
       </section>`);
     onTap(part("training"), () => training());
     onTap(part("print"), () => window.print?.());
     onTap(part("map"), () => map());
+    part("lock").addEventListener("change", () => commit({ ...save, locked: /** @type {HTMLInputElement} */ (part("lock")).checked }));
   }
 
   /**

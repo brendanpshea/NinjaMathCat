@@ -33,6 +33,7 @@ export const LONGEST_NAME = 20;
  * @property {Mastery} mastery  how well they know each kind of question
  * @property {number} played  battles started, the clock that review is timed by
  * @property {boolean} readAloud  read each question aloud as it comes
+ * @property {number} backedUp  battles played when a progress code was last offered, to keep a copy
  */
 
 /** Up to this grade, questions are read aloud unless a grown-up turns it off. */
@@ -43,11 +44,12 @@ export const READ_ALOUD_UP_TO = 2;
  * @property {Player[]} players
  * @property {string | null} current  the id of the player last chosen
  * @property {boolean} muted
+ * @property {boolean} locked  the grown-up lock: a grown-up's sum before changing a player, opening chapters or the report
  */
 
 /** @returns {Save} */
 export function newSave() {
-  return { players: [], current: null, muted: false };
+  return { players: [], current: null, muted: false, locked: false };
 }
 
 /**
@@ -73,6 +75,7 @@ export function addPlayer(save, { name, heroId, grade, readAloud }) {
     adventures: {},
     mastery: {},
     played: 0,
+    backedUp: 0,
   };
   return { save: { ...save, players: [...save.players, player], current: player.id }, player };
 }
@@ -87,7 +90,8 @@ export function addPlayer(save, { name, heroId, grade, readAloud }) {
  */
 export function importPlayer(save, stored) {
   if (save.players.length >= MOST_PLAYERS) return null;
-  const player = cleanPlayer({ ...stored, id: `p${nextNumber(save)}` }, new Set());
+  // Brought by a progress code, so a copy has just been kept.
+  const player = cleanPlayer({ ...stored, id: `p${nextNumber(save)}`, backedUp: stored.played }, new Set());
   if (!player) return null;
   return { save: { ...save, players: [...save.players, player], current: player.id }, player };
 }
@@ -167,7 +171,7 @@ export function loadSave(storage) {
   if (!Array.isArray(stored.players)) {
     // The first save kept one hero, a grade on the half-year ladder, experience and treasures.
     const player = cleanPlayer({ ...stored, id: "p1", name: "Player 1", grade: Math.floor(Number(stored.grade)) }, new Set());
-    return { players: player ? [player] : [], current: player?.id ?? null, muted: stored.muted === true };
+    return { players: player ? [player] : [], current: player?.id ?? null, muted: stored.muted === true, locked: false };
   }
   /** @type {Set<string>} */
   const seen = new Set();
@@ -181,6 +185,7 @@ export function loadSave(storage) {
     players,
     current: players.some(p => p.id === stored.current) ? stored.current : null,
     muted: stored.muted === true,
+    locked: stored.locked === true,
   };
 }
 
@@ -221,6 +226,7 @@ function cleanPlayer(stored, seen) {
     adventures,
     mastery,
     played,
+    backedUp: Number.isInteger(stored.backedUp) && stored.backedUp >= 0 ? Math.min(stored.backedUp, played) : 0,
   };
 }
 

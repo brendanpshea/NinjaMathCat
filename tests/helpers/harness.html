@@ -372,7 +372,7 @@
       // A chapter's teaching scene (?chapter=), at a step (?step=, from 0), perhaps tried wrong once (?wrong).
       const sceneShot = screen === "scene";
       if (sceneShot || screen === "how") localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "0-teens")));
-      else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify(await maya()));
+      else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify({ ...(await maya()), locked: screen === "lock" }));
       await load("?test&seed=11");
       if (screen === "how") {
         // "Show me how", open over the battle after the first question is missed twice.
@@ -425,6 +425,10 @@
           break;
         case "treasures": click("[data-ref=treasures]"); break;
         case "report": click("[data-ref=report]"); break;
+        case "lock":
+          click("[data-ref=report]");
+          await until(() => doc().querySelector("dialog.lock-dialog[open]"), "the grown-up question");
+          break;
         case "victory":
           click("[data-ref=quick]");
           await on("battle");
@@ -524,6 +528,77 @@
       click("[data-ref=next]");
       await readyToAnswer();
       report.goesOn = game().battle.question === before && $(".prompt").textContent === before.prompt && $("[data-ref=how]").hidden;
+      report.errors = errors;
+      return report;
+    },
+
+    /** The grown-up lock before grown-up things, and a level's end offering a copy of the progress now and then. */
+    async grownUps() {
+      localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify({ ...(await maya()), locked: true }));
+      await load("?test&seed=3");
+      const report = { lock: {}, backup: {} };
+      const asking = () => doc().querySelector("dialog.lock-dialog[open]");
+      const answerLock = right => {
+        const [a, b] = asking().querySelector("label").textContent.match(/\d+/g).map(Number);
+        asking().querySelector("input").value = String(right ? a * b : a * b + 1);
+        asking().querySelector("button[type=submit]").click();
+      };
+
+      // Locked, the report asks first. A wrong answer is turned away, and Cancel stays put.
+      click("[data-ref=report]");
+      await until(asking, "the grown-up question");
+      report.lock.asked = asking().querySelector("label").textContent;
+      report.lock.stayed = game().screen === "map";
+      answerLock(false);
+      report.lock.wrong = asking()?.querySelector("[data-ref=lock-error]").textContent ?? "";
+      report.lock.stillMap = game().screen === "map";
+      asking().querySelector("[data-ref=lock-cancel]").click();
+      report.lock.cancelled = !asking() && game().screen === "map";
+      // Changing the player's choices asks too, and the right answer goes on.
+      click("[data-ref=edit]");
+      await until(asking, "the grown-up question again");
+      answerLock(true);
+      await on("player", "the choices, once answered");
+      report.lock.through = !asking();
+      click("[data-ref=back]");
+      await on("map");
+      // So does opening a chapter early.
+      click(".chapter.is-locked [data-act=open-ask]");
+      report.lock.openAsks = Boolean(asking()) && !$(".open-ask");
+      asking().querySelector("[data-ref=lock-cancel]").click();
+      // On the report, the lock turns off, and then nothing asks.
+      click("[data-ref=report]");
+      await until(asking, "the question before the report");
+      answerLock(true);
+      await on("report");
+      report.lock.box = $("[data-ref=lock]").checked;
+      $("[data-ref=lock]").click();
+      report.lock.savedOff = saved().locked === false;
+      click("[data-ref=map]");
+      await on("map");
+      click("[data-ref=report]");
+      await on("report", "the report, unlocked");
+      report.lock.unlocked = !asking();
+      click("[data-ref=map]");
+      await on("map");
+
+      // Maya has played 26 battles and never kept a copy, so the level's end offers one.
+      click("[data-ref=continue]");
+      await on("battle");
+      await winBattle();
+      await on("level-done");
+      report.backup.offered = Boolean($(".backup-offer"));
+      const maya1 = saved().players[0];
+      report.backup.marked = maya1.backedUp === maya1.played;
+      click("[data-ref=backup] [data-act=show]");
+      report.backup.code = $("[data-ref=backup] [data-ref=code-text]")?.value.slice(0, 5);
+      // Offered once, it waits a while before offering again.
+      click("[data-ref=next]");
+      await on("battle", "the next level");
+      await winBattle();
+      await on("level-done", "the next level's end");
+      report.backup.notAgain = !$(".backup-offer");
       report.errors = errors;
       return report;
     },

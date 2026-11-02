@@ -366,7 +366,7 @@ select {
 .report-summary { margin: 0; font-size: 18px; }
 @media print {
   /* The progress report on paper: the page itself, without buttons or backgrounds. */
-  button, .brand { display: none !important; }
+  button, .brand, .lock-card { display: none !important; }
   body, .game { background: #fff !important; }
 }
 
@@ -428,6 +428,14 @@ select {
 .training-offer { border-color: #c7c5f2; background: var(--indigo-soft); }
 .training-offer p { margin: 0; }
 .training-offer .quiet { justify-self: start; }
+.backup-offer p, .rest-offer p { margin: 0; }
+.backup-offer .quiet { justify-self: start; }
+/* The grown-up lock's question, over whatever screen asked for it. */
+.lock-dialog { width: min(420px, calc(100vw - 24px)); padding: 20px 22px; border: 0; border-radius: 18px; background: var(--surface); color: var(--ink); }
+.lock-dialog::backdrop { background: rgba(20, 28, 48, 0.6); }
+.lock-form { display: grid; gap: 12px; }
+.lock-form label { font-size: 22px; font-weight: 800; }
+.lock-form .code-error { margin: 0; }
 .fact-note { display: block; font-size: 15px; color: var(--muted); }
 
 /* The progress report: a table a grown-up can read at a glance, and a screen reader row by row. */

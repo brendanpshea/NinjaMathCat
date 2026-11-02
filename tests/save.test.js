@@ -2,7 +2,7 @@
 // their progress.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { loadSave, writeSave, newSave, addPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME } from "../src/save.js";
+import { loadSave, writeSave, newSave, addPlayer, importPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME } from "../src/save.js";
 import { levelsFor, recordLevel, newProgress } from "../src/adventures.js";
 import { TREASURES } from "../src/treasures.js";
 
@@ -19,12 +19,12 @@ describe("the save", () => {
 
   it("starts with nobody playing yet, and the sound on", () => {
     assert.deepEqual(loadSave(memoryStorage()), newSave());
-    assert.deepEqual(newSave(), { players: [], current: null, muted: false });
+    assert.deepEqual(newSave(), { players: [], current: null, muted: false, locked: false });
   });
 
   it("adds players, each new one the current one, and names a blank one by number", () => {
     let { save, player } = addPlayer(newSave(), owl);
-    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, readAloud: false, xp: 0, treasures: [], adventures: {}, mastery: {}, played: 0 });
+    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, readAloud: false, xp: 0, treasures: [], adventures: {}, mastery: {}, played: 0, backedUp: 0 });
     ({ save, player } = addPlayer(save, { name: "   ", heroId: "dragon_king", grade: 9 }));
     assert.deepEqual([player.name, player.heroId, player.grade], ["Player 2", "cat_ninja", 0]);
     // Questions are read aloud for the youngest, unless chosen otherwise.
@@ -53,9 +53,9 @@ describe("the save", () => {
     let { save, player } = addPlayer(newSave(), owl);
     const level = levelsFor(3)[0];
     const progress = recordLevel(progressIn(player, 3), level, { firstTry: 7, secondTry: 1, missed: 0, knockouts: 0, byType: {} });
-    save = updatePlayer({ ...save, muted: true }, player.id, {
+    save = updatePlayer({ ...save, muted: true, locked: true }, player.id, {
       xp: 730, treasures: [TREASURES[3].id, TREASURES[0].id], adventures: { 3: progress },
-      mastery: { addition: { score: 0.72, seen: 9, last: 4 } }, played: 5,
+      mastery: { addition: { score: 0.72, seen: 9, last: 4 } }, played: 5, backedUp: 4,
     });
     assert.equal(writeSave(storage, save), true);
     assert.deepEqual(loadSave(storage), save);
@@ -68,7 +68,7 @@ describe("the save", () => {
     const storage = memoryStorage({
       "ninja-math-cat": JSON.stringify({
         players: [
-          { id: "p1", name: 42, heroId: "dragon_king", grade: 2.5, xp: -5, treasures: ["nope", TREASURES[1].id, TREASURES[1].id, 7], played: 3,
+          { id: "p1", name: 42, heroId: "dragon_king", grade: 2.5, xp: -5, treasures: ["nope", TREASURES[1].id, TREASURES[1].id, 7], played: 3, backedUp: 9,
             mastery: { addition: { score: 0.4, seen: 2, last: 9 }, subtraction: { score: 7, seen: 1, last: 0 }, gone_type: { score: 0.5, seen: 1, last: 0 }, shapes: { score: 0.9, seen: 0, last: 1 } },
             adventures: { 2: { done: { [level]: { stars: 2, firstTry: 6, asked: 8 }, "2-gone.1": { stars: 3, firstTry: 8, asked: 8 }, [levelsFor(2)[1].id]: { stars: 9, firstTry: 1, asked: 1 } }, opened: 99 }, 12: { done: {} } } },
           { id: "p1", name: "A copy" },
@@ -76,6 +76,7 @@ describe("the save", () => {
         ],
         current: "p7",
         muted: "yes",
+        locked: "yes",
       }),
     });
     const save = loadSave(storage);
@@ -87,8 +88,10 @@ describe("the save", () => {
       // the game no longer has, or one never seen, is dropped.
       mastery: { addition: { score: 0.4, seen: 2, last: 3 } },
       played: 3,
+      // Nor can the last copy kept.
+      backedUp: 3,
     });
-    assert.deepEqual([save.current, save.muted], [null, false]);
+    assert.deepEqual([save.current, save.muted, save.locked], [null, false, false]);
   });
 
   it("turns a save from before there were players into the first player", () => {
@@ -97,10 +100,16 @@ describe("the save", () => {
     });
     const save = loadSave(storage);
     assert.deepEqual(save, {
-      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, readAloud: true, xp: 730, treasures: [TREASURES[3].id], adventures: {}, mastery: {}, played: 0 }],
+      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, readAloud: true, xp: 730, treasures: [TREASURES[3].id], adventures: {}, mastery: {}, played: 0, backedUp: 0 }],
       current: "p1",
       muted: true,
+      locked: false,
     });
+  });
+
+  it("counts a player brought by a progress code as just copied, so no reminder comes at once", () => {
+    const { save, player } = /** @type {{ save: any, player: any }} */ (importPlayer(newSave(), { name: "Maya", heroId: "owl_wizard", grade: 3, played: 26 }));
+    assert.deepEqual([player.played, player.backedUp, save.current], [26, 26, player.id]);
   });
 
   it("forgives broken or blocked storage, and plays on without it", () => {

@@ -19,15 +19,16 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, played, still, marathon, showHow;
+  let server, played, still, marathon, showHow, grownUps;
 
   before(async () => {
     server = await startServer();
-    [played, still, marathon, showHow] = await Promise.all([
+    [played, still, marathon, showHow, grownUps] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
       runScenario(browser, server.origin, "showHow"),
+      runScenario(browser, server.origin, "grownUps"),
     ]);
   });
 
@@ -38,6 +39,25 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(still.errors, []);
     assert.deepEqual(marathon.errors, []);
     assert.deepEqual(showHow.errors, []);
+    assert.deepEqual(grownUps.errors, []);
+  });
+
+  it("with the grown-up lock on, asks a grown-up's question before the report, the choices and opening chapters", () => {
+    const { lock } = grownUps;
+    assert.match(lock.asked, /^What is \d+ × \d+\?$/);
+    assert.ok(lock.stayed && lock.stillMap && lock.cancelled, "a wrong answer or Cancel goes nowhere");
+    assert.match(lock.wrong, /isn't it/);
+    assert.ok(lock.through, "the right answer goes on");
+    assert.ok(lock.openAsks, "opening a chapter early asks first");
+    assert.equal(lock.box, true);
+    assert.ok(lock.savedOff && lock.unlocked, "turned off on the report, it asks no more");
+  });
+
+  it("offers a copy of the progress at a level's end, now and then, not every time", () => {
+    const { backup } = grownUps;
+    assert.ok(backup.offered && backup.marked);
+    assert.equal(backup.code, "NMC1-");
+    assert.ok(backup.notAgain);
   });
 
   it("offers to show how, with the chapter's teaching scene, once a question is missed twice, then plays on", () => {
