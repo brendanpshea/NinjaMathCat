@@ -51,7 +51,7 @@ describe("elapsed time questions", () => {
   it("work out how long, or when it ends", () => {
     let asked = 0;
     for (const { grade, question: q, at } of questionsOf(time)) {
-      if (q.visual) continue;
+      if (q.visual || !q.prompt.includes(" starts at ")) continue;
       asked++;
       assert.ok(grade >= 3, `${at}: elapsed time starts in third grade`);
       const [, start, rest] = q.prompt.match(/starts at (\d+:\d+ [AP]M) and (.*)$/);
@@ -64,5 +64,36 @@ describe("elapsed time questions", () => {
       }
     }
     assert.ok(asked > 0);
+  });
+});
+
+describe("AM and PM", () => {
+  /** When each thing is done, written out again, in hours after midnight. */
+  const WHEN = {
+    "eat breakfast": [6, 9], "wake up for school": [6, 8], "get to school": [7, 9], "eat lunch at school": [11, 13],
+    "go home from school": [14, 16], "play at the park after school": [15, 18], "eat dinner": [17, 19], "go to bed": [19, 21],
+  };
+
+  it("pick the one time of day that fits, from times that are only right on the clock", () => {
+    const seen = new Set();
+    for (const { grade, question: q, at } of questionsOf(time)) {
+      const doing = q.prompt.match(/^Which is the best time to (.+)\?$/)?.[1];
+      const meaning = q.prompt.match(/^Which times of day are written with (AM|PM)\?$/)?.[1];
+      if (!doing && !meaning) continue;
+      assert.ok(grade >= 2 && grade < 3, `${at}: AM and PM are for second grade`);
+      if (meaning) {
+        seen.add("meaning");
+        assert.equal(q.answer, meaning === "AM" ? "from midnight until noon" : "from noon until midnight", at);
+        continue;
+      }
+      seen.add("best time");
+      const [from, to] = WHEN[doing];
+      const fits = c => parseTime(c) >= from * 60 && parseTime(c) <= to * 60;
+      for (const c of q.choices) assert.equal(fits(c), c === q.answer, `${at} → ${c}`);
+      // Every choice reads the same on a clock face, or is a time in the night.
+      const clock = q.answer.split(" ")[0];
+      assert.ok(q.choices.some(c => c !== q.answer && c.startsWith(`${clock} `)), `${at}: the same time the other half of the day is a choice`);
+    }
+    assert.equal(seen.size, 2);
   });
 });

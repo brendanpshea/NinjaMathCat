@@ -51,6 +51,37 @@ describe("money questions", () => {
     }
   });
 
+  it("work out money stories with coins and bills (2.MD.8)", () => {
+    const VALUE = { penny: 1, nickel: 5, dime: 10, quarter: 25, "one-dollar bill": 100, "five-dollar bill": 500 };
+    const piece = (count, name) => (count === "a" ? 1 : Number(count)) * VALUE[name.replace(/pennies$/, "penny").replace(/s$/, "")];
+    const seen = new Set();
+    for (const { grade, question: q, at } of questionsOf(money)) {
+      const p = q.prompt;
+      const handful = p.match(/^(\w+) has (a|\d+) (.+?) and (a|\d+) (.+?)\. How much money does \1 have\?$/);
+      const spend = p.match(/ has (\S+) and buys .+ for (\S+)\. How much money is left\?$/);
+      const short = p.match(/ costs (\S+)\. \w+ has (\S+)\. How much more money does \w+ need\?$/);
+      let expected;
+      if (handful) {
+        seen.add("handful");
+        expected = piece(handful[2], handful[3]) + piece(handful[4], handful[5]);
+      } else if (spend) {
+        seen.add("spend");
+        expected = cents(spend[1]) - cents(spend[2]);
+      } else if (short) {
+        seen.add("short");
+        expected = cents(short[1]) - cents(short[2]);
+      } else continue;
+      assert.equal(q.answer, formatCents(expected), at);
+      assert.ok(expected > 0, at);
+      // No more than a dollar until the middle of second grade, and no bills.
+      if (grade < 2.5) {
+        const amounts = [...p.matchAll(/\$[\d.]+|\d+¢/g)].map(m => cents(m[0]));
+        assert.ok(!/bill/.test(p) && expected <= 100 && amounts.every(n => n <= 100), `${at}: more than a dollar`);
+      }
+    }
+    assert.equal(seen.size, 3);
+  });
+
   it("keep making change for third grade and up", () => {
     for (const { grade, question: q, at } of questionsOf(money)) {
       if (q.prompt.includes("change")) assert.ok(grade >= 3, at);

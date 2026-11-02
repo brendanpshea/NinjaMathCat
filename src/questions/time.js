@@ -49,15 +49,64 @@ const ACTIVITIES = [
   "The swimming lesson", "Band practice", "Art class", "The nature hike", "The piano lesson",
 ];
 
+/**
+ * Things a child does, each at a fitting time of day, in minutes after
+ * midnight (2.MD.7).
+ */
+export const DAY = [
+  { doing: "eat breakfast", at: 7 * 60 },
+  { doing: "wake up for school", at: 7 * 60 + 15 },
+  { doing: "get to school", at: 8 * 60 + 30 },
+  { doing: "eat lunch at school", at: 12 * 60 + 30 },
+  { doing: "go home from school", at: 15 * 60 },
+  { doing: "play at the park after school", at: 16 * 60 },
+  { doing: "eat dinner", at: 18 * 60 },
+  { doing: "go to bed", at: 20 * 60 },
+];
+
 /** @type {QuestionType} */
 export const time = {
   id: "time",
   name: "Telling time",
   generate(rng, grade) {
+    // AM and PM in second grade (2.MD.7).
+    if (grade >= 2 && grade < 3 && rng.chance(0.3)) return amPm(rng);
     // Elapsed time comes in third grade, alongside reading to the minute (3.MD.1).
     return grade >= 3 && rng.chance(0.5) ? elapsed(rng) : readClock(rng, atGrade(grade, CLOCK_STEP));
   },
 };
+
+/**
+ * Telling AM from PM: the best time of day for something, or what the two
+ * mean.
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function amPm(rng) {
+  const hint = "AM times run from midnight until noon: the night and the morning. PM times run from noon until midnight: the afternoon and the evening.";
+  if (rng.chance(0.25)) {
+    const pm = rng.chance(0.5);
+    const [right, other] = pm ? ["from noon until midnight", "from midnight until noon"] : ["from midnight until noon", "from noon until midnight"];
+    return {
+      prompt: `Which times of day are written with ${pm ? "PM" : "AM"}?`,
+      answer: right,
+      wrong: [other, ...rng.shuffle(["only when it is dark outside", "only when the sun is up"])],
+      hint,
+      difficulty: 2,
+    };
+  }
+  const { doing, at } = rng.pick(DAY);
+  // The same time the other half of the day, and two in the middle of the night.
+  const flipped = at + 720;
+  const night = rng.shuffle([1, 2, 3, 4].filter(h => h !== Math.floor(flipped / 60) % 24)).slice(0, 2).map(h => h * 60 + (at % 60));
+  return {
+    prompt: `Which is the best time to ${doing}?`,
+    answer: formatTime(at),
+    wrong: [formatTime(flipped), ...night.map(formatTime)],
+    hint,
+    difficulty: 1,
+  };
+}
 
 /**
  * @param {Rng} rng

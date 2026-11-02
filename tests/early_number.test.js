@@ -109,7 +109,8 @@ describe("the equal sign", () => {
 
 describe("odd and even", () => {
   it("knows which numbers are odd and even, and halves an even number", () => {
-    for (const { question: q, at } of questionsOf(oddEven)) {
+    for (const { grade, question: q, at } of questionsOf(oddEven)) {
+      if (grade >= 3) continue;
       const p = q.prompt;
       const which = p.match(/^Which number is (even|odd)\?$/);
       if (which) {
@@ -128,5 +129,56 @@ describe("odd and even", () => {
         assert.ok(q.answer > n && q.answer <= n + 2 && (q.answer % 2 === 0) === (kind === "even"), at);
       }
     }
+  });
+
+  it("finds patterns in adding and multiplying, tried on every number up to 40 (3.OA.9)", () => {
+    const odd = n => n % 2 === 1;
+    const even = n => n % 2 === 0;
+    const numbers = Array.from({ length: 41 }, (_, i) => i);
+    const every = test => numbers.every(test);
+    const everyPair = test => numbers.every(a => numbers.every(b => test(a, b)));
+    /** Whether each sentence holds, tried again independently. */
+    const HOLDS = {
+      "2 times any number is always even.": () => every(n => even(2 * n)),
+      "4 times any number is always even.": () => every(n => even(4 * n)),
+      "3 times any number is always odd.": () => every(n => odd(3 * n)),
+      "5 times any number is always odd.": () => every(n => odd(5 * n)),
+      "Any number times 10 ends in 0.": () => every(n => (10 * n) % 10 === 0),
+      "Any number times 5 ends in 0 or 5.": () => every(n => [0, 5].includes((5 * n) % 10)),
+      "Any number times 5 ends in 5.": () => every(n => (5 * n) % 10 === 5),
+      "Any number times 4 ends in 4.": () => every(n => (4 * n) % 10 === 4),
+      "Adding two odd numbers always gives an even number.": () => everyPair((a, b) => !(odd(a) && odd(b)) || even(a + b)),
+      "Adding two odd numbers always gives an odd number.": () => everyPair((a, b) => !(odd(a) && odd(b)) || odd(a + b)),
+      "Adding two even numbers always gives an even number.": () => everyPair((a, b) => !(even(a) && even(b)) || even(a + b)),
+      "Adding two even numbers always gives an odd number.": () => everyPair((a, b) => !(even(a) && even(b)) || odd(a + b)),
+      "Adding an odd number and an even number always gives an odd number.": () => everyPair((a, b) => !(odd(a) && even(b)) || odd(a + b)),
+      "Adding an odd number and an even number always gives an even number.": () => everyPair((a, b) => !(odd(a) && even(b)) || even(a + b)),
+      "Multiplying two odd numbers always gives an odd number.": () => everyPair((a, b) => !(odd(a) && odd(b)) || odd(a * b)),
+      "Multiplying two odd numbers always gives an even number.": () => everyPair((a, b) => !(odd(a) && odd(b)) || even(a * b)),
+    };
+    const digitSum = n => String(n).split("").reduce((sum, d) => sum + Number(d), 0);
+    const OF_TABLE = {
+      "Every number in it is even.": t => t.every(even),
+      "Every number in it is odd.": t => t.every(odd),
+      "The numbers go odd, even, odd, even.": t => t.every((n, i) => (i % 2 === 0 ? odd(n) : even(n))),
+      "Every number in it ends in 0 or 5.": t => t.every(n => [0, 5].includes(n % 10)),
+      "Every number in it ends in 0.": t => t.every(n => n % 10 === 0),
+      "The digits of every number in it add up to 9.": t => t.every(n => digitSum(n) === 9),
+    };
+    const seen = new Set();
+    for (const { grade, question: q, at } of questionsOf(oddEven)) {
+      if (grade < 3) continue;
+      if (q.prompt === "Which of these is always true?") {
+        seen.add("always");
+        for (const c of q.choices) assert.equal(HOLDS[c](), c === q.answer, `${at} → ${c}`);
+        continue;
+      }
+      seen.add("table");
+      const [, n, list] = q.prompt.match(/^Here is the (\d+) times table: ([\d, ]+)\. Which is true of it\?$/);
+      const table = list.split(", ").map(Number);
+      assert.deepEqual(table, Array.from({ length: 10 }, (_, i) => Number(n) * (i + 1)), at);
+      for (const c of q.choices) assert.equal(OF_TABLE[c](table), c === q.answer, `${at} → ${c}`);
+    }
+    assert.equal(seen.size, 2);
   });
 });

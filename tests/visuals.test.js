@@ -262,6 +262,14 @@ describe("drawing", () => {
     }
   });
 
+  it("groups: a row for each group, with a picture for each thing in it, and no counts said", () => {
+    for (const { v, svg, at } of rendered("groups")) {
+      const things = elementsIn(svg, "text", "counter");
+      v.rows.forEach((row, j) => assert.equal(things.filter(t => t["data-row"] === String(j)).length, row.count, at));
+      assert.ok(!/\d/.test(describeVisual(v)), `${at}: "${describeVisual(v)}" gives the counts away`);
+    }
+  });
+
   it("ten frames: a counter for each one counted, filling the first frame first", () => {
     for (const { v, svg, at } of rendered("ten_frame")) {
       assert.equal(elementsIn(svg, "rect", "frame").length, v.frames, at);

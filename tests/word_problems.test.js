@@ -34,9 +34,45 @@ describe("story problems", () => {
 
   it("equal-groups stories: the answer is the product", () => {
     for (const { question: q, at } of questionsOf(wordMultiplication)) {
+      if (/^Which (sentence|equation)/.test(q.prompt)) continue;
       const [a, b] = numbersIn(q.prompt);
       assert.equal(q.answer, a * b, at);
     }
+  });
+
+  it("read a multiplication as 'times as many', and back (4.OA.1)", () => {
+    /** Whether "35 is 5 times as many as 7." or "35 is 5 more than 7." is true. */
+    const sentenceHolds = c => {
+      const [, x, y, how, z] = c.match(/^(\d+) is (\d+) (times as many as|more than) (\d+)\.$/);
+      return how === "more than" ? Number(x) === Number(y) + Number(z) : Number(x) === Number(y) * Number(z);
+    };
+    /** Whether an equation such as "63 = 7 × 9" or "63 + 7 = 9" is true. */
+    const side = s => {
+      const [x, op, y] = s.split(" ");
+      return op === undefined ? Number(x) : op === "×" ? Number(x) * Number(y) : Number(x) + Number(y);
+    };
+    const equationHolds = c => side(c.split(" = ")[0]) === side(c.split(" = ")[1]);
+    const seen = new Set();
+    for (const { grade, question: q, at } of questionsOf(wordMultiplication)) {
+      const kind = q.prompt.match(/^Which (sentence|equation)/)?.[1];
+      if (!kind) continue;
+      seen.add(kind);
+      assert.ok(grade >= 4, at);
+      for (const c of q.choices) assert.equal((kind === "sentence" ? sentenceHolds : equationHolds)(c), c === q.answer, `${at} → ${c}`);
+    }
+    assert.equal(seen.size, 2);
+  });
+
+  it("'times as many' sharing stories find the smaller number or how many times as many, from fourth grade (4.OA.2)", () => {
+    let asked = 0;
+    for (const { grade, question: q, at } of questionsOf(wordDivision)) {
+      if (!/times as many/.test(q.prompt)) continue;
+      asked++;
+      assert.ok(grade >= 4, at);
+      const [a, b] = numbersIn(q.prompt);
+      assert.equal(q.answer, a / b, at);
+    }
+    assert.ok(asked > 0);
   });
 
   it("equal-groups stories compare by 'times as many' only from fourth grade", () => {

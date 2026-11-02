@@ -80,7 +80,7 @@ function holds(statement) {
 describe("comparing numbers", () => {
   it("has exactly one true statement among the choices", () => {
     for (const { question: q, at } of questionsOf(comparison)) {
-      if (typeof q.answer === "number") continue;
+      if (typeof q.answer === "number" || q.visual) continue;
       assert.ok(holds(q.answer), `${at} → ${q.answer} is false`);
       for (const c of q.choices) if (c !== q.answer) assert.ok(!holds(c), `${at} → ${c} is true too`);
     }
@@ -88,9 +88,37 @@ describe("comparing numbers", () => {
 
   it("asks kindergarten for the biggest or smallest number, without symbols", () => {
     for (const { grade, question: q, at } of questionsOf(comparison)) {
-      if (grade >= 1) continue;
+      if (grade >= 1 || q.visual) continue;
       const numbers = q.choices.map(Number);
       assert.equal(q.answer, q.prompt.includes("biggest") ? Math.max(...numbers) : Math.min(...numbers), at);
     }
+  });
+
+  it("compares groups of things in kindergarten: most, fewest, or the same (K.CC.6)", () => {
+    const seen = new Set();
+    for (const { grade, question: q, at } of questionsOf(comparison)) {
+      if (q.visual?.kind !== "groups") continue;
+      assert.ok(grade < 1, at);
+      const rows = q.visual.rows;
+      const count = name => rows.find(r => `the ${r.name}` === name).count;
+      assert.equal(new Set(rows.map(r => r.name)).size, 3, at);
+      assert.ok(rows.every(r => r.count >= 1 && r.count <= (grade < 0.5 ? 5 : 10)), at);
+      if (q.prompt === "Which two groups have the same number?") {
+        seen.add("same");
+        for (const c of q.choices) {
+          const pair = c.match(/^(the \w+) and (the \w+)$/);
+          assert.equal(pair ? count(pair[1]) === count(pair[2]) : false, c === q.answer, `${at} → ${c}`);
+        }
+        continue;
+      }
+      const most = q.prompt === "Which group has the most?";
+      assert.ok(most || q.prompt === "Which group has the fewest?", at);
+      seen.add(most ? "most" : "fewest");
+      const counts = rows.map(r => r.count);
+      const best = most ? Math.max(...counts) : Math.min(...counts);
+      assert.equal(counts.filter(n => n === best).length, 1, `${at}: one group has the ${most ? "most" : "fewest"}`);
+      for (const c of q.choices) assert.equal(c.startsWith("the ") && count(c) === best, c === q.answer, `${at} → ${c}`);
+    }
+    assert.equal(seen.size, 3);
   });
 });

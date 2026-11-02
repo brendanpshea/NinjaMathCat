@@ -30,6 +30,26 @@ describe("area and perimeter", () => {
         if (side !== "?") assert.equal(labelValue(side).n, v.height, at);
         assert.ok(p.includes(UNITS[base.split(" ")[1]]), at);
       }
+      const compared = p.match(/^A rectangle is (\d+) units long and (\d+) units wide\. Which of these rectangles has the same (perimeter|area), but a different (perimeter|area)\?$/);
+      if (compared) {
+        const [a, b] = [Number(compared[1]), Number(compared[2])];
+        const perimeter = ([x, y]) => 2 * (x + y);
+        const areaOf = ([x, y]) => x * y;
+        const [same, differs] = compared[3] === "perimeter" ? [perimeter, areaOf] : [areaOf, perimeter];
+        for (const c of q.choices) {
+          const r = c.split(" by ").map(Number);
+          assert.ok(r[0] > r[1], `${at} → ${c}: longer side first, and never a square`);
+          assert.equal(same(r) === same([a, b]) && differs(r) !== differs([a, b]), c === q.answer, `${at} → ${c}`);
+        }
+        continue;
+      }
+      if (/^Two rectangles both have a perimeter of/.test(p)) {
+        const [perimeter, a, b, c, d] = numbersIn(p);
+        assert.ok(2 * (a + b) === perimeter && 2 * (c + d) === perimeter, at);
+        assert.equal(q.answer, c * d - a * b, at);
+        assert.ok(q.answer > 0, at);
+        continue;
+      }
       const [w, h] = v ? [v.width, v.height] : [0, 0];
       let expected;
       if (/^What is the area of this rectangle/.test(p)) expected = w * h;
@@ -107,6 +127,14 @@ describe("units of measure", () => {
       } else if ((match = p.match(/^Which unit would you use to measure (how much|how heavy)/))) {
         assert.ok((match[1] === "how much" ? ["liters", "milliliters"] : ["kilograms", "grams"]).includes(q.answer), at);
         assert.deepEqual([...q.choices].sort(), ["grams", "kilograms", "liters", "milliliters"], at);
+      } else if ((match = p.match(/ (\d+)\/(\d+) of a (kilometer|kilogram|liter)\b.* How many (meters|grams|milliliters) is that\?$/))) {
+        assert.equal(q.answer, (1000 * Number(match[1])) / Number(match[2]), at);
+      } else if (/ milliliters| meters of it| grams| centimeters long/.test(p)) {
+        // Stories with a measure in a bigger unit, answered in the smaller (4.MD.2).
+        const [a, b] = numbersIn(p);
+        const expected = /jug holds/.test(p) ? a * 1000 - b : /trail is/.test(p) ? a * 1000 - b : /gained/.test(p) ? a * 1000 + b : (a * 100) / b;
+        assert.equal(q.answer, expected, at);
+        assert.ok(Number.isInteger(q.answer) && q.answer > 0, at);
       } else {
         const [a, b] = numbersIn(p);
         const expected = /How many liters do/.test(p) ? a * b : /shared equally/.test(p) ? a / b : /poured out/.test(p) ? a - b : a + b;

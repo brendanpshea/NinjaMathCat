@@ -155,12 +155,57 @@ function swapNeighbours(rng, n) {
   return Number(digits.join(""));
 }
 
+/** Animals to put in groups, by name and picture. */
+const ANIMALS = [["cats", "🐱"], ["dogs", "🐶"], ["bunnies", "🐰"], ["frogs", "🐸"], ["fish", "🐟"], ["birds", "🐦"]];
+
+/**
+ * Three groups in rows, lined up so they can be matched one to one: which
+ * has the most or the fewest, or which two have the same number (K.CC.6).
+ * @param {import("../rng.js").Rng} rng
+ * @param {number} top  the most in a group
+ * @returns {import("./common.js").Draft}
+ */
+function compareGroups(rng, top) {
+  const animals = rng.shuffle(ANIMALS).slice(0, 3);
+  const numbers = rng.shuffle(Array.from({ length: top }, (_, i) => i + 1));
+  const same = rng.chance(1 / 3);
+  const counts = same ? rng.shuffle([numbers[0], numbers[0], numbers[1]]) : numbers.slice(0, 3);
+  const visual = /** @type {const} */ ({ kind: "groups", rows: animals.map(([name, emoji], i) => ({ name, emoji, count: counts[i] })) });
+  const names = animals.map(([name]) => `the ${name}`);
+  if (same) {
+    const pairs = [[0, 1], [0, 2], [1, 2]];
+    const match = pairs.find(([i, j]) => counts[i] === counts[j]);
+    const say = (/** @type {number[]} */ [i, j]) => `${names[i]} and ${names[j]}`;
+    return {
+      prompt: "Which two groups have the same number?",
+      visual,
+      answer: say(/** @type {number[]} */ (match)),
+      wrong: [...pairs.filter(p => p !== match).map(say), "none of them"],
+      hint: "Match them up, one from each row. Two rows that match with none left over have the same number.",
+      difficulty: 1,
+    };
+  }
+  const most = rng.chance(0.5);
+  const target = most ? Math.max(...counts) : Math.min(...counts);
+  return {
+    prompt: `Which group has the ${most ? "most" : "fewest"}?`,
+    visual,
+    answer: names[counts.indexOf(target)],
+    wrong: [...names.filter((_, i) => counts[i] !== target), "They all have the same number."],
+    hint: most ? "Match them up, one from each row. The row with some left over at the end has more." : "Match them up, one from each row. The row that runs out first has fewer.",
+    difficulty: 1,
+  };
+}
+
 /** @type {QuestionType} */
 export const comparison = {
   id: "comparison",
   name: "Comparing numbers",
   generate(rng, grade) {
     const top = atGrade(grade, COMPARE_UP_TO);
+
+    // Kindergarten: groups of things to compare by matching (K.CC.6).
+    if (grade < 1 && rng.chance(0.5)) return compareGroups(rng, top);
 
     // Kindergarten: no symbols yet, just "which is biggest?"
     if (grade < 1) {

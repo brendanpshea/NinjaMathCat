@@ -159,6 +159,13 @@
  */
 
 /**
+ * Groups of things in rows, lined up so they can be matched one to one (K.CC.6).
+ * @typedef {object} Groups
+ * @property {"groups"} kind
+ * @property {{ name: string, emoji: string, count: number }[]} rows
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
  * @typedef {{ kind: "objects", emoji: string, count: number }
@@ -167,7 +174,7 @@
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups} Visual
  */
 
 /**

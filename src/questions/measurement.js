@@ -1,10 +1,11 @@
 // Measuring: area and perimeter (3.MD.5-8, 4.MD.3, 6.G.1), volume (5.MD.3-5,
 // 6.G.2) and surface area (6.G.4), and changing from one unit to another
-// (3.MD.2, 4.MD.1, 5.MD.1).
+// (3.MD.2, 4.MD.1, 4.MD.2, 5.MD.1).
 
 import { atGrade, wrongNumbers } from "./common.js";
 import { frac, formatFraction } from "./rational.js";
 import { formatDecimal } from "./decimals.js";
+import { NAMES } from "./word_problems.js";
 
 /** @import { Draft, QuestionType } from "./common.js" */
 /** @import { Rng } from "../rng.js" */
@@ -39,7 +40,8 @@ function sides(rng, long, short) {
  * @type {readonly [number, { kinds: string[], long: [number, number], short: [number, number] }][]}
  */
 const AREAS = [
-  [3.5, { kinds: ["count", "count", "multiply", "perimeter", "missingSide"], long: [3, 9], short: [2, 8] }],
+  [3, { kinds: ["count", "count", "multiply", "perimeter", "missingSide"], long: [3, 9], short: [2, 8] }],
+  [3.5, { kinds: ["count", "multiply", "perimeter", "missingSide", "compare", "compare"], long: [3, 9], short: [2, 8] }],
   [4.5, { kinds: ["multiply", "perimeter", "missingSide", "story"], long: [10, 25], short: [3, 12] }],
   [5.5, { kinds: ["multiply", "perimeter", "missingSide", "story"], long: [12, 40], short: [5, 20] }],
   [Infinity, { kinds: ["triangle", "triangle", "parallelogram", "missingHeight", "story"], long: [6, 20], short: [3, 14] }],
@@ -75,6 +77,7 @@ export const area = {
         difficulty: 1 + big,
       };
       case "missingSide": return missingSide(rng, w, h, unit, big);
+      case "compare": return compareRectangles(rng);
       case "story": return areaStory(rng, w, h);
       case "missingHeight": return missingHeight(rng, w, h, unit);
       default: return slanted(rng, w, h, unit);
@@ -144,6 +147,71 @@ function missingSide(rng, w, h, unit, big) {
     wrong: wrongNumbers(rng, h, [total - 2 * w, total / 2, total - w, total / 4], { min: 1 }),
     hint: `Opposite sides are the same length, so the two sides of ${w} ${unit.many} make ${2 * w}. What is left is shared by the other two.`,
     difficulty: 2 + Number(big > 1),
+  };
+}
+
+/**
+ * Rectangles with the same perimeter and different areas, or the same area
+ * and different perimeters (3.MD.8). Sides are whole units, longer first, and
+ * no rectangle is a square, so none is argued over.
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function compareRectangles(rng) {
+  /** @param {number[]} r */
+  const say = ([a, b]) => `${a} by ${b}`;
+  /** Rectangles, longer side first, never square, no side over 12, none the same. */
+  const tidy = (/** @type {number[][]} */ rs) => {
+    const seen = new Set();
+    return rs.map(([a, b]) => [Math.max(a, b), Math.min(a, b)]).filter(([a, b]) => b >= 1 && a !== b && a <= 12 && !seen.has(say([a, b])) && seen.add(say([a, b])));
+  };
+  /** Every rectangle with sides adding up to `half`. */
+  const withHalf = (/** @type {number} */ half) => tidy(Array.from({ length: half - 1 }, (_, i) => [half - 1 - i, i + 1]));
+  /** Every rectangle with this area. */
+  const withArea = (/** @type {number} */ n) => tidy(Array.from({ length: 12 }, (_, i) => i + 1).filter(b => n % b === 0).map(b => [n / b, b]));
+  const kind = rng.pick(["samePerimeter", "sameArea", "moreArea"]);
+
+  if (kind === "moreArea") {
+    const half = rng.int(6, 10);
+    const [thin, wide] = rng.shuffle(withHalf(half)).slice(0, 2).sort((x, y) => x[0] * x[1] - y[0] * y[1]);
+    const more = wide[0] * wide[1] - thin[0] * thin[1];
+    return {
+      prompt: `Two rectangles both have a perimeter of ${2 * half} units. One is ${say(thin)} and the other is ${say(wide)}. How many more square units of area does the ${say(wide)} rectangle have?`,
+      answer: more,
+      wrong: wrongNumbers(rng, more, [wide[0] * wide[1], thin[0] * thin[1], wide[0] - thin[0], more + 2], { min: 1 }),
+      hint: "Same perimeter doesn't mean same area. Find each area, length times width, then the difference.",
+      difficulty: 3,
+    };
+  }
+
+  if (kind === "samePerimeter") {
+    const half = rng.int(7, 12);
+    const [given, answer] = rng.shuffle(withHalf(half));
+    const [a, b] = given;
+    // The trap: the same area instead of the same perimeter.
+    const sameArea = withArea(a * b).filter(r => r[0] + r[1] !== half);
+    const near = tidy([[a + 1, b], [a, b + 1], [a - 1, b], [answer[0] + 1, answer[1]], [answer[0], answer[1] - 1], [a + 2, b]]).filter(r => r[0] + r[1] !== half);
+    return {
+      prompt: `A rectangle is ${a} units long and ${b} units wide. Which of these rectangles has the same perimeter, but a different area?`,
+      answer: say(answer),
+      wrong: [...rng.shuffle(sameArea), ...rng.shuffle(near)].map(say),
+      hint: `The perimeter is 2 lengths and 2 widths. ${a} + ${b} is ${half}, so look for a length and width that also add up to ${half}.`,
+      difficulty: 2,
+    };
+  }
+
+  const n = rng.pick([12, 18, 20, 24]);
+  const [given, answer] = rng.shuffle(withArea(n));
+  const [a, b] = given;
+  // The trap: the same perimeter instead of the same area.
+  const samePerimeter = withHalf(a + b).filter(r => r[0] * r[1] !== n);
+  const near = tidy([[a, b + 1], [a + 1, b], [a - 1, b], [answer[0] + 1, answer[1]], [answer[0], answer[1] + 1]]).filter(r => r[0] * r[1] !== n);
+  return {
+    prompt: `A rectangle is ${a} units long and ${b} units wide. Which of these rectangles has the same area, but a different perimeter?`,
+    answer: say(answer),
+    wrong: [...rng.shuffle(samePerimeter).slice(0, 2), ...rng.shuffle(near)].map(say),
+    hint: `The area is length times width: ${a} × ${b} = ${n}. Which other length and width multiply to ${n}?`,
+    difficulty: 2,
   };
 }
 
@@ -414,15 +482,15 @@ const CONVERSIONS = [
 
 /**
  * What a grade converts. Third grade picks units and works in one unit
- * (3.MD.2); fourth goes from bigger units to smaller (4.MD.1); fifth goes
- * both ways, with decimals in metric units (5.MD.1).
+ * (3.MD.2); fourth goes from bigger units to smaller (4.MD.1), in stories
+ * too (4.MD.2); fifth goes both ways, with decimals in metric units (5.MD.1).
  * @type {readonly [number, string[]][]}
  */
 const CONVERTING = [
   [3.5, ["which", "which", "sameUnit"]],
-  [4, ["toSmall"]],
-  [4.5, ["toSmall", "toSmall", "mixed"]],
-  [Infinity, ["toSmall", "toBig", "toBig", "toBigDecimal", "mixed"]],
+  [4, ["toSmall", "toSmall", "story"]],
+  [4.5, ["toSmall", "mixed", "story"]],
+  [Infinity, ["toSmall", "toBig", "toBig", "toBigDecimal", "mixed", "story"]],
 ];
 
 /** @type {QuestionType} */
@@ -436,6 +504,7 @@ export const conversions = {
       case "toSmall": return toSmall(rng, grade);
       case "toBig": return toBig(rng);
       case "toBigDecimal": return toBigDecimal(rng);
+      case "story": return measureStory(rng);
       default: return mixedUnits(rng);
     }
   },
@@ -582,5 +651,82 @@ function mixedUnits(rng) {
     wrong: wrongNumbers(rng, answer, [n + extra, n * 10 + extra, n * c.times, answer + c.times, answer - c.times], { min: 1 }),
     hint: `1 ${c.one} is ${c.times} ${c.small}. Change the ${c.big}, then add the rest.`,
     difficulty: 2,
+  };
+}
+
+/** Simple fractions of a kilometer, kilogram or liter, each a whole number of the smaller unit. */
+const PARTS_OF_1000 = [[1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [1, 10], [3, 10]];
+
+/**
+ * A story about distance, mass or liquid volume, given partly in a bigger
+ * unit and answered in the smaller one (4.MD.2).
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function measureStory(rng) {
+  const name = rng.pick(NAMES);
+  const kind = rng.pick(["pour", "walk", "grow", "cut", "part"]);
+  if (kind === "pour") {
+    const [liters, poured] = [rng.int(2, 5), 50 * rng.int(2, 20)];
+    const answer = liters * 1000 - poured;
+    return {
+      prompt: `A jug holds ${liters} liters of juice. ${name} pours out ${poured} milliliters. How many milliliters of juice are left in the jug?`,
+      answer,
+      // Adding instead, or 100 milliliters to the liter.
+      wrong: wrongNumbers(rng, answer, [liters * 1000 + poured, liters * 100 - poured, answer + 100, answer - 100], { min: 1, step: 50 }),
+      hint: `Change the liters to milliliters first: 1 liter is 1000 milliliters.`,
+      difficulty: 3,
+    };
+  }
+  if (kind === "walk") {
+    const km = rng.int(2, 6);
+    const walked = 100 * rng.int(2, km * 10 - 2);
+    const answer = km * 1000 - walked;
+    return {
+      prompt: `A trail is ${km} kilometers long. ${name} has walked ${walked} meters of it. How many more meters are there to walk?`,
+      answer,
+      wrong: wrongNumbers(rng, answer, [km * 1000 + walked, walked, answer + 1000, answer - 1000], { min: 100, step: 100 }),
+      hint: "Change the kilometers to meters first: 1 kilometer is 1000 meters.",
+      difficulty: 3,
+    };
+  }
+  if (kind === "grow") {
+    const [kg, gained] = [rng.int(2, 9), 50 * rng.int(2, 18)];
+    const answer = kg * 1000 + gained;
+    return {
+      prompt: `A puppy weighed ${kg} kilograms. Since then it has gained ${gained} grams. How many grams does it weigh now?`,
+      answer,
+      wrong: wrongNumbers(rng, answer, [kg + gained, kg * 100 + gained, kg * 1000 - gained, answer + 1000], { min: 1, step: 50 }),
+      hint: "Change the kilograms to grams first: 1 kilogram is 1000 grams.",
+      difficulty: 3,
+    };
+  }
+  if (kind === "cut") {
+    const [meters, pieces] = [rng.int(2, 9), rng.pick([2, 4, 5])];
+    const answer = (meters * 100) / pieces;
+    return {
+      prompt: `A ribbon ${meters} meters long is cut into ${pieces} pieces, all the same length. How many centimeters long is each piece?`,
+      answer,
+      // Not shared out, or 10 centimeters to the meter.
+      wrong: wrongNumbers(rng, answer, [meters * 100, (meters * 10) / pieces, meters * 100 - pieces, answer + 10, answer - 10], { min: 1, step: 5 }),
+      hint: `Change the meters to centimeters first: 1 meter is 100 centimeters. Then share them into ${pieces}.`,
+      difficulty: 3,
+    };
+  }
+  const [top, bottom] = rng.pick(PARTS_OF_1000);
+  const { big, small, verb } = rng.pick([
+    { big: "kilometer", small: "meters", verb: "runs" },
+    { big: "kilogram", small: "grams", verb: "buys" },
+    { big: "liter", small: "milliliters", verb: "drinks" },
+  ]);
+  const what = big === "kilogram" ? " of cheese" : big === "liter" ? " of water" : "";
+  const answer = (1000 * top) / bottom;
+  return {
+    prompt: `${name} ${verb} ${top}/${bottom} of a ${big}${what}. How many ${small} is that?`,
+    answer,
+    // One part only, 100 to the unit, or the part that is left.
+    wrong: wrongNumbers(rng, answer, [1000 / bottom, answer / 10, 1000 - answer, answer + 100].filter(v => v !== answer), { min: 1, step: 50 }),
+    hint: `1 ${big} is 1000 ${small}. Find 1/${bottom} of 1000 first.`,
+    difficulty: 3,
   };
 }

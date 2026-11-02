@@ -104,6 +104,8 @@ export function describeVisual(v) {
       return v.hundreds > 0 ? "Base-ten blocks: hundreds, tens and ones" : "Base-ten blocks: tens and ones";
     case "solid":
       return "A solid shape";
+    case "groups":
+      return `Rows of ${list(v.rows.map(r => r.name))}`;
     case "scene":
       return `A ${v.thing} and a ${v.landmark}`;
     case "lengths": {

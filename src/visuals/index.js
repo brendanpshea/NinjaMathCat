@@ -1,7 +1,7 @@
 // Drawing a question's visual. Every kind of Visual has a renderer here that
 // turns it into SVG markup, ready to put in the page.
 
-import { objects, pattern, money, clock, shape } from "./pictures.js";
+import { objects, pattern, groups, money, clock, shape } from "./pictures.js";
 import { numberLine } from "./number_line.js";
 import { pictureGraph, barGraph, linePlot } from "./graphs.js";
 import { fraction } from "./fractions.js";
@@ -22,6 +22,7 @@ export function renderVisual(v, options = {}) {
   switch (v.kind) {
     case "objects": return objects(v);
     case "pattern": return pattern(v);
+    case "groups": return groups(v);
     case "money": return money(v);
     case "clock": return clock(v);
     case "shape": return shape(v);

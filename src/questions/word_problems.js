@@ -3,11 +3,11 @@
 import { atGrade, wrongNumbers } from "./common.js";
 import { FACTORS } from "./arithmetic.js";
 
-/** @import { QuestionType } from "./common.js" */
+/** @import { Draft, QuestionType } from "./common.js" */
 /** @import { Rng } from "../rng.js" */
 
 /** First names from many places, and nobody famous. */
-const NAMES = [
+export const NAMES = [
   "Maya", "Leo", "Ava", "Sam", "Zara", "Omar", "Mei", "Ravi", "Nora", "Eli",
   "Priya", "Jonah", "Lucia", "Kai", "Amara", "Theo", "Ines", "Malik", "Hana", "Felix",
 ];
@@ -187,6 +187,16 @@ const SHARING = [
     text: (c, a, b) => `${c.name} packs ${a} ${c.thing} into bags of ${b}. How many bags does ${c.name} fill?`,
     hint: (_, a, b) => `How many groups of ${b} make ${a}?`,
   },
+  {
+    text: (c, a, b) => `${c.friend} has ${a} ${c.thing}. That is ${b} times as many as ${c.name} has. How many ${c.thing} does ${c.name} have?`,
+    hint: (_, a, b) => `${b} times what number makes ${a}? Think: ${b} × □ = ${a}.`,
+    from: 4,
+  },
+  {
+    text: (c, a, b) => `${c.name} has ${a} ${c.thing} and ${c.friend} has ${b}. How many times as many ${c.thing} does ${c.name} have as ${c.friend}?`,
+    hint: (_, a, b) => `Times as many, not how many more: how many groups of ${b} make ${a}?`,
+    from: 4,
+  },
 ];
 
 /**
@@ -264,6 +274,7 @@ export const wordMultiplication = {
   id: "word_multiplication",
   name: "Equal-groups stories",
   generate(rng, grade) {
+    if (grade >= 4 && rng.chance(0.25)) return timesAsMany(rng);
     // From fourth grade, a two-digit number of things in each group (4.NBT.5).
     const top = atGrade(grade, FACTORS);
     const a = rng.int(2, grade >= 4 ? 9 : top);
@@ -280,6 +291,34 @@ export const wordMultiplication = {
     };
   },
 };
+
+/**
+ * A multiplication read as a comparison, and back (4.OA.1): 35 = 5 × 7 says
+ * that 35 is 5 times as many as 7, and 7 times as many as 5.
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function timesAsMany(rng) {
+  const [a, b] = rng.shuffle([2, 3, 4, 5, 6, 7, 8, 9]);
+  const product = a * b;
+  if (rng.chance(0.5)) {
+    return {
+      prompt: `Which sentence means the same as ${product} = ${a} × ${b}?`,
+      answer: `${product} is ${a} times as many as ${b}.`,
+      // "More than" for "times as many", or the comparison turned round.
+      wrong: rng.shuffle([`${product} is ${a} more than ${b}.`, `${b} is ${a} times as many as ${product}.`, `${a} is ${b} times as many as ${product}.`, `${product} is ${b} more than ${a}.`]),
+      hint: "Times as many means multiplying. The biggest number is the one that is so many times as many as another.",
+      difficulty: 2,
+    };
+  }
+  return {
+    prompt: `Which equation says "${product} is ${a} times as many as ${b}"?`,
+    answer: `${product} = ${a} × ${b}`,
+    wrong: rng.shuffle([`${product} = ${a} + ${b}`, `${b} = ${a} × ${product}`, `${a} = ${b} × ${product}`, `${product} + ${a} = ${b}`]),
+    hint: `Times as many means multiplying: ${a} groups of ${b}.`,
+    difficulty: 2,
+  };
+}
 
 /**
  * Stories where the sharing doesn't come out even, and the question decides
@@ -334,7 +373,8 @@ export const wordDivision = {
     return {
       prompt: story.text(c, dividend, divisor),
       answer: quotient,
-      wrong: wrongNumbers(rng, quotient, [quotient + 1, quotient - 1, quotient + 2, divisor], { min: 1 }),
+      // One out, the divisor, or how many more instead of how many times as many.
+      wrong: wrongNumbers(rng, quotient, [quotient + 1, quotient - 1, quotient + 2, divisor, dividend - divisor], { min: 1 }),
       hint: story.hint(c, dividend, divisor),
       difficulty: 2 + Number(dividend > 25),
     };

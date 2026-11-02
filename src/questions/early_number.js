@@ -487,6 +487,8 @@ export const oddEven = {
   id: "odd_even",
   name: "Odd and even",
   generate(rng, grade) {
+    // Third grade: patterns in adding and multiplying (3.OA.9).
+    if (grade >= 3) return arithmeticPattern(rng);
     const top = grade >= 2.5 ? 50 : 20;
     switch (rng.pick(["which", "which", "doubles", "halve", "next"])) {
       case "which": {
@@ -541,3 +543,67 @@ export const oddEven = {
     }
   },
 };
+
+/** Sentences about adding and multiplying that are always true (3.OA.9). */
+export const ALWAYS = [
+  "2 times any number is always even.",
+  "4 times any number is always even.",
+  "Any number times 10 ends in 0.",
+  "Any number times 5 ends in 0 or 5.",
+  "Adding two odd numbers always gives an even number.",
+  "Adding two even numbers always gives an even number.",
+  "Adding an odd number and an even number always gives an odd number.",
+  "Multiplying two odd numbers always gives an odd number.",
+];
+
+/** And sentences that sound as if they might be, but aren't. */
+export const NOT_ALWAYS = [
+  "3 times any number is always odd.",
+  "5 times any number is always odd.",
+  "Any number times 5 ends in 5.",
+  "Any number times 4 ends in 4.",
+  "Adding two odd numbers always gives an odd number.",
+  "Adding an odd number and an even number always gives an even number.",
+  "Multiplying two odd numbers always gives an even number.",
+  "Adding two even numbers always gives an odd number.",
+];
+
+/**
+ * What can be said of a times table, with a test of whether it is true.
+ * @type {readonly { text: string, test: (table: number[]) => boolean }[]}
+ */
+export const TABLE_FACTS = [
+  { text: "Every number in it is even.", test: t => t.every(n => n % 2 === 0) },
+  { text: "Every number in it is odd.", test: t => t.every(n => n % 2 === 1) },
+  { text: "The numbers go odd, even, odd, even.", test: t => t.every((n, i) => n % 2 === (i % 2 === 0 ? 1 : 0)) },
+  { text: "Every number in it ends in 0 or 5.", test: t => t.every(n => n % 5 === 0) },
+  { text: "Every number in it ends in 0.", test: t => t.every(n => n % 10 === 0) },
+  { text: "The digits of every number in it add up to 9.", test: t => t.every(n => String(n).split("").reduce((sum, d) => sum + Number(d), 0) === 9) },
+];
+
+/**
+ * A pattern in adding or multiplying (3.OA.9): which sentence is always true,
+ * or what is true of a whole times table.
+ * @param {Rng} rng
+ * @returns {import("./common.js").Draft}
+ */
+function arithmeticPattern(rng) {
+  if (rng.chance(0.5)) {
+    return {
+      prompt: "Which of these is always true?",
+      answer: rng.pick(ALWAYS),
+      wrong: rng.shuffle(NOT_ALWAYS),
+      hint: "Try each one with a few numbers, small and big, odd and even. One example that doesn't work shows it isn't always true.",
+      difficulty: 2,
+    };
+  }
+  const n = rng.int(2, 10);
+  const table = Array.from({ length: 10 }, (_, i) => n * (i + 1));
+  return {
+    prompt: `Here is the ${n} times table: ${table.join(", ")}. Which is true of it?`,
+    answer: rng.pick(TABLE_FACTS.filter(f => f.test(table))).text,
+    wrong: rng.shuffle(TABLE_FACTS.filter(f => !f.test(table))).map(f => f.text),
+    hint: "Look at the last digit of each number, and whether it is odd or even.",
+    difficulty: 2,
+  };
+}

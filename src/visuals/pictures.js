@@ -27,6 +27,25 @@ export function objects(v) {
 }
 
 /**
+ * Groups of things, one row each, lined up from the left so each can be
+ * matched with the one above it.
+ * @param {Extract<Visual, { kind: "groups" }>} v
+ */
+export function groups(v) {
+  const longest = Math.max(...v.rows.map(r => r.count));
+  const things = v.rows.flatMap((row, j) => Array.from({ length: row.count }, (_, i) => text({
+    x: 8 + i * CELL + CELL / 2,
+    y: 8 + j * CELL + CELL / 2,
+    "font-size": 34,
+    "text-anchor": "middle",
+    "dominant-baseline": "central",
+    class: "counter",
+    "data-row": j,
+  }, row.emoji)));
+  return svg("groups", longest * CELL + 16, v.rows.length * CELL + 16, describeVisual(v), things);
+}
+
+/**
  * A row of pictures, with a dashed box where one is missing.
  * @param {Extract<Visual, { kind: "pattern" }>} v
  */
