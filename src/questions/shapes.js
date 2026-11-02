@@ -82,6 +82,26 @@ export const CLUES = [
   ["Which flat shape has 4 sides, two long and two short?", "rectangle"],
 ];
 
+/** Shapes built from straws (K.G.5): the clue, and the shape it makes. */
+export const STRAWS = [
+  ["You join 3 straws end to end to make a closed shape. What shape did you make?", "triangle"],
+  ["You make a shape from 4 straws, all the same length, with square corners. What shape is it?", "square"],
+  ["You make a shape from 2 long straws and 2 short straws, with square corners. What shape is it?", "rectangle"],
+];
+
+/** What each picture of shapes put together is made of (K.G.6, 1.G.2). */
+export const MADE_OF = {
+  triangles: "two triangles", squares: "two squares", rectangles: "two rectangles", "four squares": "four squares",
+  "half-circles": "two half-circles", house: "a square and a triangle", trapezoids: "two trapezoids", "three triangles": "three triangles",
+};
+
+/** Shapes put together in words, and the shape they make (1.G.2). */
+export const PUT_TOGETHER = [
+  ["You put two squares side by side. What shape do they make?", "rectangle"],
+  ["You put two half-circles together along their flat sides. What shape do they make?", "circle"],
+  ["You put two matching trapezoids together along their long sides. What shape do they make?", "hexagon"],
+];
+
 /** Words for where something is (K.G.1), and what is placed in the pictures. */
 export const PLACES = /** @type {const} */ (["above", "below", "next to", "in front of", "behind"]);
 const THINGS = /** @type {const} */ (["cat", "dog", "bunny", "ball", "bear"]);
@@ -162,7 +182,9 @@ export const shapes = {
     // (K.G.3), match them to clues (K.G.4) and things in the world, and say
     // where something is (K.G.1).
     if (grade < 1) {
-      const kind = rng.pick(["flat", "flat", "solid", "flatOrSolid", "shapedLike", "clue", "where", "where"]);
+      const kind = rng.pick(["flat", "flat", "solid", "flatOrSolid", "shapedLike", "clue", "where", "where", "build", "compose"]);
+      if (kind === "build") return build(rng);
+      if (kind === "compose") return compose(rng, grade);
       const otherSolids = (/** @type {string} */ answer) => rng.shuffle(SOLIDS.filter(s => s !== answer));
       if (kind === "solid") {
         const solid = rng.pick(SOLIDS);
@@ -227,7 +249,8 @@ export const shapes = {
       };
     }
 
-    // First grade: count its sides or corners (1.G.1).
+    // First grade: put shapes together (1.G.2), or count sides or corners (1.G.1).
+    if (grade < 2 && rng.chance(0.35)) return compose(rng, grade);
     if (grade < 2) {
       const sides = rng.chance(0.5);
       const answer = sides ? shape.sides : shape.corners;
@@ -353,3 +376,61 @@ export const shapes = {
     };
   },
 };
+
+/**
+ * Building a flat shape from straws (K.G.5): which shape a set of straws
+ * makes, or how many straws a shape takes.
+ * @param {import("../rng.js").Rng} rng
+ * @returns {import("./common.js").Draft}
+ */
+function build(rng) {
+  if (rng.chance(0.5)) {
+    const [prompt, answer] = rng.pick(STRAWS);
+    return {
+      prompt,
+      answer,
+      wrong: rng.shuffle(FLAT.filter(s => s !== answer)),
+      hint: "Each straw is one side. Count the sides, and look at the corners.",
+      difficulty: 1,
+    };
+  }
+  const shape = rng.pick(["triangle", "square", "rectangle", "hexagon"]);
+  const answer = shapeById(shape).sides;
+  return {
+    prompt: `How many straws do you need to make a ${shape}?`,
+    answer,
+    wrong: wrongNumbers(rng, answer, [answer + 1, answer - 1, answer + 2], { min: 2, spread: 2 }),
+    hint: `Each straw makes one side of the ${shape}.`,
+    difficulty: 1,
+  };
+}
+
+/**
+ * Shapes put together to make a bigger one (K.G.6, 1.G.2): which shapes a
+ * picture is made of, or in first grade sometimes the shape two make.
+ * @param {import("../rng.js").Rng} rng
+ * @param {number} grade
+ * @returns {import("./common.js").Draft}
+ */
+function compose(rng, grade) {
+  if (grade >= 1 && rng.chance(0.35)) {
+    const [prompt, answer] = rng.pick(PUT_TOGETHER);
+    return {
+      prompt,
+      answer,
+      wrong: rng.shuffle(["rectangle", "circle", "hexagon", "triangle", "square"].filter(s => s !== answer)),
+      hint: "Picture the two shapes, or draw them, and see what shape their outside makes.",
+      difficulty: 2,
+    };
+  }
+  const figures = /** @type {(keyof typeof MADE_OF)[]} */ (Object.keys(MADE_OF)).filter(f => grade >= 1 || (f !== "trapezoids" && f !== "three triangles"));
+  const figure = rng.pick(figures);
+  return {
+    prompt: "Which shapes were put together to make this shape?",
+    visual: { kind: "compose", figure },
+    answer: MADE_OF[figure],
+    wrong: rng.shuffle(figures.filter(f => f !== figure)).map(f => MADE_OF[f]),
+    hint: "Each color is one shape. Look at each part and name it, and count how many there are.",
+    difficulty: 1 + Number(grade >= 1),
+  };
+}

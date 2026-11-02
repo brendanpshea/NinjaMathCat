@@ -99,6 +99,8 @@ export const addition = {
   id: "addition",
   name: "Addition",
   generate(rng, grade) {
+    if (grade < 1 && rng.chance(0.3)) return showWithObjects(rng, true, atGrade(grade, WITHIN));
+    if (grade >= 2 && grade < 3 && rng.chance(0.2)) return strategy(rng, true);
     // In second grade, some facts within 20, to know by heart (2.OA.2).
     const max = grade >= 2 && grade < 3 && rng.chance(0.3) ? 20 : atGrade(grade, WITHIN);
     const a = rng.int(1, max - 1);
@@ -126,6 +128,8 @@ export const subtraction = {
   id: "subtraction",
   name: "Subtraction",
   generate(rng, grade) {
+    if (grade < 1 && rng.chance(0.3)) return showWithObjects(rng, false, atGrade(grade, WITHIN));
+    if (grade >= 2 && grade < 3 && rng.chance(0.2)) return strategy(rng, false);
     // In second grade, some facts within 20, to know by heart (2.OA.2).
     const max = grade >= 2 && grade < 3 && rng.chance(0.3) ? 20 : atGrade(grade, WITHIN);
     const a = rng.int(2, max);
@@ -149,6 +153,129 @@ export const subtraction = {
     };
   },
 };
+
+/** Two kinds of thing, to put together as two groups (K.OA.1). */
+const TWO_KINDS = [["red apples", "🍎", "green apples", "🍏"], ["red counters", "🔴", "blue counters", "🔵"], ["cats", "🐱", "dogs", "🐶"]];
+const TAKEN = ["🐦", "🐟", "🎈", "⭐", "🍪"];
+
+/** @param {string} sentence  "3 + 2" or "5 − 1" */
+function valueOf(sentence) {
+  const [x, op, y] = sentence.split(" ");
+  return op === "+" ? Number(x) + Number(y) : Number(x) - Number(y);
+}
+
+/**
+ * A picture of two groups put together, or of some crossed out, and the
+ * number sentence that shows it (K.OA.1).
+ * @param {Rng} rng
+ * @param {boolean} adding
+ * @param {number} max
+ * @returns {Draft}
+ */
+function showWithObjects(rng, adding, max) {
+  if (adding) {
+    const [first, one, second, other] = rng.pick(TWO_KINDS);
+    const a = rng.int(1, max - 1);
+    const b = rng.int(1, max - a);
+    const answer = `${a} + ${b}`;
+    // Taking away instead, a group counted twice, or one counted wrong.
+    const wrong = [`${Math.max(a, b)} − ${Math.min(a, b)}`, `${a} + ${a}`, `${b} + ${b}`, `${a} + ${b + 1}`, `${a + 1} + ${b}`].filter(s => valueOf(s) !== a + b);
+    return {
+      prompt: `Which number sentence shows the ${first} and the ${second} put together?`,
+      visual: { kind: "pattern", items: [...Array(a).fill(one), ...Array(b).fill(other)] },
+      answer,
+      wrong: [...new Set(rng.shuffle(wrong))],
+      hint: "Count each group. Putting groups together is adding.",
+      difficulty: 1,
+    };
+  }
+  const total = rng.int(2, max);
+  const gone = rng.int(1, total - 1);
+  const answer = `${total} − ${gone}`;
+  // Adding instead, the ones left taken away, or one counted wrong.
+  const wrong = [`${total} + ${gone}`, `${total} − ${total - gone}`, `${total} − ${gone + 1}`, `${total - 1} − ${gone}`, `${total - gone} + ${gone}`].filter(s => valueOf(s) !== total - gone && valueOf(s) >= 0);
+  return {
+    prompt: "The ones crossed out are taken away. Which number sentence shows the picture?",
+    visual: { kind: "objects", emoji: rng.pick(TAKEN), count: total, crossed: gone },
+    answer,
+    wrong: [...new Set(rng.shuffle(wrong))],
+    hint: "Count them all first. Then take away the ones crossed out.",
+    difficulty: 1,
+  };
+}
+
+/**
+ * Ways to work out a two-digit sum or difference (2.NBT.9). One is sound;
+ * the others each have a slip in their thinking, though every step's
+ * arithmetic is right, so the steps have to be followed, not just checked.
+ * @param {Rng} rng
+ * @param {boolean} adding
+ * @returns {Draft}
+ */
+function strategy(rng, adding) {
+  /** @typedef {[number, "+" | "−", number]} Step */
+  /** @param {Step[]} steps */
+  const write = steps => steps.map(([x, op, y]) => `${x} ${op} ${y} = ${op === "+" ? x + y : x - y}`).join(", then ");
+  /** @param {Step[]} steps */
+  const allPositive = steps => steps.every(([x, op, y]) => (op === "+" ? x + y : x - y) >= 0);
+  if (adding) {
+    let a, b;
+    do [a, b] = [rng.int(21, 68), rng.int(13, 39)];
+    while ((a % 10) + (b % 10) < 10 || a + b > 99 || a % 10 === b % 10);
+    const [A, a1, B, b1] = [a - (a % 10), a % 10, b - (b % 10), b % 10];
+    /** @type {Step[][]} */
+    const sound = [
+      [[A, "+", B], [a1, "+", b1], [A + B, "+", a1 + b1]],
+      [[a, "+", B], [a + B, "+", b1]],
+      [[a, "+", B + 10], [a + B + 10, "−", 10 - b1]],
+      [[a, "+", 10 - a1], [a + 10 - a1, "+", b - (10 - a1)]],
+    ];
+    /** @type {Step[][]} */
+    const slips = [
+      // Adding too much, then adding the extra on again instead of taking it off.
+      [[a, "+", B + 10], [a + B + 10, "+", 10 - b1]],
+      // The first number's ones added again, in place of the second's.
+      [[a, "+", B], [a + B, "+", a1]],
+      // The ten made by the ones dropped.
+      [[A, "+", B], [a1, "+", b1], [A + B, "+", (a1 + b1) % 10]],
+      // The part used to make a ten not taken off the second number.
+      [[a, "+", 10 - a1], [a + 10 - a1, "+", b]],
+    ];
+    return {
+      prompt: `Which is a correct way to work out ${a} + ${b}?`,
+      answer: write(rng.pick(sound)),
+      wrong: rng.shuffle(slips).map(write),
+      hint: "Follow each step. Every ten and every one of both numbers has to be added once, and anything extra taken off again.",
+      difficulty: 3,
+    };
+  }
+  let a, b;
+  do [a, b] = [rng.int(41, 98), rng.int(12, 39)];
+  while (a % 10 >= b % 10 || a - b < 10);
+  const [A, a1, B, b1] = [a - (a % 10), a % 10, b - (b % 10), b % 10];
+  /** @type {Step[][]} */
+  const sound = [
+    [[a, "−", B], [a - B, "−", b1]],
+    [[a, "−", B + 10], [a - B - 10, "+", 10 - b1]],
+  ];
+  const slips = /** @type {Step[][]} */ ([
+    // Taking away the smaller ones digit from the bigger, whichever number it is in.
+    [[A, "−", B], [b1, "−", a1], [A - B, "+", b1 - a1]],
+    // Taking away too much, then taking the extra away again instead of giving it back.
+    [[a, "−", B + 10], [a - B - 10, "−", 10 - b1]],
+    // The ones added on instead of taken away.
+    [[a, "−", B], [a - B, "+", b1]],
+    // A ten too many taken away.
+    [[a, "−", b1], [a - b1, "−", B + 10]],
+  ]).filter(allPositive);
+  return {
+    prompt: `Which is a correct way to work out ${a} − ${b}?`,
+    answer: write(rng.pick(sound)),
+    wrong: rng.shuffle(slips).map(write),
+    hint: "Follow each step. Taking away too much means giving some back, and the ones digits can't swap places.",
+    difficulty: 3,
+  };
+}
 
 /**
  * The properties of multiplication, as missing numbers: the order can

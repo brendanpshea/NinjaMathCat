@@ -15,6 +15,7 @@ describe("measuring length", () => {
     for (const { grade, question: q, at } of questionsOf(measuring)) {
       const p = q.prompt;
       const v = q.visual;
+      if (/can you measure about|What should you measure\?$/.test(p)) continue;
       let kind;
       if (/^Which ribbon is the (longest|shortest)\?$/.test(p)) {
         kind = "longest";
@@ -75,5 +76,21 @@ describe("measuring length", () => {
       assert.ok(expected.includes(kind), `${at}: ${kind} at grade ${grade}`);
     }
     assert.equal(seen.size, 9);
+  });
+
+  it("knows what can be measured, and what to measure to compare (K.MD.1)", () => {
+    const MEASURES = ["how long it is", "how heavy it is", "how tall it is", "how much water it holds"];
+    const TO_COMPARE = { heavier: "how heavy each one is", longer: "how long each one is", taller: "how tall each one is", "holds more": "how much water each one holds" };
+    let asked = 0;
+    for (const { grade, question: q, at } of questionsOf(measuring)) {
+      const about = /^Which of these can you measure about/.test(q.prompt);
+      const compare = q.prompt.match(/^You want to find out which (is heavier|is longer|is taller|holds more)/);
+      if (!about && !compare) continue;
+      asked++;
+      assert.ok(grade < 1, at);
+      if (about) for (const c of q.choices) assert.equal(MEASURES.includes(c), c === q.answer, `${at} → ${c}`);
+      else assert.equal(q.answer, TO_COMPARE[compare[1].replace(/^is /, "")], at);
+    }
+    assert.ok(asked > 0);
   });
 });

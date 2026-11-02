@@ -57,8 +57,8 @@ export const GRADES = [
  * @type {readonly { type: QuestionType, from: number, to: number, standards: string[] }[]}
  */
 export const CURRICULUM = [
-  { type: counting, from: 0, to: 0.5, standards: ["K.CC.4", "K.CC.5", "K.MD.3"] },
-  { type: measuring, from: 0, to: 2.5, standards: ["K.MD.2", "1.MD.1", "1.MD.2", "2.MD.1", "2.MD.2", "2.MD.3", "2.MD.4", "2.MD.5"] },
+  { type: counting, from: 0, to: 0.5, standards: ["K.CC.3", "K.CC.4", "K.CC.5", "K.MD.3"] },
+  { type: measuring, from: 0, to: 2.5, standards: ["K.MD.1", "K.MD.2", "1.MD.1", "1.MD.2", "2.MD.1", "2.MD.2", "2.MD.3", "2.MD.4", "2.MD.5"] },
   { type: sequence, from: 0, to: 1.5, standards: ["K.CC.2", "1.NBT.1"] },
   { type: skipCounting, from: 0, to: 4.5, standards: ["K.CC.1", "2.NBT.2", "3.OA.9", "4.OA.5"] },
   { type: comparison, from: 0, to: 4.5, standards: ["K.CC.6", "K.CC.7", "1.NBT.3", "2.NBT.4", "4.NBT.2"] },
@@ -67,9 +67,9 @@ export const CURRICULUM = [
   { type: tensAndOnes, from: 0.5, to: 2.5, standards: ["K.NBT.1", "1.NBT.2", "1.NBT.4", "1.NBT.5", "1.NBT.6", "2.NBT.1", "2.NBT.3", "2.NBT.8"] },
   { type: equalSign, from: 1, to: 2.5, standards: ["1.OA.3", "1.OA.7"] },
   { type: oddEven, from: 2, to: 3.5, standards: ["2.OA.3", "3.OA.9"] },
-  { type: shapes, from: 0, to: 5.5, standards: ["K.G.1", "K.G.2", "K.G.3", "K.G.4", "1.G.1", "2.G.1", "2.G.2", "3.G.1", "4.G.2", "4.G.3", "5.G.3", "5.G.4"] },
-  { type: addition, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.OA.2", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
-  { type: subtraction, from: 0, to: 4.5, standards: ["K.OA.5", "1.OA.6", "2.OA.2", "2.NBT.5", "2.NBT.6", "2.NBT.7", "3.NBT.2", "4.NBT.4"] },
+  { type: shapes, from: 0, to: 5.5, standards: ["K.G.1", "K.G.2", "K.G.3", "K.G.4", "K.G.5", "K.G.6", "1.G.1", "1.G.2", "2.G.1", "2.G.2", "3.G.1", "4.G.2", "4.G.3", "5.G.3", "5.G.4"] },
+  { type: addition, from: 0, to: 4.5, standards: ["K.OA.1", "K.OA.5", "1.OA.6", "2.OA.2", "2.NBT.5", "2.NBT.6", "2.NBT.7", "2.NBT.9", "3.NBT.2", "4.NBT.4"] },
+  { type: subtraction, from: 0, to: 4.5, standards: ["K.OA.1", "K.OA.5", "1.OA.6", "2.OA.2", "2.NBT.5", "2.NBT.6", "2.NBT.7", "2.NBT.9", "3.NBT.2", "4.NBT.4"] },
   { type: missingNumber, from: 1, to: 4.5, standards: ["1.OA.4", "1.OA.8", "3.OA.4", "3.OA.5", "3.OA.6"] },
   { type: wordAddition, from: 0, to: 4.5, standards: ["K.OA.2", "1.OA.1", "1.OA.2", "2.OA.1"] },
   { type: wordSubtraction, from: 0, to: 4.5, standards: ["K.OA.2", "1.OA.1", "2.OA.1"] },

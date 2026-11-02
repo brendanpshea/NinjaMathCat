@@ -1,10 +1,11 @@
 // Geometry figures: lines, rays and segments (4.G.1), nets that fold into
-// solids (6.G.4), and L-shapes made of two rectangles (3.MD.7d).
+// solids (6.G.4), shapes put together from smaller ones (K.G.6, 1.G.2), and
+// L-shapes made of two rectangles (3.MD.7d).
 
 import { svg, el, text, COLORS, num } from "./svg.js";
 import { describeVisual } from "./describe.js";
 
-/** @import { Lines, Net, Composite } from "../questions/common.js" */
+/** @import { Lines, Net, Composite, Compose } from "../questions/common.js" */
 
 /** @param {number[][]} corners */
 const points = corners => corners.map(([x, y]) => `${num(x)},${num(y)}`).join(" ");
@@ -124,6 +125,36 @@ export function net(v) {
     face([[x, y], [x, b], [x - rise, y + side / 2]]),
   ];
   return svg("net", 2 * (12 + rise) + side, 2 * (12 + rise) + side, describeVisual(v), body);
+}
+
+/**
+ * Shapes put together to make a bigger one (K.G.6, 1.G.2), each part a
+ * polygon or a half circle, in [x, y] points or a path.
+ * @type {Record<Compose["figure"], (number[][] | string)[]>}
+ */
+export const COMPOSED = {
+  triangles: [[[50, 20], [210, 20], [50, 180]], [[210, 20], [210, 180], [50, 180]]],
+  squares: [[[20, 40], [140, 40], [140, 160], [20, 160]], [[140, 40], [260, 40], [260, 160], [140, 160]]],
+  rectangles: [[[60, 20], [140, 20], [140, 180], [60, 180]], [[140, 20], [220, 20], [220, 180], [140, 180]]],
+  "four squares": [[[60, 20], [140, 20], [140, 100], [60, 100]], [[140, 20], [220, 20], [220, 100], [140, 100]], [[60, 100], [140, 100], [140, 180], [60, 180]], [[140, 100], [220, 100], [220, 180], [140, 180]]],
+  "half-circles": ["M 60 100 A 80 80 0 0 1 220 100 Z", "M 60 100 A 80 80 0 0 0 220 100 Z"],
+  house: [[[90, 85], [190, 85], [190, 185], [90, 185]], [[90, 85], [190, 85], [140, 15]]],
+  trapezoids: [[[50, 100], [95, 22], [185, 22], [230, 100]], [[50, 100], [230, 100], [185, 178], [95, 178]]],
+  "three triangles": [[[25, 175], [135, 175], [80, 80]], [[80, 80], [190, 80], [135, 175]], [[135, 175], [245, 175], [190, 80]]],
+};
+
+/**
+ * A shape made of smaller ones, each part in its own color, so the joins
+ * show.
+ * @param {Compose} v
+ */
+export function compose(v) {
+  const fills = [COLORS.fill, "#fde68a"];
+  const body = COMPOSED[v.figure].map((part, i) => {
+    const look = { fill: fills[i % 2], stroke: COLORS.ink, "stroke-width": 3, "stroke-linejoin": "round", class: "part" };
+    return typeof part === "string" ? el("path", { d: part, ...look }) : el("polygon", { points: points(part), ...look });
+  });
+  return svg("compose", 280, 200, describeVisual(v), body);
 }
 
 /**

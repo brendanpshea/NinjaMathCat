@@ -2,6 +2,7 @@
 // and which is bigger.
 
 import { atGrade, wrongNumbers, formatNumber as fmt } from "./common.js";
+import { numberWords } from "./early_number.js";
 
 /** @import { QuestionType } from "./common.js" */
 
@@ -13,6 +14,7 @@ export const counting = {
   id: "counting",
   name: "Counting",
   generate(rng, grade) {
+    if (rng.chance(0.2)) return numeral(rng, grade);
     if (rng.chance(0.3)) return sortAndCount(rng);
     const top = atGrade(grade, [[0, 5], [Infinity, 10]]); // K.CC.5
     const count = rng.int(1, top);
@@ -26,6 +28,28 @@ export const counting = {
     };
   },
 };
+
+/**
+ * The numeral for a number word, to 10 and then to 20 (K.CC.3): what a child
+ * writes, chosen instead. The digits turned round, as in 41 for fourteen, are
+ * the mistake to catch.
+ * @param {import("../rng.js").Rng} rng
+ * @param {number} grade
+ * @returns {import("./common.js").Draft}
+ */
+function numeral(rng, grade) {
+  const n = rng.int(1, grade < 0.5 ? 10 : 20);
+  const ones = n % 10;
+  const turned = Number(String(n).padStart(2, "0").split("").reverse().join(""));
+  const wrong = [...new Set([turned, ones, ones * 10, n + 10, n + 1, n - 1])].filter(x => x !== n && x >= 0);
+  return {
+    prompt: `Which is the number ${numberWords(n)}?`,
+    answer: n,
+    wrong: [...wrong.slice(0, 3).filter(x => x !== ones || n > 10), ...wrong.slice(3)],
+    hint: n > 10 && n < 20 ? "Teen numbers are one ten and some ones, so they start with a 1." : "Say each number out loud.",
+    difficulty: 1 + Number(n > 10),
+  };
+}
 
 /**
  * A row of things of four kinds, mixed up: how many of one kind, or which

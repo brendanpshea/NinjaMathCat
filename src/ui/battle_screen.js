@@ -136,6 +136,8 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     }
     ref("prompt").textContent = q.prompt;
     ref("picture").innerHTML = q.visual ? pictureHtml(q.visual) : "";
+    // Long choices, such as the steps of a way to work something out, get a row each.
+    ref("choices").classList.toggle("long", q.choices.some(c => String(c).length > 32));
     ref("choices").innerHTML = q.choices.map((c, i) => {
       const out = battle.ruledOut.includes(c);
       return `<button type="button" class="choice${out ? " wrong" : ""}" data-index="${i}"${out ? " disabled" : ""}>

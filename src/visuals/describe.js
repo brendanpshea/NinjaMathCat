@@ -63,7 +63,9 @@ export function dataTable(v) {
 export function describeVisual(v) {
   switch (v.kind) {
     case "objects":
-      return `Pictures of ${v.emoji} to count`;
+      return v.crossed ? `Pictures of ${v.emoji}, some of them crossed out` : `Pictures of ${v.emoji} to count`;
+    case "compose":
+      return "A shape made of smaller shapes, each in its own color";
     case "pattern":
       return v.items.includes(null) ? "A row of pictures with one missing" : "A row of pictures to sort and count";
     case "money":

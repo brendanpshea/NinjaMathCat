@@ -3,9 +3,13 @@
 // question types cover which standards; tools/standards_coverage.js reports
 // what is covered and what is still to do.
 //
-// A few standards are about doing things with hands (writing numerals,
-// building shapes, measuring with a real ruler) that a game of choosing answers
-// can't fairly test. They are marked * and counted apart.
+// A few standards are about doing things with hands: writing numerals,
+// showing sums with fingers, building and putting together shapes, measuring
+// with a real ruler. The game asks a stand-in for each, such as choosing the
+// numeral for a number word, the number sentence for a picture, or the shapes
+// a shape is made of; the hands-on part is still best done with paper, straws
+// and blocks. A standard the game can't stand in for at all would be marked *
+// and counted apart.
 
 /**
  * @typedef {object} Standard
@@ -18,26 +22,26 @@
 const TABLE = `
 K.CC.1 Count to 100 by ones and by tens
 K.CC.2 Count forward from a given number
-K.CC.3* Write numbers from 0 to 20
+K.CC.3 Write numbers from 0 to 20
 K.CC.4 Connect counting to how many there are
 K.CC.5 Count to answer "how many?" up to 20
 K.CC.6 Compare groups: greater, less or equal
 K.CC.7 Compare two numbers between 1 and 10
-K.OA.1* Show addition and subtraction with objects, fingers and drawings
+K.OA.1 Show addition and subtraction with objects, fingers and drawings
 K.OA.2 Addition and subtraction word problems within 10
 K.OA.3 Break numbers up to 10 into pairs
 K.OA.4 Find the number that makes 10
 K.OA.5 Fluently add and subtract within 5
 K.NBT.1 Teen numbers as ten ones and some more
-K.MD.1* Describe measurable attributes
+K.MD.1 Describe measurable attributes
 K.MD.2 Compare two objects by length, weight or height
 K.MD.3 Sort objects into categories and count them
 K.G.1 Positions: above, below, beside, in front, behind
 K.G.2 Name shapes whatever their size or turn
 K.G.3 Flat shapes and solid shapes
 K.G.4 Compare flat and solid shapes
-K.G.5* Build and draw shapes
-K.G.6* Put simple shapes together into bigger ones
+K.G.5 Build and draw shapes
+K.G.6 Put simple shapes together into bigger ones
 1.OA.1 Addition and subtraction word problems within 20
 1.OA.2 Word problems adding three numbers
 1.OA.3 Properties of operations: order and grouping
@@ -57,7 +61,7 @@ K.G.6* Put simple shapes together into bigger ones
 1.MD.3 Tell time in hours and half hours
 1.MD.4 Data with up to three categories
 1.G.1 Defining attributes of shapes
-1.G.2* Put shapes together to make new shapes
+1.G.2 Put shapes together to make new shapes
 1.G.3 Halves and fourths of circles and rectangles
 2.OA.1 One- and two-step word problems within 100
 2.OA.2 Fluently add and subtract within 20
@@ -71,8 +75,8 @@ K.G.6* Put simple shapes together into bigger ones
 2.NBT.6 Add up to four two-digit numbers
 2.NBT.7 Add and subtract within 1000
 2.NBT.8 Add or subtract 10 or 100 in your head
-2.NBT.9* Explain why adding and subtracting strategies work
-2.MD.1* Measure length with a ruler or other tool
+2.NBT.9 Explain why adding and subtracting strategies work
+2.MD.1 Measure length with a ruler or other tool
 2.MD.2 Measure one length in two different units
 2.MD.3 Estimate lengths
 2.MD.4 How much longer one object is than another

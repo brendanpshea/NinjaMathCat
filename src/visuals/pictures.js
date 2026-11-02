@@ -9,20 +9,21 @@ import { describeVisual } from "./describe.js";
 const CELL = 50;
 
 /**
- * Counters in rows of five, the way ten frames group them.
+ * Counters in rows of five, the way ten frames group them. The last few may
+ * be crossed out, as taken away (K.OA.1).
  * @param {Extract<Visual, { kind: "objects" }>} v
  */
 export function objects(v) {
   const perRow = 5;
   const rows = Math.ceil(v.count / perRow);
-  const counters = Array.from({ length: v.count }, (_, i) => text({
-    x: 8 + (i % perRow) * CELL + CELL / 2,
-    y: 8 + Math.floor(i / perRow) * CELL + CELL / 2,
-    "font-size": 34,
-    "text-anchor": "middle",
-    "dominant-baseline": "central",
-    class: "counter",
-  }, v.emoji));
+  const gone = v.count - (v.crossed ?? 0);
+  const counters = Array.from({ length: v.count }, (_, i) => {
+    const [x, y] = [8 + (i % perRow) * CELL + CELL / 2, 8 + Math.floor(i / perRow) * CELL + CELL / 2];
+    const counter = text({ x, y, "font-size": 34, "text-anchor": "middle", "dominant-baseline": "central", class: "counter", ...(i >= gone ? { opacity: 0.45 } : {}) }, v.emoji);
+    if (i < gone) return counter;
+    const cross = { stroke: COLORS.point, "stroke-width": 4, "stroke-linecap": "round" };
+    return el("g", { class: "crossed" }, counter, el("line", { x1: x - 16, y1: y - 16, x2: x + 16, y2: y + 16, ...cross }), el("line", { x1: x + 16, y1: y - 16, x2: x - 16, y2: y + 16, ...cross }));
+  });
   return svg("objects", perRow * CELL + 16, rows * CELL + 16, describeVisual(v), counters);
 }
 

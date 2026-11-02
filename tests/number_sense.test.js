@@ -6,9 +6,25 @@ import { counting, sequence, skipCounting, comparison } from "../src/questions/n
 import { questionsOf, numbersIn } from "./helpers.js";
 
 describe("counting", () => {
+  it("picks the numeral for a number word, to 20, with the digits turned round to catch (K.CC.3)", () => {
+    const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+    let asked = 0;
+    for (const { grade, question: q, at } of questionsOf(counting)) {
+      const word = q.prompt.match(/^Which is the number (\w+)\?$/)?.[1];
+      if (!word) continue;
+      asked++;
+      assert.equal(q.answer, WORDS.indexOf(word), at);
+      assert.ok(q.answer >= 1 && q.answer <= (grade < 0.5 ? 10 : 20), at);
+      const turned = Number(String(q.answer).padStart(2, "0").split("").reverse().join(""));
+      if (q.answer > 11 && q.answer < 20 && q.answer % 10 !== 1) assert.ok(q.choices.includes(turned), `${at}: ${turned} is the slip to catch`);
+    }
+    assert.ok(asked > 0);
+  });
+
   it("shows as many pictures as the answer, or sorts a mixed row and counts a kind (K.MD.3)", () => {
     let sorted = 0;
     for (const { grade, question: q, at } of questionsOf(counting)) {
+      if (!q.visual) continue;
       if (q.visual.kind === "pattern") {
         sorted++;
         const items = q.visual.items;

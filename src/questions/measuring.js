@@ -31,6 +31,7 @@ export const measuring = {
   id: "measuring",
   name: "Measuring length",
   generate(rng, grade) {
+    if (grade < 1 && rng.chance(0.4)) return attribute(rng);
     switch (rng.pick(atGrade(grade, MEASURING))) {
       case "longest": return longest(rng);
       case "order": return order(rng);
@@ -278,5 +279,50 @@ function story(rng) {
     wrong: wrongNumbers(rng, a - b, [a + b, a - b + 10, a - b - 10, a - b + 1].filter(n => n > 0 && n !== a - b), { min: 1 }),
     hint: "Take the shorter length from the longer one.",
     difficulty: 2,
+  };
+}
+
+/** Things, and what about them can be measured (K.MD.1). */
+const MEASURABLE = [
+  { thing: "a pencil", can: ["how long it is", "how heavy it is"] },
+  { thing: "a backpack", can: ["how heavy it is", "how tall it is"] },
+  { thing: "a tree", can: ["how tall it is"] },
+  { thing: "a jug of water", can: ["how much water it holds", "how heavy it is"] },
+  { thing: "a jump rope", can: ["how long it is"] },
+];
+const NOT_MEASURABLE = ["what color it is", "what it is called", "who it belongs to", "what it is made of"];
+
+/** Comparisons, and what to measure to make them. */
+const TO_COMPARE = [
+  { ask: "which is heavier, a book or a shoe", answer: "how heavy each one is" },
+  { ask: "which is longer, a rope or a ribbon", answer: "how long each one is" },
+  { ask: "which is taller, a giraffe or a horse", answer: "how tall each one is" },
+  { ask: "which holds more water, a cup or a bowl", answer: "how much water each one holds" },
+];
+
+/**
+ * What can be measured about a thing, or what to measure to compare two
+ * (K.MD.1).
+ * @param {Rng} rng
+ * @returns {Draft}
+ */
+function attribute(rng) {
+  if (rng.chance(0.5)) {
+    const { thing, can } = rng.pick(MEASURABLE);
+    return {
+      prompt: `Which of these can you measure about ${thing}?`,
+      answer: rng.pick(can),
+      wrong: rng.shuffle(NOT_MEASURABLE),
+      hint: "You can measure something if you can find out how much: how long, how tall, how heavy.",
+      difficulty: 1,
+    };
+  }
+  const { ask, answer } = rng.pick(TO_COMPARE);
+  return {
+    prompt: `You want to find out ${ask}. What should you measure?`,
+    answer,
+    wrong: rng.shuffle([...TO_COMPARE.filter(c => c.answer !== answer).map(c => c.answer), "what color each one is"]),
+    hint: "Heavier is about weight, longer and taller are about length, and holding more is about how much fits inside.",
+    difficulty: 1,
   };
 }

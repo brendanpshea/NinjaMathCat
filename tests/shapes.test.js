@@ -2,6 +2,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { shapes, SHAPES, TRAITS, NAMES_BY_SIDES, SOLID_PARTS, shapeById } from "../src/questions/shapes.js";
+import { COMPOSED } from "../src/visuals/figures.js";
 import { SHAPE_CORNERS } from "../src/visuals/pictures.js";
 import { questionsOf } from "./helpers.js";
 
@@ -182,6 +183,41 @@ describe("solid shapes and where things are", () => {
       }
     }
     assert.equal(seen.size, 4);
+  });
+});
+
+describe("building and putting shapes together", () => {
+  it("builds shapes from straws, and names the shapes a shape is made of (K.G.5, K.G.6, 1.G.2)", () => {
+    /** How each picture is cut, written out again: how many parts, of what. */
+    const PARTS = {
+      triangles: [2, "two triangles"], squares: [2, "two squares"], rectangles: [2, "two rectangles"], "four squares": [4, "four squares"],
+      "half-circles": [2, "two half-circles"], house: [2, "a square and a triangle"], trapezoids: [2, "two trapezoids"], "three triangles": [3, "three triangles"],
+    };
+    const STRAWS = { "3 straws end to end": "triangle", "4 straws, all the same length": "square", "2 long straws and 2 short straws": "rectangle" };
+    const TOGETHER = { "two squares side by side": "rectangle", "two half-circles together": "circle", "two matching trapezoids": "hexagon" };
+    const seen = new Set();
+    for (const { grade, question: q, at } of questionsOf(shapes)) {
+      const p = q.prompt;
+      if (q.visual?.kind === "compose") {
+        seen.add("compose");
+        assert.ok(grade < 2, at);
+        const [count, made] = PARTS[q.visual.figure];
+        assert.equal(COMPOSED[q.visual.figure].length, count, at);
+        assert.equal(q.answer, made, at);
+        if (grade < 1) assert.ok(!["trapezoids", "three triangles"].includes(q.visual.figure), `${at}: trapezoids come in first grade`);
+      } else if (/straws/.test(p)) {
+        seen.add("straws");
+        assert.ok(grade < 1, at);
+        const many = p.match(/^How many straws do you need to make an? (\w+)\?$/);
+        if (many) assert.equal(q.answer, { triangle: 3, square: 4, rectangle: 4, hexagon: 6 }[many[1]], at);
+        else assert.equal(q.answer, STRAWS[Object.keys(STRAWS).find(k => p.includes(k))], at);
+      } else if (/^You put two/.test(p)) {
+        seen.add("together");
+        assert.ok(grade >= 1 && grade < 2, at);
+        assert.equal(q.answer, TOGETHER[Object.keys(TOGETHER).find(k => p.includes(k))], at);
+      }
+    }
+    assert.equal(seen.size, 3);
   });
 });
 

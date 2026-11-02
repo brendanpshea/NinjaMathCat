@@ -246,15 +246,22 @@
  */
 
 /**
+ * A shape made of smaller shapes, each part in its own color (K.G.6, 1.G.2).
+ * @typedef {object} Compose
+ * @property {"compose"} kind
+ * @property {"triangles" | "squares" | "rectangles" | "four squares" | "half-circles" | "house" | "trapezoids" | "three triangles"} figure
+ */
+
+/**
  * Something to show beside the prompt. It is data, not markup: the
  * renderers in src/visuals/ decide how a clock or a graph looks.
- * @typedef {{ kind: "objects", emoji: string, count: number }
+ * @typedef {{ kind: "objects", emoji: string, count: number, crossed?: number }
  *   | { kind: "pattern", items: (string | null)[] }
  *   | { kind: "money", items: string[] }
  *   | { kind: "clock", hours: number, minutes: number }
  *   | { kind: "shape", shape: string }
  *   | NumberLine | PictureGraph | BarGraph | LinePlot | FractionModel
- *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths | Lines | Net | Composite | Gauge | BoxPlot | DoubleLine} Visual
+ *   | AreaFigure | CubeBox | AngleFigure | CoordinateGrid | TenFrame | BaseTen | Lengths | Solid | Scene | Groups | FractionBars | Hundredths | Lines | Net | Composite | Gauge | BoxPlot | DoubleLine | Compose} Visual
  */
 
 /**

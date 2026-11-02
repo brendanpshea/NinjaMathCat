@@ -54,6 +54,8 @@ for (let i = 0; i < Number(countArg); i++) {
     : v.kind === "gauge" ? `${v.tool} at ${v.value} ${v.unit} (marks every ${v.step}, numbered every ${v.labelEvery})`
     : v.kind === "box_plot" ? `box plot ${v.five.join(", ")} on ${v.from} to ${v.to}`
     : v.kind === "double_line" ? `double line: ${v.top.values.map(n => n ?? "?").join(", ")} / ${v.bottom.values.map(n => n ?? "?").join(", ")}`
+    : v.kind === "compose" ? `made of ${v.figure}`
+    : v.kind === "objects" && v.crossed ? `${v.count} ${v.emoji}, ${v.crossed} crossed out`
     : v.kind === "groups" ? `groups: ${v.rows.map(r => `${r.count} ${r.name}`).join(", ")}`
     : v.kind === "scene" ? `a ${v.thing} ${v.place} a ${v.landmark}`
     : v.kind === "lengths" ? `ribbons ${v.ribbons.map(r => `${r.color} ${r.from}+${r.length}`).join(", ")}${v.ruler ? `, ruler in ${v.ruler}` : ""}${v.cubes ? ", cubes" : ""}`

@@ -392,6 +392,21 @@ describe("drawing", () => {
     }
   });
 
+  it("crossed-out counters: the last ones crossed, and every counter still there", () => {
+    for (const { v, svg, at } of rendered("objects")) {
+      assert.equal(elementsIn(svg, "text", "counter").length, v.count, at);
+      assert.equal((svg.match(/class="crossed"/g) ?? []).length, v.crossed ?? 0, at);
+    }
+  });
+
+  it("shapes put together: a part for each piece, in alternating colors", () => {
+    for (const { v, svg, at } of rendered("compose")) {
+      const parts = elementsIn(svg, "(?:polygon|path)", "part");
+      assert.ok(parts.length >= 2, at);
+      assert.ok(parts.every((p, i) => i === 0 || p.fill !== parts[i - 1].fill), `${at}: two parts side by side in one color`);
+    }
+  });
+
   it("ten frames: a counter for each one counted, filling the first frame first", () => {
     for (const { v, svg, at } of rendered("ten_frame")) {
       assert.equal(elementsIn(svg, "rect", "frame").length, v.frames, at);

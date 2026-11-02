@@ -8,7 +8,7 @@ import { fraction, fractionBars, hundredths } from "./fractions.js";
 import { area, cubes, angle, coordinates, lengths } from "./measures.js";
 import { tenFrame, baseTen } from "./counting.js";
 import { solid, scene } from "./solids.js";
-import { lines, net, composite } from "./figures.js";
+import { lines, net, composite, compose } from "./figures.js";
 import { gauge, boxPlot, doubleLine } from "./readings.js";
 
 /** @import { Visual } from "../questions/common.js" */
@@ -25,6 +25,7 @@ export function renderVisual(v, options = {}) {
     case "objects": return objects(v);
     case "pattern": return pattern(v);
     case "groups": return groups(v);
+    case "compose": return compose(v);
     case "gauge": return gauge(v);
     case "box_plot": return boxPlot(v);
     case "double_line": return doubleLine(v);
