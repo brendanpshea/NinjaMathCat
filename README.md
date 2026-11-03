@@ -34,10 +34,15 @@ still no server; codes come in by hand, and stay on the teacher's device.
 
 The game learns, from every answer, how well each child knows each kind of
 question. Each level's review goes mostly to what they find hard or haven't
-practised lately; shaky topics come easier, and strong ones harder; a kind
-they miss comes back a couple of questions later. The training ground builds
-a short battle from the topics that need it most, and a progress report shows
-grown-ups how each topic is going.
+practised lately, spaced out over days, the gaps growing as a topic gets
+stronger; a sitting's first level warms up with what is most due; shaky
+topics come easier, and strong ones harder; a kind they miss comes back a
+couple of questions later. A wrong answer that comes from a known mistake
+says which ("That adds the bottom numbers too"), and placing numbers on a
+number line is done by tapping it, not by picking a choice. The training
+ground builds a short battle from the topics that need it most, a progress
+report shows grown-ups how each topic is going, and after each level there is
+something for a grown-up and the child to talk about together.
 
 For children still learning to read, questions can be read aloud (on to begin
 with up to 2nd grade), and every question and chapter note has a "Read to me"
