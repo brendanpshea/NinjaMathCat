@@ -257,6 +257,7 @@
       report.done.stars = $(".stars-big .stars").getAttribute("aria-label");
       report.done.facts = $$(".facts li").map(li => li.textContent.replace(/\s+/g, " ").trim());
       report.done.topicNote = text(".topic-note");
+      report.done.talk = text(".talk-card");
       report.done.next = text("[data-ref=next]");
       report.done.saved = saved();
 

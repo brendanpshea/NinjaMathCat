@@ -28,6 +28,7 @@ import { runScene } from "./scene_view.js";
 import { sceneFor } from "../scenes.js";
 import { startChallenge, recordChallenge, CHALLENGE_FROM, CHALLENGE_SECONDS } from "../challenge.js";
 import { classView, codesIn, addCodes, playerFromCode } from "../classroom.js";
+import { talkAbout } from "../talk.js";
 import { createChallengeScreen } from "./challenge_screen.js";
 
 /** @import { Battle } from "../battle.js" */
@@ -1017,6 +1018,9 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
           <p>That was a tough one. The training ground practises what's been tricky, a little at a time.</p>
           <button type="button" class="quiet" data-ref="training">Go to the training ground</button>
         </div>` : ""}
+        <div class="card talk-card">
+          <p><strong>For a grown-up, to talk about together:</strong> ${esc(talkAbout(rng, tally.answers))}</p>
+        </div>
         ${finishedChapter ? `<div class="card chapter-note">
           <h2 class="card-title">You finished ${esc(chapter.title)}!</h2>
           <p>${chapterStars} of ${chapterLevels.length * 3} stars in this chapter. ${following ? `Next up: <strong>${esc(following.title)}</strong>.` : `That was the last chapter of the ${esc(gradeWords(level.grade))} adventure. Well done!`}</p>
@@ -1064,6 +1068,9 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         </ul>
         <p class="tagline">Level ${battle.hero.level}${gained > 0 ? `, up ${gained}!` : ""} · ${found.length} new ${found.length === 1 ? "treasure" : "treasures"}</p>
         ${found.length > 0 ? `<ul class="treasure-grid">${found.map(treasureCard).join("")}</ul>` : ""}
+        <div class="card talk-card">
+          <p><strong>For a grown-up, to talk about together:</strong> ${esc(talkAbout(rng, battle.tally.answers))}</p>
+        </div>
         <div class="actions">
           <button type="button" class="primary big" data-ref="again">Train again</button>
           <button type="button" class="quiet" data-ref="map">Back to the map</button>

@@ -200,6 +200,7 @@ describe("in a real browser", { skip }, () => {
     assert.match(played.done.next, /^Next: Level 2: Practice/);
     assert.ok(played.done.topicNote, "a word on how each topic went");
     assert.match(played.done.topicNote, /^(Great at .+!)? ?(Keep practising .+\.)?$/);
+    assert.match(played.done.talk, /^For a grown-up, to talk about together: \S/, "something for a grown-up to talk about with the child");
     const sam = played.done.saved.players[0];
     assert.equal(sam.name, "Sam");
     assert.equal(sam.heroId, "owl_wizard");

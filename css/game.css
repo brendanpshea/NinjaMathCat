@@ -433,7 +433,9 @@ select {
 .training-offer { border-color: #c7c5f2; background: var(--indigo-soft); }
 .training-offer p { margin: 0; }
 .training-offer .quiet { justify-self: start; }
-.backup-offer p, .rest-offer p { margin: 0; }
+.backup-offer p, .rest-offer p, .talk-card p { margin: 0; }
+/* After a level: something for a grown-up and the child to talk about. */
+.talk-card { border-color: #c7c5f2; background: var(--indigo-soft); }
 .backup-offer .quiet { justify-self: start; }
 /* The grown-up lock's question, over whatever screen asked for it. */
 .lock-dialog { width: min(420px, calc(100vw - 24px)); padding: 20px 22px; border: 0; border-radius: 18px; background: var(--surface); color: var(--ink); }

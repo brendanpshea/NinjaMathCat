@@ -146,6 +146,7 @@ const FILES = [
   "src/speech.js",
   "src/stage.js",
   "src/standards.js",
+  "src/talk.js",
   "src/treasures.js",
   "src/ui/app.js",
   "src/ui/battle_screen.js",
