@@ -282,6 +282,11 @@ export const comparison = {
       wrong: [`${x} ${flipped} ${y}`, `${x} = ${y}`, `${y} ${op} ${x}`],
       hint: top > 1000 ? "Compare the digits place by place, starting from the biggest place."
         : `Which is bigger, ${x} or ${y}? Then find the sign whose open side faces it.`,
+      slips: [
+        [`${x} ${flipped} ${y}`, "That says the smaller number is the bigger one."],
+        [`${y} ${op} ${x}`, "That says the smaller number is the bigger one."],
+        [`${x} = ${y}`, "Those two numbers aren't the same."],
+      ],
       difficulty: Math.min(3, 1 + Number(Math.floor(a / 10) === Math.floor(b / 10)) + Number(top > 100) + Number(top > 10000)),
     };
   },

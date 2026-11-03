@@ -68,6 +68,11 @@ export const area = {
         // The perimeter, the two sides added, or a row too many or too few.
         wrong: wrongNumbers(rng, w * h, [2 * (w + h), w + h, w * h + w, w * h - w, w * h + h, w * h - h], { min: 1 }),
         hint: "The area is how many unit squares cover it: the number of rows times the squares in each row.",
+        // In words that don't need "perimeter", which the area chapter comes before.
+        slips: [
+          [2 * (w + h), "That's the distance all the way around the edge. The area is the squares that cover it."],
+          [w + h, "That adds two sides. The area is the rows times the squares in each row."],
+        ],
         difficulty: 1 + big,
       };
       case "perimeter": return {
@@ -77,6 +82,10 @@ export const area = {
         // The area, or only some of the sides.
         wrong: wrongNumbers(rng, 2 * (w + h), [w * h, w + h, 2 * w + h, w + 2 * h], { min: 1, spread: 4 }),
         hint: "The perimeter is the distance all the way around: add up all four sides.",
+        slips: [
+          [w * h, "That's the area, the squares inside. The perimeter is the distance around the edge."],
+          [w + h, "That adds only two sides. Opposite sides match, so there are four to add."],
+        ],
         difficulty: 1 + big,
       };
       case "missingSide": return missingSide(rng, w, h, unit, big, areaOnly);
@@ -115,6 +124,7 @@ function countSquares(rng) {
     // The squares round the edge, a row or column missed, or one too many.
     wrong: wrongNumbers(rng, answer, [2 * (w + h) - 4, 2 * (w + h), answer - w, answer + w, answer - h, answer + h], { min: 1 }),
     hint: `Count the squares in one row, then count the rows.`,
+    slips: [[2 * (w + h) - 4, "That counts only the squares around the edge. The ones inside count too."]],
     difficulty: answer > 24 ? 2 : 1,
   };
 }

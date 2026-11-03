@@ -86,6 +86,7 @@ export const TRIES = 2;
  *   straight on; "won" means every monster is beaten
  * @property {string | null} hint  when then is "again"
  * @property {Answer | null} answer  the right answer, when then is "reveal"
+ * @property {string | null} slip  after a wrong answer, the mistake it comes from, where the question knows
  */
 
 /**
@@ -217,6 +218,7 @@ function strike(battle, question, foe, rng) {
       then: won ? "won" : "next",
       hint: null,
       answer: null,
+      slip: null,
     },
   };
 }
@@ -265,6 +267,7 @@ function takeHit(battle, question, foe, choice, rng) {
       then: again ? "again" : "reveal",
       hint: again ? question.hint : null,
       answer: again ? null : question.answer,
+      slip: question.slips?.[String(choice)] ?? null,
     },
   };
 }

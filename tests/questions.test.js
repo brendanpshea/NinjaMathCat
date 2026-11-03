@@ -62,8 +62,21 @@ for (const { type } of CURRICULUM) {
     it("speak to children below second grade in words they know", () => {
       for (const { grade, question: q, at } of questionsOf(type)) {
         if (grade >= 2) continue;
-        const words = `${q.prompt} ${q.hint}`.match(/\b(true|shaded|difference|digits?|regroup\w*|carry\w*|denominator|numerator|brackets|expression|equation)\b/i);
-        assert.equal(words, null, `${at} → hint: ${q.hint}`);
+        const said = `${q.prompt} ${q.hint} ${Object.values(q.slips ?? {}).join(" ")}`;
+        const words = said.match(/\b(true|shaded|difference|digits?|regroup\w*|carry\w*|denominator|numerator|brackets|expression|equation)\b/i);
+        assert.equal(words, null, `${at} → ${said}`);
+      }
+    });
+
+    it("name the mistake behind a wrong choice only for a wrong choice, and never say the answer", () => {
+      for (const { question: q, at } of questionsOf(type)) {
+        for (const [choice, why] of Object.entries(q.slips ?? {})) {
+          assert.ok(q.choices.some(c => String(c) === choice) && choice !== String(q.answer), `${at} → a slip for "${choice}"`);
+          assert.ok(/^[A-Z0-9].*[.?]$/.test(why), `${at} → "${why}" is a sentence`);
+          const whole = typeof q.answer === "number" ? q.answer : /^\d+$/.test(q.answer) ? Number(q.answer) : null;
+          const tells = whole !== null ? whole >= 10 && numbersIn(why).includes(whole) && !numbersIn(q.prompt).includes(whole) : says(why, q.answer) && !says(q.prompt, q.answer);
+          assert.ok(!tells, `${at} → the slip for ${choice} says the answer: ${why}`);
+        }
       }
     });
 

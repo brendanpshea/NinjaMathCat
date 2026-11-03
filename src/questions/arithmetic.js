@@ -152,6 +152,13 @@ export const addition = {
         sum + 1, sum - 1, carried > 0 ? addingWithoutCarrying(a, b) : sum + 10, sum - 10, ...(max >= 1000 ? [sum + 100, sum - 100] : []), Math.abs(a - b),
       ]),
       hint: addingHint(a, b),
+      slips: [
+        // Not for 9 + 1 or 12 + 8, where "they make a new ten" all but says the answer.
+        ...((a % 10) + (b % 10) === 10 && sum <= 20 ? [] : [/** @type {[number, string]} */ ([addingWithoutCarrying(a, b), (a % 10) + (b % 10) >= 10
+          ? `${a % 10} and ${b % 10} make a new ten, and that answer leaves it out.`
+          : "That forgets to carry: when a place makes 10 or more, 1 goes on to the next place."])]),
+        [Math.abs(a - b), "That takes away instead of adding."],
+      ],
       difficulty: 1 + Number(carried > 0) + Number(sum > max / 2),
     };
   },
@@ -180,6 +187,12 @@ export const subtraction = {
         ...(max >= 1000 ? [difference + 100, difference - 100] : []),
       ]),
       hint: takingHint(a, b),
+      slips: [
+        [smallerFromLarger(a, b), a % 10 < b % 10
+          ? `That takes ${a % 10} from ${b % 10} in the ones, the wrong way round. Trade a ten for ten ones first.`
+          : "That takes the smaller digit from the bigger in every place. Where the top one is smaller, trade from the next place first."],
+        [a + b, "That adds instead of taking away."],
+      ],
       difficulty: 1 + Number(regroups) + Number(a > max / 2),
     };
   },
@@ -459,6 +472,9 @@ export const multiplication = {
           ? [product / 10, product * 10, product + b, product - b, product + 10 * a]
           : [product + a, product - a, product + b, product - b, a + b], { spread: 4 }),
         hint: kind === "tens" ? `Work out ${a} × ${b / 10}, then make it ten times as big.` : `Think of ${a} groups of ${b}.`,
+        slips: kind === "tens"
+          ? [[product / 10, `That's ${a} × ${b / 10}, but ${b} is ${b / 10} tens.`], [product * 10, "That has a zero too many."]]
+          : [[a + b, "That adds instead of multiplying."]],
         difficulty: kind === "tens" ? 2 : 1 + Number(product > 25) + Number(Math.max(a, b) >= 7),
       };
     }
@@ -476,6 +492,12 @@ export const multiplication = {
         : [a * ones + a * Math.floor(b / 10), a * ones, product + a, product - a, product + 100], { spread: 9 }),
       hint: kind[1] === 1 ? `Start with the ones: ${a % 10} × ${b}. Then multiply each place by ${b}, adding on anything carried.`
         : `Multiply ${fmt(a)} by ${ones}, then by ${b - ones}, and add the two parts.`,
+      slips: kind[1] === 1
+        ? [[multiplyingWithoutCarrying(a, b), "That forgets to add on what was carried from each place."]]
+        : [
+          [a * ones + a * Math.floor(b / 10), `That treats the ${Math.floor(b / 10)} in ${b} as ${Math.floor(b / 10)} ones, but it stands for ${Math.floor(b / 10)} tens.`],
+          [a * ones, `That's only ${fmt(a)} × ${ones}. The tens of ${b} need multiplying too.`],
+        ],
       difficulty: 2 + Number(product >= 10000),
     };
   },
@@ -573,6 +595,11 @@ export const division = {
         String(quotient),
       ]),
       hint: `${firstDivision(dividend, divisor)} What is left over at the end is the remainder.`,
+      slips: [
+        [withRemainder(quotient - 1, remainder + divisor), `That remainder is ${divisor} or more, so another ${divisor} fits.`],
+        [withRemainder(quotient, divisor - remainder), `That's how many more would make another ${divisor}, not what is left over.`],
+        [String(quotient), "That leaves out the remainder."],
+      ],
       difficulty: 3,
     };
   },

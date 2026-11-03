@@ -31,6 +31,18 @@ export function sameBottom(d1, d2) {
 }
 
 /**
+ * A wrong fraction and the mistake it comes from, written as the choices
+ * are; none if it isn't a fraction that could be a choice.
+ * @param {Fraction} f
+ * @param {string} why
+ * @param {(f: Fraction) => string} write
+ * @returns {[string, string][]}
+ */
+function slip(f, why, write) {
+  return f.d > 0 && f.n > 0 ? [[write(f), why]] : [];
+}
+
+/**
  * Wrong fractions, written out: never worth the same as the answer or as
  * each other, never with a zero or negative part, and, if `dens` is given,
  * only with those denominators.
@@ -239,6 +251,10 @@ export const fractionArithmetic = {
           // first keep the bottom, so the answer can't be picked out as the only one with the same bottom.
           wrong: wrongFractions(rng, answer, [...(adding ? [frac(answer.n, 2 * d)] : []), frac(adding ? a - b : a + b, d), frac(answer.n + 1, d), frac(answer.n - 1, d), frac(answer.n + 2, d)], write),
           hint: `The parts are the same size, so ${adding ? "add" : "take away"} the tops: ${a} ${adding ? "+" : "−"} ${b}. The bottom stays ${d}.`,
+          slips: [
+            ...(adding ? slip(frac(answer.n, 2 * d), "That adds the bottom numbers too, but adding doesn't change the size of the parts.", write) : []),
+            ...slip(frac(adding ? a - b : a + b, d), adding ? "That takes away instead of adding." : "That adds instead of taking away.", write),
+          ],
           difficulty: 1 + Number(answer.n >= d),
         };
       }
@@ -266,6 +282,10 @@ export const fractionArithmetic = {
           // Multiplying the bottom too, or the bottom instead of the top.
           wrong: wrongFractions(rng, answer, [frac(k * a, k * d), frac(a, k * d), frac(k + a, d), frac(k * a + 1, d), frac(k * a, d + k)], write),
           hint: `${k} groups of ${a}/${d}: multiply the top by ${k}.`,
+          slips: [
+            ...slip(frac(k * a, k * d), "That multiplies the bottom number too, but the parts stay the same size.", write),
+            ...slip(frac(k + a, d), "That adds instead of multiplying.", write),
+          ],
           difficulty: 2,
         };
       }
@@ -289,6 +309,12 @@ export const fractionArithmetic = {
             adding ? subtract(x, y) : add(x, y),
           ], write),
           hint: sameBottom(x.d, y.d),
+          slips: [
+            ...slip(frac(adding ? x.n + y.n : Math.abs(x.n - y.n), adding ? x.d + y.d : Math.abs(x.d - y.d)),
+              `That ${adding ? "adds" : "takes away"} the tops and the bottoms. The parts are different sizes, so first give them the same denominator.`, write),
+            ...slip(frac(adding ? x.n + y.n : Math.abs(x.n - y.n), x.d * y.d), "That puts the tops over a shared denominator without changing them to match it.", write),
+            ...slip(adding ? subtract(x, y) : add(x, y), adding ? "That takes away instead of adding." : "That adds instead of taking away.", write),
+          ],
           difficulty: 3,
         };
       }
@@ -302,6 +328,12 @@ export const fractionArithmetic = {
           // Dividing instead, adding, or keeping one bottom.
           wrong: wrongFractions(rng, answer, [divide(x, y), frac(x.n + y.n, x.d + y.d), frac(x.n * y.n, x.d), frac(x.n * y.d, x.d * y.n), add(x, y)], write),
           hint: "Multiply the tops, then multiply the bottoms.",
+          slips: [
+            ...slip(divide(x, y), "That divides instead of multiplying.", write),
+            ...slip(frac(x.n + y.n, x.d + y.d), "That adds the tops and the bottoms.", write),
+            ...slip(add(x, y), "That adds instead of multiplying.", write),
+            ...slip(frac(x.n * y.n, x.d), "That multiplies the tops but keeps one bottom. Multiply the bottoms too.", write),
+          ],
           difficulty: 2,
         };
       }

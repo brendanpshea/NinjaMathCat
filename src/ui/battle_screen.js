@@ -53,8 +53,9 @@ export function pictureHtml(visual) {
  */
 export function feedbackFor(round) {
   switch (round.then) {
-    case "again": return `Not quite. Try again! Hint: ${round.hint}`;
-    case "reveal": return `The answer is ${typeof round.answer === "number" ? formatNumber(round.answer) : round.answer}.`;
+    // A wrong answer the question knows the mistake behind says what it was, before the hint.
+    case "again": return `Not quite. ${round.slip ? `${round.slip} ` : ""}Try again! Hint: ${round.hint}`;
+    case "reveal": return `The answer is ${typeof round.answer === "number" ? formatNumber(round.answer) : round.answer}.${round.slip ? ` ${round.slip}` : ""}`;
     case "won": return "You beat every monster!";
     default: return round.defeatedFoe ? "Right! The monster is beaten!" : "Right!";
   }

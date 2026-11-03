@@ -142,6 +142,16 @@ describe("a wrong answer", () => {
     assert.equal(after.streak, 0);
   });
 
+  it("names the mistake behind a wrong choice, where the question knows it, and nothing for a right one", () => {
+    const { rng, battle } = begin();
+    const question = { ...battle.question, slips: { [String(wrong(battle))]: "That adds instead of taking away." } };
+    const asked = { ...battle, question };
+    assert.equal(answer(asked, wrong(asked), rng).round.slip, "That adds instead of taking away.");
+    const other = question.choices.find(c => c !== question.answer && c !== wrong(asked));
+    assert.equal(answer(asked, other, rng).round.slip, null);
+    assert.equal(answer(asked, question.answer, rng).round.slip, null);
+  });
+
   it(`shows the answer and moves on after ${TRIES} wrong tries`, () => {
     let { rng, battle } = begin();
     const question = battle.question;

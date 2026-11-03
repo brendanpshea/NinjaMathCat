@@ -160,6 +160,9 @@ function blocks(rng, hundreds) {
     answer: n,
     wrong: wrongNumbers(rng, n, likely.filter(v => v !== n), { min: 1 }),
     hint: hundreds ? "Each big square is a hundred, each long block a ten, and each little cube a one." : "Each long block is a ten, and each little cube is a one. Count the tens first.",
+    slips: hundreds
+      ? [[100 * h + o, "That leaves out the long blocks, the tens."], [100 * h + 10 * o + t, "That swaps the tens and the ones."]]
+      : [[10 * o + t, "That swaps the tens and the ones."], [t + o, "That counts each long block as 1, but a long block is a ten."]],
     difficulty: 1 + Number(o === 0 || t === 0) + Number(hundreds),
   };
 }
@@ -178,6 +181,11 @@ function tensOnes(rng) {
     // Turned round, added up, or written as the two numbers side by side.
     wrong: wrongNumbers(rng, n, [10 * o + t, t + o, 100 * t + o, n + 10, n - 10, n + 1].filter(v => v !== n), { min: 1 }),
     hint: o === 0 ? "Count by tens, once for each ten. There are no ones to add." : `${t} ${t === 1 ? "ten is" : "tens are"} ${10 * t}. Then add the ones.`,
+    slips: [
+      [10 * o + t, "That swaps the tens and the ones."],
+      [t + o, "That counts the tens as ones. Each ten is worth 10."],
+      [100 * t + o, "That writes the tens and the ones side by side. The tens go in the tens place."],
+    ],
     difficulty: 1 + Number(o === 0),
   };
 }
@@ -199,6 +207,9 @@ function howManyTens(rng) {
     wrong: wrongNumbers(rng, answer, [tens ? o : t, tens ? 10 * t : n, answer + 1, answer - 1].filter(v => v !== answer), { min: 0 }),
     // Where to look, not what is there.
     hint: tens ? `In ${n}, the tens come first, on the left.` : `In ${n}, the ones come last, on the right.`,
+    slips: tens
+      ? [[o, "That's the ones. The question asks about the tens."], [10 * t, "That's what the tens are worth. The question asks how many tens there are."]]
+      : [[t, "That's the tens. The question asks about the ones."], [n, "That's the whole number."]],
     difficulty: 1,
   };
 }

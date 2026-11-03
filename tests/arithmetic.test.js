@@ -28,6 +28,26 @@ describe("addition", () => {
   });
 });
 
+describe("the mistakes behind wrong answers", () => {
+  it("are named whenever one is among the choices: no carrying, smaller from larger, taking away instead", () => {
+    let named = 0;
+    for (const type of [addition, subtraction]) {
+      for (const { question: q, at } of questionsOf(type)) {
+        if (!/^What is [\d,]+ [+−] [\d,]+\?$/.test(q.prompt)) continue;
+        const [a, b] = numbersIn(q.prompt);
+        const tenExactly = (a % 10) + (b % 10) === 10 && a + b <= 20;
+        const slips = type === addition ? [...(tenExactly ? [] : [addingWithoutCarrying(a, b)]), Math.abs(a - b)] : [smallerFromLarger(a, b), a + b];
+        for (const s of slips) {
+          if (s === q.answer || !q.choices.includes(s)) continue;
+          assert.ok(q.slips?.[String(s)], `${at}: ${s} is a known slip, so it should be named`);
+          named++;
+        }
+      }
+    }
+    assert.ok(named > 100, `only ${named} slips named`);
+  });
+});
+
 describe("first grade", () => {
   it("adds, takes away and finds missing numbers within 20, all year (1.OA.6, 1.OA.8)", () => {
     for (const type of [addition, subtraction, missingNumber]) {

@@ -293,6 +293,7 @@ function addOrSubtract(rng, big, adding) {
     ]),
     // Both written to hundredths, the step children skip when they line the numbers up on the right.
     hint: `Write both in hundredths, ${twoPlaces(a)} and ${twoPlaces(b)}, with the points lined up. Then ${adding ? "add" : "subtract"} as usual.`,
+    slips: [[formatDecimal(misaligned, 2), "That lines the numbers up on the right, instead of at the point."]],
     difficulty: 2 + Number(big),
   };
 }

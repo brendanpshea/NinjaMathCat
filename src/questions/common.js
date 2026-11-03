@@ -282,6 +282,9 @@
  * @property {Answer[]} wrong  wrong answers, best first; the first three distinct ones are used
  * @property {string} hint  a nudge after a wrong try, which never gives the answer away
  * @property {number} difficulty  1 (easy) to 3 (hard), within the grade
+ * @property {[Answer, string][]} [slips]  the mistakes some wrong answers come from, each said
+ *   to a child who picks it: "That adds the bottom numbers too." Only those for wrong answers
+ *   that are among the choices are kept, and none may give the answer away.
  */
 
 /**
@@ -294,6 +297,7 @@
  * @property {Answer[]} choices  four, shuffled, the answer among them
  * @property {string} hint
  * @property {number} difficulty
+ * @property {Record<string, string>} [slips]  for a wrong choice, by its text, the mistake it comes from
  */
 
 /**
@@ -396,7 +400,7 @@ function pickSide(rng, answer, likely, count, side, spread, min, step) {
  * @returns {Question}
  */
 export function makeQuestion(rng, type, grade, focus) {
-  const { wrong, ...draft } = type.generate(rng, grade, focus);
+  const { wrong, slips = [], ...draft } = type.generate(rng, grade, focus);
   const seen = new Set([String(draft.answer)]);
   /** @type {Answer[]} */
   const kept = [];
@@ -409,7 +413,13 @@ export function makeQuestion(rng, type, grade, focus) {
   if (kept.length < 3) {
     throw new Error(`${type.id} at grade ${grade} made only ${kept.length} wrong answers for "${draft.prompt}"`);
   }
-  return { type: type.id, ...draft, choices: rng.shuffle([draft.answer, ...kept]) };
+  // The mistakes behind the wrong choices made, the first for each where two would say it.
+  /** @type {Record<string, string>} */
+  const said = {};
+  for (const [w, why] of slips) {
+    if (kept.some(k => String(k) === String(w)) && !(String(w) in said)) said[String(w)] = why;
+  }
+  return { type: type.id, ...draft, choices: rng.shuffle([draft.answer, ...kept]), ...(Object.keys(said).length > 0 ? { slips: said } : {}) };
 }
 
 /**

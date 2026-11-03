@@ -43,4 +43,11 @@ describe("answer choices", () => {
     assert.equal(feedbackFor(round(-8)), "The answer is −8.");
     assert.equal(feedbackFor(round("2 1/2")), "The answer is 2 1/2.");
   });
+
+  it("say the mistake behind a wrong choice before the hint, and after a revealed answer", () => {
+    const slip = "That adds the bottom numbers too, but adding doesn't change the size of the parts.";
+    assert.equal(feedbackFor({ then: "again", hint: "Add the tops.", slip, answer: null, defeatedFoe: false }), `Not quite. ${slip} Try again! Hint: Add the tops.`);
+    assert.equal(feedbackFor({ then: "again", hint: "Add the tops.", slip: null, answer: null, defeatedFoe: false }), "Not quite. Try again! Hint: Add the tops.");
+    assert.equal(feedbackFor({ then: "reveal", answer: "3/4", slip, hint: null, defeatedFoe: false }), `The answer is 3/4. ${slip}`);
+  });
 });

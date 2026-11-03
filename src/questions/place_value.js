@@ -52,6 +52,11 @@ function roundWhole(rng, grade) {
     ], { step: place, min: 1 }),
     hint: grade < 4 ? `Is ${fmt(n)} closer to ${fmt(down)} or to ${fmt(up)}?`
       : `Look at the digit just right of the ${name}s place, the ${Math.floor(n / (place / 10)) % 10}: 5 or more rounds up.`,
+    slips: [
+      [other, `That rounds the wrong way. ${grade < 4 ? "Which one is it closer to?" : "Look at the digit just right of the place you round to."}`],
+      ...(PLACE_NAMES.has(place * 10) ? [/** @type {[number, string]} */ ([roundedTo(place * 10), `That rounds to the nearest ${PLACE_NAMES.get(place * 10)}, not the nearest ${name}.`])] : []),
+      ...(place > 10 ? [/** @type {[number, string]} */ ([roundedTo(place / 10), `That rounds to the nearest ${PLACE_NAMES.get(place / 10)}, not the nearest ${name}.`])] : []),
+    ],
     difficulty: 1 + Number(n - down === place / 2) + Number(place >= 1000),
   };
 }

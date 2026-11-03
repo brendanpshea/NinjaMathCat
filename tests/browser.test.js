@@ -184,7 +184,8 @@ describe("in a real browser", { skip }, () => {
   });
 
   it("gives a hint after a wrong answer, rules that choice out, then shows the answer", () => {
-    assert.match(played.battle.hint, /^Not quite\. Try again! Hint: /);
+    // The mistake behind the choice, where the question knows it, then the hint.
+    assert.match(played.battle.hint, /^Not quite\. (?:[^.!?]+[.?] )*Try again! Hint: /);
     assert.equal(played.battle.ruledOutDisabled, true);
     assert.match(played.battle.reveal, /^The answer is /);
     assert.equal(played.battle.revealShowsRight, true);

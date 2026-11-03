@@ -137,6 +137,10 @@ function readClock(rng, step) {
     answer: formatClock(hours, minutes),
     wrong: [...rng.shuffle(wrong.slice(0, 2)), ...rng.shuffle(wrong.slice(2))],
     hint: minutes === 0 ? "The short hand points to the hour." : "The short hand shows the hour. The long hand shows the minutes.",
+    slips: [
+      ...(minutes > 0 ? [/** @type {[string, string]} */ ([formatClock(minutes >= 30 ? next : previous, minutes), "Check the hour: it's the number the short hand has just gone past."])] : []),
+      ...(minutes % 5 === 0 ? [/** @type {[string, string]} */ ([formatClock(minutes / 5 || 12, (hours * 5) % 60), "That swaps the hands. The short hand shows the hour, and the long hand the minutes."])] : []),
+    ],
     difficulty: minutes === 0 ? 1 : minutes % 15 === 0 ? 2 : 3,
   };
 }
