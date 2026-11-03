@@ -29,6 +29,7 @@ import { sceneFor } from "../scenes.js";
 import { startChallenge, recordChallenge, CHALLENGE_FROM, CHALLENGE_SECONDS } from "../challenge.js";
 import { classView, codesIn, addCodes, playerFromCode } from "../classroom.js";
 import { talkAbout } from "../talk.js";
+import { icon } from "./icons.js";
 import { createChallengeScreen } from "./challenge_screen.js";
 
 /** @import { Battle } from "../battle.js" */
@@ -523,55 +524,77 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     const done = states.filter(s => s === "done").length;
     const stars = levels.reduce((sum, l) => sum + (progress.done[l.id]?.stars ?? 0), 0);
     const hero = heroOf(player);
+    const gradeName = gradeWords(grade);
+    // The chapter to show open: the one being played, or the last, once all are done.
+    const shown = next?.chapter ?? chapters.length - 1;
     show("map", `
       <section class="map-screen">
-        <div class="banner">
-          <span data-ref="hero"></span>
-          <div>
-            <h1 tabindex="-1">${esc(player.name)}'s ${esc(gradeWords(grade))} adventure</h1>
-            <p class="tagline">${esc(hero.name)} · Level ${levelForXp(player.xp)} · ${player.treasures.length} of ${TREASURES.length} treasures</p>
+        <div class="map-head">
+          <span class="map-hero" data-ref="hero"></span>
+          <div class="map-who">
+            <h1 tabindex="-1">${esc(player.name)}<span class="visually-hidden">'s ${esc(gradeName)} adventure</span></h1>
+            <p class="map-badges"><span class="grade-chip">${esc(gradeName[0].toUpperCase() + gradeName.slice(1))}</span><span class="hero-level">${esc(hero.name)} · Level ${levelForXp(player.xp)}</span></p>
+          </div>
+          <button type="button" class="quiet switch-player" data-ref="switch" aria-label="Switch player">${icon("players")}<span class="switch-word"> Switch player</span></button>
+        </div>
+        <div class="card play-card">
+          ${next ? `<button type="button" class="primary big continue" data-ref="continue"><span class="continue-play">${icon("play")} Play</span><span class="continue-topic"><span class="visually-hidden">, </span>${next.kind === "boss" ? "Boss battle" : `Level ${next.number}`} · ${esc(chapters[next.chapter].title)}</span></button>`
+            : `<p class="map-finished">You finished the whole ${esc(gradeName)} adventure! Play any level again for more stars, or try the next grade.</p>`}
+          <div class="map-progress">
+            <div class="progress-bar" role="progressbar" aria-label="Levels done" aria-valuemin="0" aria-valuemax="${levels.length}" aria-valuenow="${done}">
+              <span style="width: ${(100 * done) / levels.length}%"></span>
+            </div>
+            <span class="map-stars">${icon("star")} ${stars}<span class="visually-hidden"> of ${levels.length * 3} stars</span></span>
           </div>
         </div>
-        <div class="card map-progress">
-          <p class="map-count"><strong>${done} of ${levels.length} levels done</strong> · ${stars} of ${levels.length * 3} stars</p>
-          <p class="map-time">A level takes about 5 minutes, and a chapter is 5 levels.</p>
-          <div class="progress-bar" role="progressbar" aria-label="Levels done" aria-valuemin="0" aria-valuemax="${levels.length}" aria-valuenow="${done}">
-            <span style="width: ${(100 * done) / levels.length}%"></span>
-          </div>
-          ${next ? `<button type="button" class="primary big continue" data-ref="continue">${done === 0 ? "Start" : "Play"} ${esc(levelName(next))}<span class="continue-topic"><span class="visually-hidden">, </span>${esc(chapters[next.chapter].title)}</span></button>`
-            : `<p class="map-finished">You finished the whole ${esc(gradeWords(grade))} adventure! Play any level again for more stars, or try the next grade.</p>`}
-        </div>
-        <div class="actions map-actions">
-          <button type="button" class="quiet" data-ref="training">Training ground</button>
-          <button type="button" class="quiet" data-ref="quick">Quick battle</button>
-          ${grade >= CHALLENGE_FROM ? `<button type="button" class="quiet" data-ref="challenge"><span aria-hidden="true">⏱️</span> One-minute challenge</button>` : ""}
-          <button type="button" class="quiet" data-ref="treasures">Treasures</button>
-          <button type="button" class="quiet" data-ref="report">Progress report</button>
-          <button type="button" class="quiet" data-ref="edit">Change hero or grade</button>
-          <button type="button" class="quiet" data-ref="switch">Switch player</button>
-        </div>
+        <nav class="map-tiles" aria-label="More to play">
+          <button type="button" class="tile tile--training" data-ref="training">${icon("training", "tile-icon")}<span class="tile-word">Training</span></button>
+          <button type="button" class="tile tile--quick" data-ref="quick">${icon("battle", "tile-icon")}<span class="tile-word">Quick battle</span></button>
+          ${grade >= CHALLENGE_FROM ? `<button type="button" class="tile tile--challenge" data-ref="challenge">${icon("challenge", "tile-icon")}<span class="tile-word">Challenge</span></button>` : ""}
+          <button type="button" class="tile tile--treasures" data-ref="treasures">${icon("treasures", "tile-icon")}<span class="tile-word">Treasures</span><span class="tile-count">${player.treasures.length} of ${TREASURES.length}</span></button>
+        </nav>
         <ol class="chapters">${chapters.map((chapter, c) => {
           const mine = levels.filter(l => l.chapter === c);
           const locked = states[levels.indexOf(mine[0])] === "locked";
-          return `<li class="chapter${locked ? " is-locked" : ""}${next?.chapter === c ? " is-current" : ""}" data-chapter="${c}">
-            <div class="chapter-art" aria-hidden="true" style="background-image: url('${backdropFor(settingFor(grade, c)).file}')"></div>
-            <div class="chapter-body">
-              <h2 class="chapter-title"><span class="chapter-number">Chapter ${c + 1}</span> ${esc(chapter.title)}</h2>
-              <ol class="levels">${mine.map(level => {
-                const state = states[levels.indexOf(level)];
-                const result = progress.done[level.id];
-                const said = `Level ${level.number}, ${KIND_NAMES[level.kind]}, ${state === "done" ? `${result?.stars} of 3 stars` : state === "open" ? "ready to play" : "locked"}`;
-                return `<li><button type="button" class="level-button is-${state} level-button--${level.kind}" data-level="${level.id}" aria-label="${said}"${state === "locked" ? " disabled" : ""}>
-                  <span class="level-number" aria-hidden="true">${level.kind === "boss" ? "👑" : level.number}</span>
-                  <span class="level-stars" aria-hidden="true">${result ? "★".repeat(result.stars) + "☆".repeat(3 - result.stars) : state === "open" ? "Play" : "🔒"}</span>
-                </button></li>`;
-              }).join("")}</ol>
-              <div class="chapter-more" data-ref="more-${c}">${locked
-                ? `<button type="button" class="link" data-act="open-ask" data-chapter="${c}">Open this chapter early (for grown-ups)</button>`
-                : `<button type="button" class="link" data-act="note" data-chapter="${c}">${sceneFor(chapters[c].id) ? "Watch the chapter's opening scene" : "Read the chapter note"}</button>`}</div>
-            </div>
+          const finished = mine.every(l => progress.done[l.id]);
+          const chapterStars = mine.reduce((sum, l) => sum + (progress.done[l.id]?.stars ?? 0), 0);
+          const state = finished ? `${icon("star")} ${chapterStars}<span class="visually-hidden"> stars</span>`
+            : locked ? `${icon("lock")}<span class="visually-hidden">Locked</span>`
+            : next?.chapter === c ? `<span class="visually-hidden">Playing now</span>` : "";
+          // Each chapter is one line, but the one being played is open, with its levels.
+          return `<li class="chapter${locked ? " is-locked" : ""}${next?.chapter === c ? " is-current" : ""}${finished ? " is-finished" : ""}" data-chapter="${c}">
+            <details${c === shown ? " open" : ""}>
+              <summary class="chapter-line"><span class="chapter-badge">${c + 1}</span><span class="chapter-title">${esc(chapter.title)}</span><span class="chapter-state">${state}</span></summary>
+              <div class="chapter-open">
+                <div class="chapter-art" style="background-image: url('${backdropFor(settingFor(grade, c)).file}')">
+                  ${locked ? "" : `<button type="button" class="chapter-watch" data-act="note" data-chapter="${c}" aria-label="${sceneFor(chapters[c].id) ? "Watch the chapter's opening scene" : "Read the chapter note"}">${icon("play")}</button>`}
+                </div>
+                <div class="chapter-body">
+                  <ol class="levels">${mine.map(level => {
+                    const state = states[levels.indexOf(level)];
+                    const result = progress.done[level.id];
+                    const isNext = level === next;
+                    const said = `Level ${level.number}, ${KIND_NAMES[level.kind]}, ${state === "done" ? `${result?.stars} of 3 stars` : isNext ? "play this next" : state === "open" ? "ready to play" : "locked"}`;
+                    return `<li><button type="button" class="level-button is-${state}${isNext ? " is-next" : ""} level-button--${level.kind}" data-level="${level.id}" aria-label="${said}"${state === "locked" ? " disabled" : ""}>
+                      <span class="level-number" aria-hidden="true">${level.kind === "boss" ? "👑" : level.number}</span>
+                      <span class="level-stars" aria-hidden="true">${result ? "★".repeat(result.stars) + "☆".repeat(3 - result.stars) : isNext ? icon("play") : state === "locked" ? icon("lock") : ""}</span>
+                    </button></li>`;
+                  }).join("")}</ol>
+                  ${locked ? `<div class="chapter-more" data-ref="more-${c}"><button type="button" class="link" data-act="open-ask" data-chapter="${c}">Open this chapter early (for grown-ups)</button></div>` : ""}
+                </div>
+              </div>
+            </details>
           </li>`;
         }).join("")}</ol>
+        <details class="grown-ups">
+          <summary>For grown-ups</summary>
+          <p class="map-count"><strong>${done} of ${levels.length} levels done</strong> · ${stars} of ${levels.length * 3} stars. A level takes about 5 minutes, and a chapter is 5 levels.</p>
+          <div class="actions">
+            <button type="button" class="quiet" data-ref="report">Progress report</button>
+            <button type="button" class="quiet" data-ref="edit">Change hero or grade</button>
+            <button type="button" class="quiet" data-ref="class">Class view</button>
+          </div>
+        </details>
       </section>`);
 
     part("hero").replaceChildren(still(heroSprite(hero), hero.name));
@@ -582,6 +605,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     onTap(part("treasures"), () => treasures());
     onTap(part("report"), () => grownUp(report));
     onTap(part("edit"), () => grownUp(() => playerForm(player)));
+    onTap(part("class"), () => grownUp(() => classPage()));
     onTap(part("switch"), () => title());
     screenEl.querySelector(".chapters")?.addEventListener("click", event => {
       const target = /** @type {HTMLElement} */ (event.target);

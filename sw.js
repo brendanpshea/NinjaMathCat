@@ -151,6 +151,7 @@ const FILES = [
   "src/ui/app.js",
   "src/ui/battle_screen.js",
   "src/ui/challenge_screen.js",
+  "src/ui/icons.js",
   "src/ui/scene_view.js",
   "src/ui/sprites.js",
   "src/ui/stage_view.js",

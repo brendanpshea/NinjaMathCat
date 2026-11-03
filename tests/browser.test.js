@@ -175,7 +175,12 @@ describe("in a real browser", { skip }, () => {
     assert.equal(played.map.heading, "Sam's 2nd grade adventure");
     assert.equal(played.map.levels, levelsFor(2).length);
     assert.equal(played.map.open, 1);
-    assert.equal(played.map.continue, `Start Level 1: New topic, ${chaptersFor(2)[0].title}`);
+    assert.equal(played.map.continue, `Play, Level 1 · ${chaptersFor(2)[0].title}`);
+    // A calm map: one level to play next, only its chapter open, a tile for each other way to play, grown-ups' things folded away.
+    assert.equal(played.map.next, 1);
+    assert.deepEqual(played.map.openChapters, ["0"]);
+    assert.deepEqual(played.map.tiles, ["Training", "Quick battle", "Treasures0 of 75"]);
+    assert.ok(played.map.grownUpsClosed);
   });
 
   it("starts a chapter with its teaching scene, with its note and a worked example a link away", () => {
@@ -233,7 +238,7 @@ describe("in a real browser", { skip }, () => {
 
   it("marks the level done on the map, and the next one ready", () => {
     assert.match(played.after.firstLevel, /^Level 1, New topic, [123] of 3 stars$/);
-    assert.equal(played.after.secondLevel, "Level 2, Practice, ready to play");
+    assert.equal(played.after.secondLevel, "Level 2, Practice, play this next", "the next level says so");
     assert.match(played.after.count, /^1 of 40 levels done/);
   });
 
@@ -250,7 +255,7 @@ describe("in a real browser", { skip }, () => {
 
   it("lets a grown-up open a chapter early, with every chapter before it", () => {
     assert.match(played.open.asks, /^Open Chapter 5, .*, early\?/);
-    assert.equal(played.open.continue, `Play Level 21: New topic, ${chaptersFor(2)[4].title}`);
+    assert.equal(played.open.continue, `Play, Level 21 · ${chaptersFor(2)[4].title}`);
     assert.equal(played.open.earlierOpen, true);
     assert.equal(played.open.laterLocked, true);
   });

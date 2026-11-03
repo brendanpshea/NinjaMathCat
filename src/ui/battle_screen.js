@@ -9,6 +9,7 @@ import { renderVisual, dataTable } from "../visuals/index.js";
 import { escapeXml as esc } from "../visuals/svg.js";
 import { formatNumber } from "../questions/common.js";
 import { createStage } from "./stage_view.js";
+import { icon } from "./icons.js";
 import { questionSpeech } from "../speech.js";
 
 /** @import { Battle, Round } from "../battle.js" */
@@ -109,7 +110,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
         <div class="numpad" data-ref="pad" hidden>
           <div class="numpad-top">
             <output class="numpad-field" data-ref="field" aria-label="Your answer" aria-live="polite"></output>
-            <button type="button" class="numpad-key" data-key="back" aria-label="delete">⌫</button>
+            <button type="button" class="numpad-key" data-key="back" aria-label="delete">${icon("back")}</button>
             <button type="button" class="primary numpad-enter" data-key="enter">Strike!</button>
           </div>
           <div class="numpad-keys" role="group" aria-label="Number keys" data-ref="keys"></div>

@@ -300,32 +300,64 @@ select {
 .topics li { padding: 3px 11px; font-size: 15px; font-weight: 700; color: var(--indigo); background: var(--indigo-soft); border-radius: 999px; counter-increment: topic; }
 .topics li::before { content: counter(topic) ". "; color: var(--muted); }
 
-/* The map: how far along the adventure is, what to play next, and every
-   chapter with its levels. A level is a big button: its number, or a crown
-   for a boss, and its stars once it's done. */
+/* The map: who is playing, one big way to play on, a tile for each other way
+   to play, and the chapters, each one line but the one being played, which is
+   open with its levels. Grown-ups' things are folded away at the bottom. A
+   level is a big button: its number, or a crown for a boss, and its stars
+   once it's done; only the one to play next stands out. */
 .map-screen, .note-screen, .player-screen { display: grid; gap: 18px; }
-.map-screen .banner .still { height: 96px; }
-.map-progress { gap: 10px; }
+.icon { width: 1.15em; height: 1.15em; flex: none; vertical-align: -0.2em; }
+.map-head { display: flex; align-items: center; gap: 14px; }
+.map-hero .still { height: 84px; }
+.map-who { display: grid; gap: 6px; flex: 1; min-width: 0; }
+.map-who h1 { overflow-wrap: break-word; }
+.map-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; }
+.grade-chip { padding: 2px 12px; border-radius: 999px; background: var(--indigo); color: #fff; font-size: 15px; font-weight: 800; white-space: nowrap; }
+.hero-level { color: var(--muted); font-size: 15px; font-weight: 700; }
+.switch-player { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; }
+.play-card { gap: 12px; }
+.continue { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 18px; width: 100%; text-align: left; }
+.continue-play { display: inline-flex; align-items: center; gap: 10px; font-size: 32px; }
+.continue-topic { font-size: 18px; font-weight: 700; opacity: 0.95; }
+.map-progress { display: flex; align-items: center; gap: 12px; }
+.map-progress .progress-bar { flex: 1; }
+.map-stars { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: #b45309; }
+.map-stars .icon { color: #f59e0b; }
 .map-count, .map-finished { margin: 0; }
 .progress-bar { height: 14px; overflow: hidden; background: #eef1f7; border-radius: 7px; }
 .progress-bar span { display: block; height: 100%; background: var(--indigo); border-radius: 7px; }
-.continue { display: grid; justify-items: start; text-align: left; }
-.continue-topic { font-size: 17px; font-weight: 700; opacity: 0.9; }
-.chapters { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
-.chapter {
-  display: grid;
-  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
-  overflow: hidden;
-  background: var(--surface);
-  border: 2px solid var(--line);
-  border-radius: var(--radius);
-}
+/* Other ways to play: tiles with an icon and a word or two, each its own colour. */
+.map-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.tile { display: grid; justify-items: center; align-content: center; gap: 4px; padding: 14px 8px; border: 2px solid; border-radius: var(--radius); font-size: 17px; font-weight: 800; }
+.tile-icon { width: 38px; height: 38px; }
+.tile-count { font-size: 13px; font-weight: 700; opacity: 0.8; }
+.tile:hover { filter: brightness(0.96); }
+.tile--training { color: #075985; background: #e0f2fe; border-color: #bae6fd; }
+.tile--quick { color: #991b1b; background: #fee2e2; border-color: #fecaca; }
+.tile--challenge { color: #5b21b6; background: #ede9fe; border-color: #ddd6fe; }
+.tile--treasures { color: #92400e; background: #fef3c7; border-color: #fde68a; }
+.chapters { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.chapter { overflow: hidden; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); }
 .chapter.is-current { border: 3px solid var(--orange); }
-.chapter-art { min-height: 120px; background: #24324c center bottom / cover no-repeat; }
+.chapter-line { display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; list-style: none; }
+.chapter-line::-webkit-details-marker { display: none; }
+/* A chevron: down when closed, up when open. */
+.chapter-line::after { content: ""; width: 9px; height: 9px; margin: 0 4px 4px; border-right: 3px solid var(--muted); border-bottom: 3px solid var(--muted); rotate: 45deg; }
+details[open] > .chapter-line::after { rotate: 225deg; margin-bottom: -4px; }
+.chapter-badge { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--indigo-soft); color: var(--indigo); font: 800 17px var(--display); }
+.chapter.is-current .chapter-badge { background: var(--orange); color: #fff; }
+.chapter.is-finished .chapter-badge { background: var(--indigo); color: #fff; }
+.chapter-title { flex: 1; min-width: 0; font: 800 20px/1.2 var(--display); }
+.chapter.is-locked .chapter-title, .chapter.is-locked .chapter-state { color: var(--muted); }
+.chapter-state { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: #b45309; }
+.chapter-state .icon { width: 18px; height: 18px; }
+.chapter-open { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); border-top: 2px solid var(--line); }
+.chapter-art { position: relative; min-height: 120px; background: #24324c center bottom / cover no-repeat; }
 .chapter.is-locked .chapter-art { filter: grayscale(0.7) brightness(0.9); }
-.chapter-body { display: grid; gap: 10px; align-content: start; padding: 12px 16px 14px; }
-.chapter-title { margin: 0; font: 800 22px/1.2 var(--display); }
-.chapter-number { display: block; font: 700 14px var(--body); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+/* The chapter's opening scene: a round play button on its picture. */
+.chapter-watch { position: absolute; right: 10px; bottom: 10px; display: grid; place-items: center; width: 48px; height: 48px; padding: 0 0 0 3px; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.92); color: var(--indigo); box-shadow: 0 2px 8px rgb(0 0 0 / 0.25); }
+.chapter-watch .icon { width: 26px; height: 26px; }
+.chapter-body { display: grid; gap: 10px; align-content: center; padding: 14px 16px; }
 .levels { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .level-button {
   display: grid;
@@ -341,8 +373,18 @@ select {
 }
 .level-number { font: 800 22px/1 var(--display); }
 .level-stars { font-size: 13px; line-height: 1; color: #d97706; letter-spacing: -0.04em; }
-.level-button.is-open { border-color: var(--orange); background: var(--orange-soft); }
-.level-button.is-open .level-stars { color: var(--orange-deep); font-weight: 800; letter-spacing: 0; }
+.level-stars .icon { width: 16px; height: 16px; }
+.level-button.is-open { border-color: #fdba74; }
+/* The level to play next: the only one that glows. */
+.level-button.is-next { border-color: var(--orange); background: var(--orange-soft); color: var(--orange-deep); animation: next-glow 1.8s ease-in-out infinite; }
+.level-button.is-next .level-stars { color: var(--orange-deep); }
+@keyframes next-glow { 0%, 100% { box-shadow: 0 0 0 3px rgb(232 98 15 / 0.25); } 50% { box-shadow: 0 0 0 7px rgb(232 98 15 / 0.1); } }
+@media (prefers-reduced-motion: reduce) { .level-button.is-next { animation: none; box-shadow: 0 0 0 4px rgb(232 98 15 / 0.25); } }
+/* For grown-ups, folded away at the bottom. */
+.grown-ups { padding-top: 12px; border-top: 2px solid var(--line); }
+.grown-ups summary { cursor: pointer; font-weight: 800; color: var(--muted); }
+.grown-ups[open] { display: grid; gap: 10px; }
+.grown-ups .map-count { color: var(--muted); }
 .level-button.is-done { border-color: #c7c5f2; background: var(--indigo-soft); }
 .level-button.is-locked { border-style: dashed; color: var(--muted); background: #f7f8fb; cursor: not-allowed; }
 .level-button:hover:not(:disabled) { border-color: var(--indigo); }
@@ -362,7 +404,6 @@ select {
 /* In a battle, a question from an earlier chapter says it is review. */
 .review-tag { justify-self: start; margin: 0; padding: 3px 10px; border-radius: 999px; background: var(--indigo-soft); color: var(--indigo); font-size: 14px; font-weight: 800; }
 .review-tag[hidden] { display: none; }
-.map-time { margin: 0; color: var(--muted); font-size: 15px; }
 .report-summary { margin: 0; font-size: 18px; }
 /* The class view: a tag on students pasted in by code, and the topics the class needs. */
 .class-from { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--indigo-soft); color: var(--indigo); font-size: 13px; font-weight: 700; }
@@ -644,9 +685,16 @@ select {
   .grade-years { gap: 5px; }
   .grade-number { font-size: 26px; }
   .grade-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } /* the number is enough to see */
-  /* A chapter's picture goes across the top of its card. */
-  .chapter { grid-template-columns: minmax(0, 1fr); }
+  /* An open chapter's picture goes across the top, above its levels. */
+  .chapter-open { grid-template-columns: minmax(0, 1fr); }
   .chapter-art { min-height: 0; aspect-ratio: 3.2; }
+  .map-hero .still { height: 64px; }
+  .map-head { gap: 10px; }
+  /* Switching player is the icon alone, so the name has the room. */
+  .switch-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .switch-player { padding: 10px 12px; }
+  .continue-play { font-size: 28px; }
+  .map-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .levels { gap: 6px; }
   .level-button { width: 56px; height: 60px; }
   .note-text { font-size: 20px; }

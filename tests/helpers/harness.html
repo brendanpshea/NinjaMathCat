@@ -219,6 +219,10 @@
       report.map.open = $$(".level-button.is-open").length;
       report.map.continue = text("[data-ref=continue]");
       report.map.challenge = Boolean($("[data-ref=challenge]"));
+      report.map.next = $$(".level-button.is-next").length;
+      report.map.openChapters = $$(".chapter details[open]").map(d => d.closest(".chapter").dataset.chapter);
+      report.map.tiles = $$(".map-tiles .tile").map(t => t.textContent.trim());
+      report.map.grownUpsClosed = !$(".grown-ups").open;
       click("[data-ref=continue]");
 
       // The chapter opens with its teaching scene; its note is a link away.
