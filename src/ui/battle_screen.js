@@ -118,10 +118,35 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
   const stage = createStage(ref("stage"));
   stage.show(battle, hero);
 
-  /** Read the question out, with its choices; for ratios, "5:13" is "5 to 13". */
+  /**
+   * Whether an answer is being acted out, when no other can be given. The
+   * battle says so as data-busy too, for the tests, since a number line's
+   * ticks have no disabled state to show it.
+   * @param {boolean} now
+   */
+  function setBusy(now) {
+    busy = now;
+    root.querySelector(".battle")?.toggleAttribute("data-busy", now);
+  }
+
+  /**
+   * Read the question out, with its choices; for ratios, "5:13" is "5 to 13".
+   * One answered on a number line is only its words: its choices are the ticks.
+   */
   function readQuestion() {
     const q = battle.question;
-    if (q) speaker?.say(questionSpeech(q.prompt, q.choices.filter(c => !battle.ruledOut.includes(c))), { ratios: q.type === "ratios" });
+    if (q) speaker?.say(q.input === "line" ? q.prompt : questionSpeech(q.prompt, q.choices.filter(c => !battle.ruledOut.includes(c))), { ratios: q.type === "ratios" });
+  }
+
+  /**
+   * For a question answered on a number line, the tick for each choice, in
+   * order, as the line's picture draws them to tap.
+   * @param {import("../questions/common.js").Question} q
+   * @returns {Element[]}
+   */
+  function ticksOf(q) {
+    const line = /** @type {import("../questions/common.js").NumberLine} */ (q.visual);
+    return q.choices.map((_, i) => /** @type {Element} */ (ref("picture").querySelector(`[data-part="tick-${line.from + i * line.tick}"]`)));
   }
 
   function showJourney() {
@@ -148,17 +173,28 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     ref("tag").textContent = review ? `Review: ${review}` : "";
     ref("prompt").textContent = q.prompt;
     ref("picture").innerHTML = q.visual ? pictureHtml(q.visual) : "";
+    const onLine = q.input === "line";
+    ref("choices").hidden = onLine;
     // Long choices, such as the steps of a way to work something out, get a row each.
     ref("choices").classList.toggle("long", q.choices.some(c => String(c).length > 32));
-    ref("choices").innerHTML = q.choices.map((c, i) => {
+    ref("choices").innerHTML = onLine ? "" : q.choices.map((c, i) => {
       const out = battle.ruledOut.includes(c);
       return `<button type="button" class="choice${out ? " wrong" : ""}" data-index="${i}"${out ? " disabled" : ""}>
         <span class="key" aria-hidden="true">${i + 1}</span><span class="choice-text">${choiceHtml(c)}</span></button>`;
     }).join("");
+    // On a number line, the ticks are what to tap, by keyboard too.
+    if (onLine) {
+      ticksOf(q).forEach((tick, i) => {
+        tick.setAttribute("tabindex", "0");
+        tick.setAttribute("role", "button");
+        tick.classList.add("tappable");
+        if (battle.ruledOut.includes(q.choices[i])) tick.classList.add("is-wrong");
+      });
+    }
     ref("next").hidden = true;
     ref("how").hidden = true;
     teach = null;
-    busy = false;
+    setBusy(false);
     if (readAloud) readQuestion();
   }
 
@@ -171,10 +207,14 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     if (busy || !q) return;
     const choice = q.choices[index];
     if (choice === undefined || battle.ruledOut.includes(choice)) return;
-    busy = true;
-    const buttons = /** @type {HTMLButtonElement[]} */ ([...ref("choices").querySelectorAll(".choice")]);
+    setBusy(true);
+    const onLine = q.input === "line";
+    // The choice buttons, or on a number line its ticks; `disabled` only means anything on a button.
+    const buttons = /** @type {HTMLButtonElement[]} */ (onLine ? ticksOf(q) : [...ref("choices").querySelectorAll(".choice")]);
+    /** @param {Element} el @param {boolean} right */
+    const mark = (el, right) => el.classList.add(onLine ? (right ? "is-right" : "is-wrong") : (right ? "right" : "wrong"));
     buttons.forEach(b => { b.disabled = true; });
-    buttons[index].classList.add(isCorrect(q, choice) ? "right" : "wrong");
+    mark(buttons[index], isCorrect(q, choice));
 
     const before = battle;
     const result = answer(battle, choice, rng);
@@ -192,10 +232,10 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
         return;
       case "again":
         buttons.forEach((b, i) => { b.disabled = battle.ruledOut.includes(q.choices[i]); });
-        busy = false;
+        setBusy(false);
         return;
       case "reveal": {
-        buttons[q.choices.indexOf(q.answer)].classList.add("right");
+        mark(buttons[q.choices.indexOf(q.answer)], true);
         const next = ref("next");
         next.hidden = false;
         // Missed twice: a teaching scene for this kind of question can show how.
@@ -213,6 +253,20 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
   ref("choices").addEventListener("click", event => {
     const button = /** @type {HTMLElement} */ (event.target).closest(".choice");
     if (button instanceof HTMLButtonElement) choose(Number(button.dataset.index));
+  });
+  // A tick tapped, on a question answered on the number line.
+  ref("picture").addEventListener("click", event => {
+    const tick = /** @type {Element} */ (event.target).closest(".tappable");
+    const q = battle.question;
+    if (!tick || q?.input !== "line") return;
+    const line = /** @type {import("../questions/common.js").NumberLine} */ (q.visual);
+    choose(Math.round((Number(tick.getAttribute("data-part")?.slice("tick-".length)) - line.from) / line.tick));
+  });
+  ref("picture").addEventListener("keydown", event => {
+    const tick = /** @type {Element} */ (event.target).closest(".tappable");
+    if (!tick || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault();
+    tick.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   });
   ref("read")?.addEventListener("click", () => readQuestion());
   ref("how").addEventListener("click", () => {
@@ -249,7 +303,8 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
       if (event.key === "Escape") showRest();
       return;
     }
-    if (/^[1-4]$/.test(event.key)) choose(Number(event.key) - 1);
+    // The number keys pick a choice; on a number line, Tab and Enter pick a tick instead.
+    if (/^[1-4]$/.test(event.key) && battle.question?.input !== "line") choose(Number(event.key) - 1);
   }, { signal: listening.signal });
 
   showJourney();

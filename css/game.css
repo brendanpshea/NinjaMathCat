@@ -405,7 +405,12 @@ select {
 .scene-line { margin: 4px 0 0; font: 700 24px/1.35 var(--display); }
 .scene-line:focus { outline: none; } /* focused only so a check is read out */
 .scene-picture[hidden], .scene-choices[hidden] { display: none; }
-.scene-picture .tappable { cursor: pointer; }
+.scene-picture .tappable, .picture .tappable { cursor: pointer; }
+/* A number line's ticks, tapped to answer in a battle: a box round the one pointed at. */
+.picture .tappable:hover, .picture .tappable:focus-visible { outline: none; stroke: var(--indigo); stroke-width: 3; }
+.picture .tappable:focus:not(:focus-visible) { outline: none; }
+.picture .tappable.is-right { stroke: var(--right); stroke-width: 4; }
+.picture .tappable.is-wrong { stroke: var(--wrong); stroke-width: 4; }
 .scene-picture .focus { animation: ring-in 0.35s ease-out; }
 @keyframes ring-in { from { opacity: 0; stroke-width: 12; } }
 .scene-picture .tappable:hover, .scene-picture .tappable:focus-visible { outline: none; stroke: var(--indigo); stroke-width: 6; }

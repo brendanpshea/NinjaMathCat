@@ -32,6 +32,10 @@ const SHOTS = [
   ["challenge", 1000, 1000], ["challenge", 390, 1300, "phone-"], ["challenge-done", 1000, 1100],
   // The class view, for teachers.
   ["class", 1000, 1300], ["class", 390, 1800, "phone-"],
+  // A question answered by tapping the number line, tried wrong once: whole numbers, fractions, negatives.
+  ["line", 1000, 1150], ["line", 390, 1400, "phone-"],
+  ["line-fractions", 1000, 1150, "", "screen=line&chapter=3-fractions"],
+  ["line-negatives", 390, 1400, "phone-", "screen=line&chapter=6-negatives"],
   ["scene-4-check", 390, 1500, "phone-", "screen=scene&chapter=4-decimals&step=5&wrong"],
 ];
 // npm run screens -- scene: only the shots whose screen has "scene" in its name.

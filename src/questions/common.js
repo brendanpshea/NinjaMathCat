@@ -285,6 +285,9 @@
  * @property {[Answer, string][]} [slips]  the mistakes some wrong answers come from, each said
  *   to a child who picks it: "That adds the bottom numbers too." Only those for wrong answers
  *   that are among the choices are kept, and none may give the answer away.
+ * @property {"line"} [input]  answered by tapping the number line in `visual`, not by a choice
+ * @property {Answer[]} [ticks]  with input "line": what each tick of the line stands for, in order
+ *   along it, which are the choices; `wrong` is then not used
  */
 
 /**
@@ -298,6 +301,8 @@
  * @property {string} hint
  * @property {number} difficulty
  * @property {Record<string, string>} [slips]  for a wrong choice, by its text, the mistake it comes from
+ * @property {"line"} [input]  answered by tapping a tick of the number line in `visual`; the
+ *   choices are then what each tick stands for, in order along the line, from its first tick
  */
 
 /**
@@ -309,6 +314,7 @@
  *   adventure can ask for, by name, each with what it means: "easy" for
  *   multiplication is the facts with 2, 5 or 10. A type without them ignores
  *   a focus.
+ * @property {"line"} [input]  its questions are answered on a number line, not by a choice
  */
 
 /**
@@ -400,7 +406,11 @@ function pickSide(rng, answer, likely, count, side, spread, min, step) {
  * @returns {Question}
  */
 export function makeQuestion(rng, type, grade, focus) {
-  const { wrong, slips = [], ...draft } = type.generate(rng, grade, focus);
+  const { wrong, slips = [], ticks, ...draft } = type.generate(rng, grade, focus);
+  // On a number line, every tick is a choice, in order, and every wrong one can say how it's off.
+  if (draft.input === "line" && ticks) {
+    return { type: type.id, ...draft, choices: ticks, slips: Object.fromEntries(slips.map(([w, why]) => [String(w), why])) };
+  }
   const seen = new Set([String(draft.answer)]);
   /** @type {Answer[]} */
   const kept = [];

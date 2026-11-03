@@ -1,5 +1,5 @@
-// Number lines: reading a point, following a jump (2.MD.6), and fractions as
-// points on a line (3.NF.2).
+// Number lines: reading a point, following a jump (2.MD.6), fractions as
+// points on a line (3.NF.2), and placing a number on one, by tapping it.
 
 import { atGrade, wrongNumbers } from "./common.js";
 
@@ -122,6 +122,69 @@ export const fractionLine = {
       ]),
       hint: "Count the equal spaces from 0 to 1. That is the bottom number.",
       difficulty: 2 + Number(wholes > 1),
+    };
+  },
+};
+
+/**
+ * A tick's number as it is read: 7, 3/4, 1, −3.
+ * @param {number} units  in steps of 1/den
+ * @param {number} den
+ * @returns {string}
+ */
+function tickText(units, den) {
+  if (units < 0) return `−${tickText(-units, den)}`;
+  return den === 1 || units % den === 0 ? String(units / den) : `${units}/${den}`;
+}
+
+/**
+ * Where a number goes on a line, tapped rather than chosen: whole numbers
+ * from 0 to 20 in first grade and to 100 in second (2.MD.6), fractions from
+ * third (3.NF.2), and negative numbers in sixth (6.NS.6). Placing numbers on
+ * a line is among the best-supported ways to build a sense of how big
+ * numbers are (Siegler and Ramani's number board games; Fazio, Kennedy and
+ * Siegler's Catch the Monster for fractions). A wrong tap says which way to
+ * go, as the bigger or smaller number it is.
+ * @type {QuestionType}
+ */
+export const placing = {
+  id: "placing",
+  name: "Placing numbers on a line",
+  input: "line",
+  generate(rng, grade) {
+    /** @type {{ den: number, from: number, to: number, tick: number, label: number }} */
+    const line = grade >= 6 ? { den: 1, from: -10, to: 10, tick: 1, label: 5 }
+      : grade >= 3 ? (() => {
+        const den = rng.pick([2, 3, 4, 6, 8]);
+        return { den, from: 0, to: den * (grade < 3.5 ? 1 : rng.pick([1, 2])), tick: 1, label: den };
+      })()
+      : grade >= 2.5 ? { den: 1, from: 0, to: 100, tick: 5, label: 25 }
+      : grade >= 2 ? { den: 1, from: 0, to: 100, tick: 10, label: 50 }
+      : { den: 1, from: 0, to: 20, tick: 1, label: 5 };
+    const { den, from, to, tick, label } = line;
+    const positions = stepsBetween(from, to, tick);
+    // Never on a labelled tick, where it could be read off instead of worked out; in sixth grade, mostly below 0.
+    const open = positions.filter(at => at % label !== 0);
+    const target = rng.pick(from < 0 && rng.chance(0.7) ? open.filter(at => at < 0) : open);
+    /** @param {number} at */
+    const answerAt = at => (den === 1 ? at : tickText(at, den));
+    const ticks = positions.map(answerAt);
+    const shown = tickText(target, den);
+    const negative = target < 0;
+    return {
+      prompt: `Tap where ${shown} goes on the number line.`,
+      visual: { kind: "number_line", den, from, to, tick, label, points: [], jumps: [] },
+      answer: answerAt(target),
+      wrong: [],
+      input: "line",
+      ticks,
+      hint: negative ? `Negative numbers are left of 0. ${shown} is ${-target} steps to the left of 0.`
+        : den > 1 ? `From 0 to 1 is cut into ${den} equal parts. Count ${target} of them from 0.`
+        : `Find the labelled numbers on either side of ${shown}, then count the small steps.`,
+      slips: positions.filter(at => at !== target).map(at => [answerAt(at), at < target
+        ? `That's ${tickText(at, den)}, which is less than ${shown}. ${shown} is further right.`
+        : `That's ${tickText(at, den)}, which is more than ${shown}. ${shown} is further left.`]),
+      difficulty: negative || den > 4 ? 3 : den > 1 || tick > 1 ? 2 : 1,
     };
   },
 };

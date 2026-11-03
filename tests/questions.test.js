@@ -31,7 +31,28 @@ function says(text, answer) {
 
 for (const { type } of CURRICULUM) {
   describe(`${type.name} questions`, () => {
-    it("have four different choices, exactly one of them right", () => {
+    // Questions answered on a number line have a choice for every tick instead.
+    const choosing = type.input !== "line";
+
+    if (!choosing) {
+      it("are answered on their number line: every tick a choice, in order, exactly one right, never a labelled one", () => {
+        for (const { question: q, at } of questionsOf(type)) {
+          assert.equal(q.input, "line", at);
+          const line = q.visual;
+          assert.equal(line?.kind, "number_line", at);
+          const ticks = Math.round((line.to - line.from) / line.tick) + 1;
+          assert.equal(q.choices.length, ticks, at);
+          assert.equal(new Set(q.choices.map(String)).size, ticks, at);
+          assert.equal(q.choices.filter(c => isCorrect(q, c)).length, 1, at);
+          const place = line.from + q.choices.indexOf(q.answer) * line.tick;
+          assert.notEqual(place % line.label, 0, `${at}: on a labelled tick, it could be read off`);
+          // Every wrong tick says which way to go.
+          for (const c of q.choices) if (c !== q.answer) assert.match(q.slips?.[String(c)] ?? "", /further (left|right)\.$/, `${at} → ${c}`);
+        }
+      });
+    }
+
+    it("have four different choices, exactly one of them right", { skip: !choosing }, () => {
       for (const { question: q, at } of questionsOf(type)) {
         assert.equal(q.choices.length, 4, at);
         assert.equal(new Set(q.choices.map(String)).size, 4, `${at} → ${q.choices.join(" | ")}`);
@@ -89,7 +110,7 @@ for (const { type } of CURRICULUM) {
       }
     });
 
-    it("put the answer in every position", () => {
+    it("put the answer in every position", { skip: !choosing }, () => {
       for (const grade of gradesFor(type)) {
         const positions = new Set();
         for (let seed = 1; seed <= 100; seed++) {
@@ -100,7 +121,7 @@ for (const { type } of CURRICULUM) {
       }
     });
 
-    it("do not give the answer away by where it sits among the numbers", () => {
+    it("do not give the answer away by where it sits among the numbers", { skip: !choosing }, () => {
       // If the wrong answers were always one either side, a child could pick
       // the middle number without doing the sum. The answer should be the
       // biggest or smallest choice about half the time, like the rest.

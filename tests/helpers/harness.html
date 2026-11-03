@@ -52,15 +52,23 @@
   /** On the battle screen, wait until a question can be answered, or the battle is over. */
   async function readyToAnswer() {
     await until(() => game().screen !== "battle"
-      || ($(".choice:not(:disabled)") && $("[data-ref=next]").hidden && $(".prompt")?.textContent === game().battle?.question?.prompt),
+      || (($(".choice:not(:disabled)") || $(".picture .tappable")) && !$(".battle[data-busy]") && $("[data-ref=next]").hidden && $(".prompt")?.textContent === game().battle?.question?.prompt),
     "a question to answer");
   }
 
-  /** Answer the current question: rightly, or with the first wrong choice not tried. */
+  /**
+   * Answer the current question: rightly, or with the first wrong choice not
+   * tried. One answered on a number line is answered by tapping the tick.
+   */
   async function answer(right) {
     const { battle } = game();
     const q = battle.question;
     const choice = right ? q.answer : q.choices.find(c => c !== q.answer && !battle.ruledOut.includes(c));
+    if (q.input === "line") {
+      const tick = $(`.picture [data-part="tick-${q.visual.from + q.choices.indexOf(choice) * q.visual.tick}"]`);
+      tick.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return;
+    }
     $$(".choice")[q.choices.indexOf(choice)].click();
   }
 
@@ -391,12 +399,30 @@
       // A chapter's teaching scene (?chapter=), at a step (?step=, from 0), perhaps tried wrong once (?wrong).
       const sceneShot = screen === "scene";
       if (sceneShot || screen === "how") localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "0-teens")));
+      else if (screen === "line") localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "2-lines")));
       else if (screen === "class") {
         const { save, zoe } = await classSave();
         localStorage.setItem("ninja-math-cat", JSON.stringify({ ...save, classCodes: [zoe(9)] }));
       } else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify({ ...(await maya()), locked: screen === "lock" }));
       // A challenge a few minutes long, so the shot catches it mid-run.
       await load(screen === "challenge" ? "?test&seed=11&challenge=170" : "?test&seed=11");
+      if (screen === "line") {
+        // A question answered on the number line, from a chapter's first level, tried wrong once.
+        click("[data-ref=continue]");
+        await on("scene");
+        click("[data-ref=skip]");
+        await on("battle");
+        await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load");
+        for (let i = 0; i < 8; i++) {
+          await readyToAnswer();
+          if (game().battle.question.input === "line") break;
+          await answer(true);
+        }
+        await answer(false);
+        await until(() => /Not quite/.test($(".feedback").textContent) && !$(".battle[data-busy]"), "the hint");
+        await wait(400);
+        return {};
+      }
       if (screen === "how") {
         // "Show me how", open over the battle after the first question is missed twice.
         click("[data-ref=continue]");
@@ -550,7 +576,7 @@
       report.type = game().battle.question.type;
       report.hiddenBefore = $("[data-ref=how]").hidden;
       await answer(false);
-      await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint");
+      await until(() => /Not quite/.test($(".feedback").textContent) && !$(".battle[data-busy]"), "the hint");
       report.hiddenAfterOneMiss = $("[data-ref=how]").hidden;
       await answer(false);
       await until(() => !$("[data-ref=next]").hidden, "the Next button");
@@ -851,7 +877,7 @@
           report.questions++;
           if ($(".review-tag:not([hidden])")) report.reviewTags = (report.reviewTags ?? 0) + 1;
           const where = `${title}: ${q.prompt}`;
-          if ($$(".choice").length !== 4 || $$(".choice-text").some(c => !c.textContent.trim())) problem(`${where}: choices missing or blank`);
+          if (q.input === "line" ? $$(".picture .tappable").length !== q.choices.length : $$(".choice").length !== 4 || $$(".choice-text").some(c => !c.textContent.trim())) problem(`${where}: choices missing or blank`);
           if (q.visual) {
             report.kinds[q.visual.kind] = (report.kinds[q.visual.kind] ?? 0) + 1;
             const picture = $(".picture svg");
@@ -866,16 +892,16 @@
           } else if (chance(0.75)) {
             report.wrongOnce++;
             await answer(false);
-            await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint");
+            await until(() => /Not quite/.test($(".feedback").textContent) && !$(".battle[data-busy]"), "the hint");
             if (!text(".feedback")) problem(`${where}: no hint shown`);
             await answer(true);
           } else {
             report.wrongTwice++;
             await answer(false);
-            await until(() => /Not quite/.test($(".feedback").textContent) && $(".choice:not(:disabled)"), "the hint");
+            await until(() => /Not quite/.test($(".feedback").textContent) && !$(".battle[data-busy]"), "the hint");
             await answer(false);
             await until(() => !$("[data-ref=next]").hidden, "the Next button");
-            if ($$(".choice.right").length !== 1) problem(`${where}: the right answer is not shown`);
+            if ($$(".choice.right, .picture .tappable.is-right").length !== 1) problem(`${where}: the right answer is not shown`);
             // Where a teaching scene can show how, watch it, over the battle, and come back.
             const how = $("[data-ref=how]");
             if (how && !how.hidden) {

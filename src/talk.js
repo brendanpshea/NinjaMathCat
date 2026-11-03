@@ -31,6 +31,7 @@ export const TALK = {
   fractions: ["Cut a sandwich or a pancake into equal parts together. Ask: what is each part called?", "Ask: would you rather have a half or a quarter of a pizza? Why?"],
   bar_graph: ["Ask everyone in the family a question, like their favorite fruit, and draw a bar graph together."],
   number_line: ["Ask: on a ruler, where is 7? How far is it from 7 to 10?"],
+  placing: ["Draw a line from 0 to 10 together. Ask: where does 7 go? Where would 7 and a half go?", "Ask: which is closer to 1, three quarters or one half? Draw a line from 0 to 1 to check."],
   word_multiplication: ["Ask: how many wheels are on 4 bikes? How did you work it out?"],
   multiplication: ["Ask: what does 3 × 4 look like? Draw 3 rows of 4 dots together.", "Ask: you know 5 × 6. How can that help you with 6 × 6?"],
   division: ["Share something out together, like 12 crackers among 3 plates. Ask: how many each? Any left over?", "Ask: how does knowing 4 × 6 help with 24 ÷ 4?"],

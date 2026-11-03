@@ -5,7 +5,7 @@
 // src/ui/challenge_screen.js runs the clock.
 
 import { chaptersFor, levelsFor, nextLevel } from "./adventures.js";
-import { pickQuestion, questionKey } from "./curriculum.js";
+import { pickQuestion, questionKey, typeById } from "./curriculum.js";
 import { isCorrect } from "./questions/common.js";
 
 /** @import { AdventureProgress } from "./adventures.js" */
@@ -43,7 +43,8 @@ export function challengeMix(grade, progress) {
   const chapters = chaptersFor(grade);
   const levels = levelsFor(grade);
   const reached = (nextLevel(levels, progress) ?? levels[levels.length - 1]).chapter;
-  const kinds = [...new Set(chapters.slice(0, reached + 1).flatMap(c => [...c.learn, ...(c.warmup ?? [])]))];
+  // Only questions with choices: tapping a number line is for a battle, not a race.
+  const kinds = [...new Set(chapters.slice(0, reached + 1).flatMap(c => [...c.learn, ...(c.warmup ?? [])]))].filter(type => typeById(type).input !== "line");
   return kinds.map(type => ({ type, grade: chapters[reached].at, weight: 1, most: 2 }));
 }
 

@@ -12,7 +12,7 @@ import { time } from "./questions/time.js";
 import { shapes } from "./questions/shapes.js";
 import { wordAddition, wordSubtraction, wordMultiplication, wordDivision, wordTwoStep } from "./questions/word_problems.js";
 import { pictureGraph, barGraph } from "./questions/graphs.js";
-import { numberLine, fractionLine } from "./questions/number_lines.js";
+import { numberLine, fractionLine, placing } from "./questions/number_lines.js";
 import { fractions } from "./questions/fractions.js";
 import { rounding, placeValue } from "./questions/place_value.js";
 import { decimals } from "./questions/decimals.js";
@@ -85,6 +85,7 @@ export const CURRICULUM = [
   { type: wordDivision, from: 3, to: 4.5, standards: ["3.OA.2", "3.OA.3", "4.OA.2", "4.OA.3"] },
   { type: wordTwoStep, from: 3, to: 4.5, standards: ["3.OA.8", "4.OA.3"] },
   { type: fractionLine, from: 3, to: 3.5, standards: ["3.NF.2"] },
+  { type: placing, from: 1, to: 6.5, standards: ["2.MD.6", "3.NF.2", "6.NS.6"] },
   { type: rounding, from: 3, to: 5.5, standards: ["3.NBT.1", "4.NBT.3", "5.NBT.4"] },
   { type: fractionCompare, from: 3, to: 4.5, standards: ["3.NF.3", "4.NF.1", "4.NF.2"] },
   { type: area, from: 3, to: 6.5, standards: ["3.MD.5", "3.MD.6", "3.MD.7", "3.MD.8", "4.MD.3", "6.G.1"] },
