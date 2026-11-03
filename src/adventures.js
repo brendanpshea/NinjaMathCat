@@ -13,7 +13,7 @@
 import { CURRICULUM, pickQuestion } from "./curriculum.js";
 import { MONSTERS } from "./monsters.js";
 import { createRng } from "./rng.js";
-import { need, steer } from "./mastery.js";
+import { need, steer, dueToday } from "./mastery.js";
 
 /** @import { Mix } from "./curriculum.js" */
 /** @import { Question } from "./questions/common.js" */
@@ -264,9 +264,12 @@ const LEAST_NEED = 0.25;
  * @param {Level} level
  * @param {Mastery} [mastery]
  * @param {number} [now]  battles the player has played
- * @returns {{ mix: Mix, adventure: Monster[], pitch: number[], toughness: number[], opening: string[] }}
+ * @param {{ today?: number, warmUp?: boolean }} [when]  today: the day it is (dayNumber), so review
+ *   is spaced over days; warmUp: the first level of a sitting, which opens with what is most due
+ *   from earlier chapters, before anything else
+ * @returns {{ mix: Mix, adventure: Monster[], pitch: number[], toughness: number[], opening: string[], warmUp: string[] }}
  */
-export function planLevel(level, mastery = {}, now = 0) {
+export function planLevel(level, mastery = {}, now = 0, { today, warmUp = false } = {}) {
   const chapters = chaptersFor(level.grade);
   const chapter = chapters[level.chapter];
   const plan = LEVEL_PLANS[level.kind];
@@ -278,7 +281,9 @@ export function planLevel(level, mastery = {}, now = 0) {
   ])].filter(type => !fresh.includes(type));
   const freshShare = earlier.length === 0 ? 1 : plan.fresh;
   // Review goes where it is needed most.
-  const needs = earlier.map(type => Math.max(LEAST_NEED, need(mastery[type], now)));
+  const needs = earlier.map(type => Math.max(LEAST_NEED, need(mastery[type], now, today)));
+  // A warm-up: two kinds from earlier chapters, the most due, asked first.
+  const warm = warmUp && today !== undefined && freshShare < 1 ? dueToday(mastery, earlier, today, WARM_UP) : [];
   const allNeed = needs.reduce((a, b) => a + b, 0);
   /** @type {Mix} */
   const mix = [
@@ -292,10 +297,14 @@ export function planLevel(level, mastery = {}, now = 0) {
     adventure: plan.foes.map(i => who[i]),
     pitch: plan.pitch,
     toughness: plan.toughness,
-    // A learn level brings in each of the chapter's topics before anything else.
-    opening: level.kind === "learn" ? fresh : [],
+    // A learn level brings in each of the chapter's topics before anything else, after any warm-up.
+    opening: [...warm, ...(level.kind === "learn" ? fresh : [])],
+    warmUp: warm,
   };
 }
+
+/** How many kinds from earlier chapters a sitting's first level warms up with. */
+export const WARM_UP = 2;
 
 /** How many kinds of question a training level works on. */
 export const TRAINING_KINDS = 4;
@@ -309,9 +318,10 @@ export const TRAINING_KINDS = 4;
  * @param {AdventureProgress} progress
  * @param {Mastery} mastery
  * @param {number} now  battles the player has played
+ * @param {number} [today]  the day it is (dayNumber), so review is spaced over days
  * @returns {{ mix: Mix, adventure: Monster[], pitch: number[], toughness: number[], kinds: string[] }}
  */
-export function planTraining(grade, progress, mastery, now) {
+export function planTraining(grade, progress, mastery, now, today) {
   const chapters = chaptersFor(grade);
   const levels = levelsFor(grade);
   const reached = (nextLevel(levels, progress) ?? levels[levels.length - 1]).chapter;
@@ -320,7 +330,7 @@ export function planTraining(grade, progress, mastery, now) {
   const met = reachedKinds.filter(type => (mastery[type]?.seen ?? 0) > 0);
   const pool = met.length > 0 ? met : [...new Set(chapter.learn)];
   const kinds = pool
-    .map((type, i) => ({ type, i, need: Math.max(LEAST_NEED, need(mastery[type], now)) }))
+    .map((type, i) => ({ type, i, need: Math.max(LEAST_NEED, need(mastery[type], now, today)) }))
     .sort((a, b) => b.need - a.need || a.i - b.i)
     .slice(0, TRAINING_KINDS);
   const allNeed = kinds.reduce((sum, k) => sum + k.need, 0);

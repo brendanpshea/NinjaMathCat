@@ -19,7 +19,7 @@ function maya() {
     played: 9,
     treasures: [TREASURES[5].id, TREASURES[0].id, TREASURES[40].id],
     adventures: { 2: second, 3: third },
-    mastery: { multiplication: { score: 0.734, seen: 12, last: 9 }, division: { score: 0.2, seen: 4, last: 6 } },
+    mastery: { multiplication: { score: 0.734, seen: 12, last: 9, day: 20760 }, division: { score: 0.2, seen: 4, last: 6 } },
     challenges: { 3: 14 },
   });
   return currentPlayer(save);
@@ -44,7 +44,7 @@ describe("progress codes", () => {
     }
     for (const [type, m] of Object.entries(player.mastery)) {
       assert.ok(Math.abs(moved.mastery[type].score - m.score) <= 0.005, type);
-      assert.deepEqual([moved.mastery[type].seen, moved.mastery[type].last], [m.seen, m.last]);
+      assert.deepEqual([moved.mastery[type].seen, moved.mastery[type].last, moved.mastery[type].day], [m.seen, m.last, m.day]);
     }
     assert.deepEqual(moved.challenges, { 3: 14 });
   });

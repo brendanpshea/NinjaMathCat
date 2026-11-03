@@ -4,7 +4,7 @@
 // (src/battle.js).
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { learn, strength, need, steer, UNKNOWN, SPACING, NEW_NEED } from "../src/mastery.js";
+import { learn, strength, need, steer, dayNumber, waitDays, dueToday, UNKNOWN, SPACING, NEW_NEED } from "../src/mastery.js";
 import { levelsFor, planLevel, planTraining, chaptersFor, newProgress, recordLevel, TRAINING_KINDS } from "../src/adventures.js";
 import { startBattle, answer, ASK_AGAIN } from "../src/battle.js";
 import { MONSTERS } from "../src/monsters.js";
@@ -14,6 +14,60 @@ import { createRng } from "../src/rng.js";
 function after(outcomes, type = "addition", now = 0) {
   return outcomes.reduce((m, outcome) => learn(m, type, outcome, now), {});
 }
+
+describe("spacing review over days", () => {
+  it("counts days from midnight, as a child lives them", () => {
+    const evening = new Date(2026, 10, 3, 21, 30).getTime();
+    const nextMorning = new Date(2026, 10, 4, 7, 0).getTime();
+    const sameNight = new Date(2026, 10, 3, 23, 59).getTime();
+    assert.equal(dayNumber(nextMorning) - dayNumber(evening), 1);
+    assert.equal(dayNumber(sameNight), dayNumber(evening));
+  });
+
+  it("lets a kind wait longer the better it's known: two days when shaky, two weeks when strong", () => {
+    assert.equal(waitDays(0.1), 2);
+    assert.equal(waitDays(0.95), 14);
+    assert.ok(waitDays(0.6) > waitDays(0.4));
+  });
+
+  it("remembers the day a kind was last asked, and its need grows with the days against how long it can wait", () => {
+    const strong = learn({}, "addition", "firstTry", 5, 100);
+    assert.equal(strong.addition.day, 100);
+    assert.equal(learn({}, "addition", "firstTry", 5).addition.day, undefined, "no day given, none kept");
+    const m = { score: 0.9, seen: 9, last: 5, day: 100 };
+    // In battles nothing has passed; in days, need grows until it can wait no longer.
+    assert.equal(need(m, 5, 100), need(m, 5));
+    assert.ok(need(m, 5, 107) > need(m, 5, 100));
+    assert.equal(need(m, 5, 130), 1 - 0.9 + 0.5);
+    const shaky = { score: 0.35, seen: 4, last: 5, day: 100 };
+    assert.ok(need(shaky, 5, 102) - need(shaky, 5, 100) > need(m, 5, 102) - need(m, 5, 100), "a shaky kind comes due sooner");
+  });
+
+  it("finds what is most due today: met before, not practised today, the longest gone for how well it's known first", () => {
+    const mastery = {
+      addition: { score: 0.9, seen: 9, last: 1, day: 90 }, // 10 days, can wait ~13
+      subtraction: { score: 0.35, seen: 4, last: 1, day: 96 }, // 4 days, can wait ~3
+      time: { score: 0.6, seen: 5, last: 1, day: 100 }, // today
+      money: { score: 0.6, seen: 5, last: 1 }, // no day known
+    };
+    assert.deepEqual(dueToday(mastery, ["addition", "subtraction", "time", "money", "rounding"], 100, 2), ["subtraction", "addition"]);
+    assert.deepEqual(dueToday(mastery, ["time"], 100, 2), []);
+  });
+
+  it("opens a sitting's first level with what is most due from earlier chapters, then its new topics", () => {
+    const level = levelsFor(3).find(l => l.chapter === 2 && l.kind === "learn");
+    const chapters = chaptersFor(3);
+    const [old1, old2] = [chapters[0].learn[0], chapters[1].learn[0]];
+    const mastery = { [old1]: { score: 0.4, seen: 6, last: 1, day: 90 }, [old2]: { score: 0.9, seen: 6, last: 1, day: 99 } };
+    const warm = planLevel(level, mastery, 5, { today: 100, warmUp: true });
+    assert.deepEqual(warm.warmUp, [old1, old2]);
+    assert.deepEqual(warm.opening, [old1, old2, ...chapters[2].learn]);
+    for (const type of warm.warmUp) assert.ok(warm.mix.some(p => p.type === type), `${type} is in the mix, so it can be asked`);
+    assert.deepEqual(planLevel(level, mastery, 5, { today: 100 }).opening, chapters[2].learn, "not the first level, no warm-up");
+    const first = levelsFor(3).find(l => l.chapter === 0 && l.kind === "learn");
+    assert.deepEqual(planLevel(first, mastery, 5, { today: 100, warmUp: true }).warmUp, [], "nothing earlier to warm up with");
+  });
+});
 
 describe("mastery", () => {
   it("follows recent answers: up when right the first time, down when missed", () => {

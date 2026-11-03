@@ -220,7 +220,7 @@ function cleanPlayer(stored, seen) {
   for (const { type } of CURRICULUM) {
     const m = stored.mastery?.[type.id];
     if (m && typeof m.score === "number" && m.score >= 0 && m.score <= 1 && Number.isInteger(m.seen) && m.seen > 0 && Number.isInteger(m.last) && m.last >= 0) {
-      mastery[type.id] = { score: m.score, seen: m.seen, last: Math.min(m.last, played) };
+      mastery[type.id] = { score: m.score, seen: m.seen, last: Math.min(m.last, played), ...(Number.isInteger(m.day) && m.day > 0 ? { day: m.day } : {}) };
     }
   }
   const grade = ADVENTURE_GRADES.includes(stored.grade) ? stored.grade : ADVENTURE_GRADES[0];

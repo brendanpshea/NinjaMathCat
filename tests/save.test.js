@@ -55,7 +55,7 @@ describe("the save", () => {
     const progress = recordLevel(progressIn(player, 3), level, { firstTry: 7, secondTry: 1, missed: 0, knockouts: 0, byType: {} });
     save = updatePlayer({ ...save, muted: true, locked: true, classCodes: ["NMC1-abc"] }, player.id, {
       xp: 730, treasures: [TREASURES[3].id, TREASURES[0].id], adventures: { 3: progress },
-      mastery: { addition: { score: 0.72, seen: 9, last: 4 } }, played: 5, backedUp: 4, challenges: { 3: 17 },
+      mastery: { addition: { score: 0.72, seen: 9, last: 4, day: 20760 } }, played: 5, backedUp: 4, challenges: { 3: 17 },
     });
     assert.equal(writeSave(storage, save), true);
     assert.deepEqual(loadSave(storage), save);

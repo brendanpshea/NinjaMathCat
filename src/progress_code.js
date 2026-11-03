@@ -50,7 +50,7 @@ export function encodePlayer(player) {
       grade,
       [levelsFor(Number(grade)).map(l => progress.done[l.id]?.stars ?? 0).join(""), progress.opened],
     ])),
-    m: Object.fromEntries(Object.entries(player.mastery).map(([type, m]) => [type, [Math.round(m.score * 100), m.seen, m.last]])),
+    m: Object.fromEntries(Object.entries(player.mastery).map(([type, m]) => [type, [Math.round(m.score * 100), m.seen, m.last, ...(m.day !== undefined ? [m.day] : [])]])),
     c: player.challenges,
   };
   return PREFIX + toBase64(JSON.stringify(compact));
@@ -90,7 +90,7 @@ export function decodePlayer(code) {
   /** @type {Record<string, unknown>} */
   const mastery = {};
   for (const [type, m] of Object.entries(c.m ?? {})) {
-    if (Array.isArray(m)) mastery[type] = { score: Number(m[0]) / 100, seen: m[1], last: m[2] };
+    if (Array.isArray(m)) mastery[type] = { score: Number(m[0]) / 100, seen: m[1], last: m[2], ...(m[3] !== undefined ? { day: m[3] } : {}) };
   }
   return {
     name: c.n,

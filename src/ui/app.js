@@ -18,7 +18,7 @@ import {
   ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, planTraining, settingFor, exampleFor,
   recordLevel, levelStates, nextLevel, openChapter, starsFor, residents,
 } from "../adventures.js";
-import { learn, strength } from "../mastery.js";
+import { learn, strength, dayNumber } from "../mastery.js";
 import { loadSave, writeSave, addPlayer, importPlayer, updatePlayer, removePlayer, currentPlayer, progressIn, MOST_PLAYERS, LONGEST_NAME, READ_ALOUD_UP_TO } from "../save.js";
 import { encodePlayer, decodePlayer } from "../progress_code.js";
 import { escapeXml as esc } from "../visuals/svg.js";
@@ -115,7 +115,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
   /** @type {{ destroy(): void, readonly challenge: import("../challenge.js").Challenge } | null} */
   let challengeScreen = null;
   /** What has been played since the page was opened, for the progress report. */
-  const session = { battles: 0, asked: 0, firstTry: 0, started: Date.now(), restSuggested: false };
+  const session = { battles: 0, asked: 0, firstTry: 0, started: Date.now(), restSuggested: false, warmedUp: new Set() };
   /** How long play has gone on since the game was opened, before a break is suggested, in minutes. */
   const REST_AFTER = 15;
   /** How many battles go by before a level's end suggests keeping a copy of the progress again. */
@@ -713,9 +713,12 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     const chapter = chaptersFor(level.grade)[level.chapter];
     const startLevel = levelForXp(player.xp);
     const foundBefore = new Set(player.treasures);
+    // A sitting's first level warms up with what is most due from earlier chapters.
+    const warmUp = !session.warmedUp.has(player.id);
+    session.warmedUp.add(player.id);
     const battle = startBattle(rng, {
       grade: chapter.at,
-      ...planLevel(level, player.mastery, player.played),
+      ...planLevel(level, player.mastery, player.played, { today: dayNumber(Date.now()), warmUp }),
       hero: { level: startLevel, xp: player.xp },
       treasures: player.treasures,
     });
@@ -749,7 +752,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
    */
   function training() {
     const player = me();
-    const plan = planTraining(player.grade, progressIn(player, player.grade), player.mastery, player.played);
+    const plan = planTraining(player.grade, progressIn(player, player.grade), player.mastery, player.played, dayNumber(Date.now()));
     const startLevel = levelForXp(player.xp);
     const foundBefore = new Set(player.treasures);
     const battle = startBattle(rng, {
@@ -815,7 +818,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     const now = player.played + 1;
     let mastery = player.mastery;
     for (const { type, outcome } of done.answers) {
-      mastery = learn(mastery, type, outcome, now);
+      mastery = learn(mastery, type, outcome, now, dayNumber(Date.now()));
       session.asked++;
       session.firstTry += Number(outcome === "firstTry");
     }
@@ -932,7 +935,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
       onProgress: b => {
         let mastery = me().mastery;
         for (const { type, outcome } of b.tally.answers.slice(learned)) {
-          mastery = learn(mastery, type, outcome, now);
+          mastery = learn(mastery, type, outcome, now, dayNumber(Date.now()));
           session.asked++;
           session.firstTry += Number(outcome === "firstTry");
         }
