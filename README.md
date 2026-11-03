@@ -1,7 +1,9 @@
-# Ninja Math Cat
+# Whiskerblade
 
-A math battle game for kindergarten through 6th grade. Each right answer powers
-your hero's attack; each wrong one lets the monster strike back.
+Math games for kids, K to 6th grade: beat monsters and win treasure. A math
+battle game for kindergarten through 6th grade, formerly Ninja Math Cat. Each
+right answer powers your hero's attack; each wrong one lets the monster
+strike back.
 
 Each grade, from kindergarten to 6th, is an adventure of eight chapters in
 the order a school year usually takes them, with forty short levels in all:

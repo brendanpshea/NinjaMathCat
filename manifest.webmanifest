@@ -1,7 +1,7 @@
 {
-  "name": "Ninja Math Cat",
-  "short_name": "Math Cat",
-  "description": "A free math battle game for kindergarten to 6th grade, following the Common Core standards. Answer questions to power up your hero and beat the monsters.",
+  "name": "Whiskerblade",
+  "short_name": "Whiskerblade",
+  "description": "Math games for kids, K to 6th grade: beat monsters and win treasure.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

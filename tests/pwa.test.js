@@ -20,7 +20,7 @@ describe("installing the game", () => {
   const page = read("index.html").toString("utf8");
 
   it("has a manifest that installs it from wherever the site is, such as GitHub Pages under a folder", () => {
-    assert.equal(manifest.name, "Ninja Math Cat");
+    assert.equal(manifest.name, "Whiskerblade");
     assert.ok(manifest.short_name.length <= 12, "a short name that fits under an icon");
     assert.deepEqual([manifest.start_url, manifest.scope, manifest.id], ["./", "./", "./"]);
     assert.equal(manifest.display, "standalone");

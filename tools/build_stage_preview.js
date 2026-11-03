@@ -35,7 +35,7 @@ const monsters = TIERS.map((title, i) => `
         </ul>
       </div>`).join("");
 
-const page = `<title>Ninja Math Cat Stage</title>
+const page = `<title>Whiskerblade Stage</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -127,7 +127,7 @@ const page = `<title>Ninja Math Cat Stage</title>
 
 <main class="wrap">
   <header class="intro">
-    <h1>Ninja Math Cat stage</h1>
+    <h1>Whiskerblade stage</h1>
     <p>The battle stage running on the game's own rules and questions. Answer by clicking a choice or pressing <kbd>1</kbd>–<kbd>4</kbd>, or skip the maths with <kbd>R</kbd> for a right answer and <kbd>W</kbd> for a wrong one. Pick any monster to fight it next.</p>
   </header>
 

@@ -79,7 +79,7 @@ const contents = entries
   .filter(({ type }) => sections.some(s => s.includes(`id="${type.id.replace(/_/g, "-")}"`)))
   .map(({ type }) => `<a href="#${type.id.replace(/_/g, "-")}">${esc(type.name)}</a>`).join("");
 
-const page = `<title>Ninja Math Cat Visuals</title>
+const page = `<title>Whiskerblade Visuals</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -172,7 +172,7 @@ const page = `<title>Ninja Math Cat Visuals</title>
 
 <main class="wrap show-answers" id="gallery">
   <header class="intro">
-    <h1>Ninja Math Cat visuals</h1>
+    <h1>Whiskerblade visuals</h1>
     <p>${total} sample questions, each drawn by the game's own code from data it made up for that question. Sections marked New are the graphs, number lines and fraction models added in this step; the rest are the pictures the questions already had, now drawn.</p>
   </header>
 

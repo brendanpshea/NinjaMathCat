@@ -56,7 +56,7 @@ describe("in a real browser", { skip }, () => {
     assert.equal(offline.scope, "/");
     assert.deepEqual([...offline.kept].sort(), offlineFiles().map(f => new URL(f, "http://x/").pathname).sort());
     assert.ok(offline.controlled, "the page is served by the worker");
-    assert.equal(offline.title, "Ninja Math Cat");
+    assert.equal(offline.title, "Whiskerblade");
     assert.ok(offline.installBefore, "no install button until the browser offers");
     assert.match(offline.installOffer, /^Install the game on this device\. It opens like an app, and plays with no internet\.$/);
     assert.ok(offline.installAfter, "once the browser has asked, the button goes");
@@ -144,7 +144,7 @@ describe("in a real browser", { skip }, () => {
   });
 
   it("opens on a title that asks who is playing, with nobody yet", () => {
-    assert.equal(played.title.heading, "Ninja Math Cat");
+    assert.equal(played.title.heading, "Whiskerblade");
     assert.equal(played.title.players, 0);
     assert.equal(played.title.newPlayer, true);
   });

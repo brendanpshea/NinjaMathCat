@@ -6,7 +6,9 @@ Ninja Cat, the first hero, standing on the game's sky over an orange sun.
 Writes assets/icons/: icon-192.png and icon-512.png (rounded, for anywhere),
 maskable-512.png (full-bleed, the cat inside the middle 80% that Android
 keeps whatever shape it cuts), and apple-touch-icon.png (180, full-bleed;
-iOS rounds the corners itself). Needs Pillow.
+iOS rounds the corners itself). And out/store/play-icon-512.png, square and
+full-bleed, for a Google Play listing, which rounds the corners itself
+(docs/STORE.md). Needs Pillow.
 """
 
 from pathlib import Path
@@ -62,7 +64,10 @@ def main():
     icon(512, inner=0.84, rounded=True).save(OUT / "icon-512.png", optimize=True)
     icon(512, inner=0.66, rounded=False).save(OUT / "maskable-512.png", optimize=True)
     icon(180, inner=0.8, rounded=False).save(OUT / "apple-touch-icon.png", optimize=True)
-    for name in sorted(OUT.iterdir()):
+    store = ROOT / "out" / "store"
+    store.mkdir(parents=True, exist_ok=True)
+    icon(512, inner=0.8, rounded=False).save(store / "play-icon-512.png", optimize=True)
+    for name in [*sorted(OUT.iterdir()), store / "play-icon-512.png"]:
         print(name.relative_to(ROOT).as_posix())
 
 

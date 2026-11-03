@@ -123,7 +123,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
 
   root.innerHTML = `
     <header class="top">
-      <span class="brand" aria-hidden="true">Ninja Math Cat</span>
+      <span class="brand" aria-hidden="true">Whiskerblade</span>
       <button type="button" class="quiet sound" data-ref="sound"></button>
     </header>
     <div class="screen" data-ref="screen"></div>`;
@@ -222,7 +222,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
       <section class="title-screen">
         <div class="title-stage" style="background-image: url('${scene.file}'); --floor: ${scene.floor}">
           <div class="title-words">
-            <h1 tabindex="-1">Ninja Math Cat</h1>
+            <h1 tabindex="-1">Whiskerblade</h1>
             <p class="tagline">Answer math questions to power up your hero and beat the monsters!</p>
           </div>
           <div class="title-fighter title-fighter--hero">
@@ -258,7 +258,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
           <p>Each grade's adventure follows the Common Core math standards, from kindergarten to 6th grade, in forty short levels. It is free, with nothing to sign up for: everyone's progress is saved in this browser only.</p>
           <p class="install" data-ref="install" hidden></p>
           <p><button type="button" class="link" data-ref="class">For teachers: the class view</button></p>
-          <p><a href="https://github.com/brendanpshea/NinjaMathCat">Source code</a> · <a href="legacy/">The original game</a> · Free software (GPL-3.0)</p>
+          <p><a href="https://github.com/brendanpshea/NinjaMathCat">Source code</a> · <a href="legacy/">The original Ninja Math Cat</a> · Free software (GPL-3.0)</p>
         </footer>
       </section>`);
     part("banner-hero").replaceChildren(still(heroSprite(hero), hero.name));
