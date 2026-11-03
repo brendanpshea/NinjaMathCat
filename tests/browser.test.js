@@ -9,7 +9,7 @@
 import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { startServer, findBrowser, runScenario, runScenarioLive } from "./helpers/browser.js";
-import { TREASURES } from "../src/treasures.js";
+import { KEEPSAKES, chapterTreasure } from "../src/treasures.js";
 import { ADVENTURE_GRADES, chaptersFor, levelsFor } from "../src/adventures.js";
 import { offlineFiles } from "../tools/offline_files.js";
 
@@ -20,13 +20,13 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed;
+  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures;
 
   before(async () => {
     server = await startServer();
     // The offline test takes its server offline, so it has one to itself.
     lonely = await startServer();
-    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed] = await Promise.all([
+    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
@@ -36,6 +36,7 @@ describe("in a real browser", { skip }, () => {
       runScenario(browser, server.origin, "classView"),
       runScenarioLive(browser, lonely.origin, "offline"),
       runScenario(browser, server.origin, "typed"),
+      runScenario(browser, server.origin, "treasures"),
     ]);
   });
 
@@ -51,6 +52,35 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(classView.errors, []);
     assert.deepEqual(offline.errors, []);
     assert.deepEqual(typed.errors, []);
+    assert.deepEqual(treasures.errors, []);
+  });
+
+  it("gives a chapter's treasure for beating its boss, and a keepsake when something learned days ago sticks", () => {
+    assert.equal(treasures.continue, `Play, Boss battle · ${chaptersFor(3)[0].title}`);
+    assert.ok(treasures.saidStuck, "the stage says it stuck, and how long ago");
+    assert.equal(treasures.done.heading, "Chapter 1 done!");
+    const egg = chapterTreasure(3, 0);
+    const [won, kept] = treasures.done.reveals;
+    assert.deepEqual(won, { kicker: "Chapter treasure", name: egg.name, line: egg.line });
+    assert.equal(kept.kicker, "It stuck!");
+    assert.ok(KEEPSAKES.some(k => k.name === kept.name), kept.name);
+    assert.match(kept.line, /^You remembered (multiplication|equal-groups stories) after 6 days\.$/);
+    assert.ok(treasures.done.revealAfterStars, "the stars come first");
+    assert.equal(treasures.remembered.length, 1, "kept with what it was for, and the day");
+    // Maya had 27 keepsakes; now one more, and a chapter treasure.
+    assert.equal(treasures.tile, "Treasures29");
+  });
+
+  it("shows the treasures on shelves: names only, a locked place for each chapter to come, and each opens to say what it was for", () => {
+    assert.deepEqual(treasures.shelf.names, ["3rd grade", "Keepsakes"]);
+    assert.equal(treasures.shelf.chapter.length, 9);
+    assert.equal(treasures.shelf.chapter[0], chapterTreasure(3, 0).name);
+    assert.deepEqual(treasures.shelf.chapter.slice(1), [...chaptersFor(3).slice(1).map((_, i) => `Chapter ${i + 2}, not won yet`), "Every chapter, not won yet"]);
+    assert.equal(treasures.shelf.keepsakes, 28);
+    assert.deepEqual(treasures.shelf.opened, { kicker: `Chapter 1: ${chaptersFor(3)[0].title}`, name: chapterTreasure(3, 0).name, line: chapterTreasure(3, 0).line });
+    assert.ok(treasures.shelf.closeFocused && treasures.shelf.closed, "Close takes focus, and gives it back");
+    assert.equal(treasures.shelf.keepsake.kicker, "It stuck!");
+    assert.match(treasures.shelf.keepsake.line, /^You remembered .+ after 6 days\.$/);
   });
 
   it("asks for typed answers once a kind is known: a number pad, any number taken, a repeat free, the keyboard too", () => {
@@ -179,7 +209,7 @@ describe("in a real browser", { skip }, () => {
     // A calm map: one level to play next, only its chapter open, a tile for each other way to play, grown-ups' things folded away.
     assert.equal(played.map.next, 1);
     assert.deepEqual(played.map.openChapters, ["0"]);
-    assert.deepEqual(played.map.tiles, ["Training", "Quick battle", "Treasures0 of 75"]);
+    assert.deepEqual(played.map.tiles, ["Training", "Quick battle", "TreasuresNone yet"]);
     assert.ok(played.map.grownUpsClosed);
   });
 
@@ -260,11 +290,11 @@ describe("in a real browser", { skip }, () => {
     assert.equal(played.open.laterLocked, true);
   });
 
-  it("shows the treasures found so far", () => {
-    const found = played.done.saved.players[0].treasures.length;
+  it("shows no treasures yet after a first level: a place for each chapter's, and the grade's own", () => {
     assert.equal(played.treasures.heading, "Sam's treasures");
-    assert.ok(played.treasures.found >= found);
-    assert.equal(played.treasures.found + played.treasures.missing, TREASURES.length);
+    assert.deepEqual(played.treasures.shelves, ["2nd grade", "Keepsakes"]);
+    assert.equal(played.treasures.won, 0, "monsters drop nothing, and nothing can stick on the first day");
+    assert.equal(played.treasures.locked, 9);
   });
 
   it("still offers a quick battle of eight monsters", () => {

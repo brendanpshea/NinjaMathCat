@@ -2,13 +2,14 @@
 // account and no server: the code is text, to send by email or a class's
 // message board, or paste from one browser into another, or into a teacher's
 // class view (src/classroom.js). It holds the name, hero, grade, experience
-// and treasures, the stars won on every level, what the game has learned
+// and keepsakes (with what each was found for), the stars won on every level,
+// which bring the chapter treasures with them, what the game has learned
 // about each kind of question, and the best challenge scores.
 //
 // A code that has been cut short or changed is either turned away or put
 // right, as a save from storage is (src/save.js).
 
-import { TREASURES } from "./treasures.js";
+import { KEEPSAKES } from "./treasures.js";
 import { levelsFor } from "./adventures.js";
 
 /** @import { Player } from "./save.js" */
@@ -33,11 +34,13 @@ function fromBase64(code) {
 
 /**
  * A player's progress as a code. Levels are kept as their stars, one digit
- * each in the order of the adventure; treasures by where they come in the
- * list of treasures, so new treasures go at its end.
+ * each in the order of the adventure; keepsakes by where they come in the
+ * list of keepsakes, so new ones go at its end, and what each one found by
+ * remembering was for.
  * @param {Player} player
  */
 export function encodePlayer(player) {
+  const place = (/** @type {string} */ id) => KEEPSAKES.findIndex(k => k.id === id);
   const compact = {
     n: player.name,
     h: player.heroId,
@@ -45,7 +48,8 @@ export function encodePlayer(player) {
     x: player.xp,
     p: player.played,
     r: player.readAloud ? 1 : 0,
-    t: player.treasures.map(id => TREASURES.findIndex(t => t.id === id)).filter(i => i >= 0),
+    t: player.treasures.map(place).filter(i => i >= 0),
+    k: Object.entries(player.remembered).map(([id, r]) => [place(id), r.type, r.after, r.day]).filter(([i]) => Number(i) >= 0),
     a: Object.fromEntries(Object.entries(player.adventures).map(([grade, progress]) => [
       grade,
       [levelsFor(Number(grade)).map(l => progress.done[l.id]?.stars ?? 0).join(""), progress.opened],
@@ -92,6 +96,12 @@ export function decodePlayer(code) {
   for (const [type, m] of Object.entries(c.m ?? {})) {
     if (Array.isArray(m)) mastery[type] = { score: Number(m[0]) / 100, seen: m[1], last: m[2], ...(m[3] !== undefined ? { day: m[3] } : {}) };
   }
+  /** @type {Record<string, unknown>} */
+  const remembered = {};
+  for (const entry of Array.isArray(c.k) ? c.k : []) {
+    const id = Array.isArray(entry) ? KEEPSAKES[Number(entry[0])]?.id : undefined;
+    if (id) remembered[id] = { type: entry[1], after: entry[2], day: entry[3] };
+  }
   return {
     name: c.n,
     heroId: c.h,
@@ -99,7 +109,8 @@ export function decodePlayer(code) {
     xp: c.x,
     played: c.p,
     readAloud: c.r === 1,
-    treasures: Array.isArray(c.t) ? c.t.map((/** @type {unknown} */ i) => TREASURES[Number(i)]?.id) : [],
+    treasures: Array.isArray(c.t) ? c.t.map((/** @type {unknown} */ i) => KEEPSAKES[Number(i)]?.id) : [],
+    remembered,
     adventures,
     mastery,
     challenges: c.c,

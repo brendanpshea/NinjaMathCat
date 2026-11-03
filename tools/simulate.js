@@ -30,7 +30,6 @@ export function simulateAdventure(seed, { grade, accuracy, perTier = 2 }) {
     questions: tally.firstTry + tally.secondTry + tally.missed,
     knockouts: tally.knockouts,
     level: battle.hero.level,
-    treasures: battle.treasures.length,
     rounds,
   };
 }

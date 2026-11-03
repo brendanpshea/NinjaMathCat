@@ -16,7 +16,7 @@ const SHOTS = [
   ["battle", 1000, 1150], ["hint", 1000, 1150], ["reveal", 1000, 1150], ["level-done", 1000, 1100],
   ["victory", 1000, 1300], ["treasures", 1000, 1300], ["report", 1000, 1300],
   ["players", 390, 1200, "phone-"], ["map", 390, 2200, "phone-"], ["note", 390, 1300, "phone-"],
-  ["battle", 390, 1400, "phone-"], ["level-done", 390, 1300, "phone-"], ["report", 390, 1500, "phone-"],
+  ["battle", 390, 1400, "phone-"], ["level-done", 390, 1500, "phone-"], ["treasures", 390, 1800, "phone-"], ["report", 390, 1500, "phone-"],
   // A school laptop's window: is everything needed to play in sight without scrolling?
   ["map", 1366, 650, "laptop-"], ["battle", 1366, 650, "laptop-"],
   // Teaching scenes: a step pointing at the picture, and a check after a wrong try.

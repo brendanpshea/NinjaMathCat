@@ -5,14 +5,17 @@ import assert from "node:assert/strict";
 import { planRound, narrate, sfxFor, strikeName, BEAT } from "../src/stage.js";
 import { startBattle, answer } from "../src/battle.js";
 import { MONSTERS } from "../src/monsters.js";
-import { TREASURES } from "../src/treasures.js";
+import { KEEPSAKES } from "../src/treasures.js";
 import { createRng } from "../src/rng.js";
 
 /** A round where nothing happened; override what did. */
 const round = (over = {}) => ({
   correct: true, heroDamage: 0, foeDamage: 0, streakMultiplier: 1, defeatedFoe: false, knockedOut: false,
-  healed: 0, xpGained: 0, leveledUp: false, drop: null, then: "next", hint: null, answer: null, ...over,
+  healed: 0, xpGained: 0, leveledUp: false, stuck: null, then: "next", hint: null, answer: null, ...over,
 });
+
+/** Telling time, remembered after 5 days, which found the first keepsake. */
+const stuck = { type: "time", after: 5, keepsake: KEEPSAKES[0] };
 
 /** The beats as "who act", in time order, so a sequence reads at a glance. */
 const story = plan => [...plan.beats].sort((a, b) => a.at - b.at).map(b => `${b.who} ${b.act}`);
@@ -34,14 +37,21 @@ describe("a right answer", () => {
     assert.deepEqual([1.25, 1.5, 2].map(strikeName), ["Power strike!", "Super strike!", "Mega strike!"]);
   });
 
-  it("beats a monster: it vanishes, drops its treasure, and the hero heals while it goes", () => {
-    const plan = planRound(round({ heroDamage: 25, defeatedFoe: true, drop: TREASURES[0], healed: 25 }));
-    assert.deepEqual(story(plan), ["hero attack", "monster vanish", "monster drop", "hero glow"]);
-    const [, vanish, drop, glow] = [...plan.beats].sort((a, b) => a.at - b.at);
-    assert.equal(drop.text, TREASURES[0].emoji);
+  it("beats a monster: it vanishes, and the hero heals while it goes", () => {
+    const plan = planRound(round({ heroDamage: 25, defeatedFoe: true, healed: 25 }));
+    assert.deepEqual(story(plan), ["hero attack", "monster vanish", "hero glow"]);
+    const [, vanish, glow] = [...plan.beats].sort((a, b) => a.at - b.at);
     assert.equal(glow.text, "+25");
-    assert.ok(drop.at > vanish.at && glow.at > drop.at);
+    assert.ok(glow.at > vanish.at);
     assert.ok(plan.end >= glow.at + BEAT.glow);
+  });
+
+  it("gives something remembered from days ago its own moment, after everything else", () => {
+    const plan = planRound(round({ heroDamage: 25, defeatedFoe: true, healed: 25, stuck }));
+    assert.deepEqual(story(plan), ["hero attack", "monster vanish", "hero glow", "hero stuck"]);
+    const [, , glow, moment] = [...plan.beats].sort((a, b) => a.at - b.at);
+    assert.equal(moment.text, "It stuck!");
+    assert.ok(moment.at >= glow.at + BEAT.glow && plan.end >= moment.at + BEAT.glow);
   });
 
   it("celebrates a new level instead of the heal it brings", () => {
@@ -91,9 +101,10 @@ describe("narrating", () => {
     assert.equal(narrate(round({ correct: false, foeDamage: 15 }), names), "Sneaky Duck hits Ninja Cat for 15.");
   });
 
-  it("tells the rest of the story: a streak, a win, a treasure, a heal or a level", () => {
-    const won = narrate(round({ heroDamage: 30, streakMultiplier: 1.25, defeatedFoe: true, drop: TREASURES[0], healed: 25 }), names);
-    assert.equal(won, `Ninja Cat hits Sneaky Duck for 30. A streak makes it extra strong! Sneaky Duck is beaten! It leaves behind a treasure: ${TREASURES[0].name}. Ninja Cat gets 25 health back.`);
+  it("tells the rest of the story: a streak, a win, a heal or a level, and something remembered", () => {
+    const won = narrate(round({ heroDamage: 30, streakMultiplier: 1.25, defeatedFoe: true, healed: 25, stuck }), names);
+    assert.equal(won, `Ninja Cat hits Sneaky Duck for 30. A streak makes it extra strong! Sneaky Duck is beaten! Ninja Cat gets 25 health back. It stuck! You remembered this from 5 days ago. You found a keepsake: ${KEEPSAKES[0].name}.`);
+    assert.match(narrate(round({ heroDamage: 30, stuck: { ...stuck, keepsake: null } }), names), /from 5 days ago\.$/);
     assert.match(narrate(round({ heroDamage: 25, leveledUp: true, healed: 60 }), names), /levels up!$/);
     assert.match(narrate(round({ correct: false, foeDamage: 15, knockedOut: true }), names), /knocked out, but gets right back up!$/);
   });
@@ -103,13 +114,13 @@ describe("sound", () => {
   it("gives every beat of every kind of round a sound that exists", async () => {
     const { SFX } = await import("../src/sound.js");
     const rounds = [
-      round({ heroDamage: 30, streakMultiplier: 1.5, defeatedFoe: true, drop: TREASURES[0], healed: 25 }),
+      round({ heroDamage: 30, streakMultiplier: 1.5, defeatedFoe: true, healed: 25, stuck }),
       round({ heroDamage: 25, leveledUp: true, healed: 60 }),
       round({ correct: false, foeDamage: 15, knockedOut: true }),
     ];
     const heard = rounds.flatMap(r => planRound(r).beats.map(sfxFor));
     for (const name of heard) assert.ok(SFX[name], `no sound called ${name}`);
-    assert.deepEqual(new Set(heard), new Set(["charged", "defeat", "drop", "heal", "swing", "hit", "levelUp", "claw", "hurt", "down", "revive"]));
+    assert.deepEqual(new Set(heard), new Set(["charged", "defeat", "stuck", "heal", "swing", "hit", "levelUp", "claw", "hurt", "down", "revive"]));
   });
 
   it("builds ZzFX samples for every sound", async () => {

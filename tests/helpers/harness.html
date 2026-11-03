@@ -98,12 +98,14 @@
    */
   async function maya(levels = 21) {
     const { levelsFor } = await import("/src/adventures.js");
-    const { TREASURES } = await import("/src/treasures.js");
+    const { KEEPSAKES } = await import("/src/treasures.js");
+    const { dayNumber } = await import("/src/mastery.js");
     const done = Object.fromEntries(levelsFor(3).slice(0, levels).map((l, i) => [l.id, { stars: i % 4 === 1 ? 2 : 3, firstTry: 7, asked: 8 }]));
     return {
       players: [{
         id: "p1", name: "Maya", heroId: "cat_ninja", grade: 3, xp: 2600, played: 26,
-        treasures: TREASURES.filter((_, i) => i % 3 === 0).map(t => t.id), adventures: { 3: { done, opened: 0 } },
+        treasures: KEEPSAKES.filter((_, i) => i % 3 === 0).map(t => t.id), adventures: { 3: { done, opened: 0 } },
+        remembered: { [KEEPSAKES[3].id]: { type: "addition", after: 5, day: dayNumber(Date.now()) - 10 } },
         mastery: {
           multiplication: { score: 0.82, seen: 41, last: 24 }, word_multiplication: { score: 0.71, seen: 18, last: 22 },
           division: { score: 0.38, seen: 30, last: 25 }, word_division: { score: 0.52, seen: 12, last: 20 },
@@ -127,7 +129,7 @@
     const save = await maya();
     save.players.push({ id: "p2", name: "Ben", heroId: "owl_wizard", grade: 3, xp: 400, played: 6, treasures: [], adventures: {}, mastery: { division: { score: 0.3, seen: 5, last: 6 } } });
     const zoe = done => encodePlayer({
-      name: "Zoe", heroId: "cat_ninja", grade: 3, xp: 900, played: 12, readAloud: false, treasures: [],
+      name: "Zoe", heroId: "cat_ninja", grade: 3, xp: 900, played: 12, readAloud: false, treasures: [], remembered: {},
       adventures: { 3: { done: Object.fromEntries(levelsFor(3).slice(0, done).map(l => [l.id, { stars: 3, firstTry: 8, asked: 8 }])), opened: 0 } },
       mastery: { division: { score: 0.25, seen: 9, last: 11 } }, challenges: { 3: 12 },
     });
@@ -344,8 +346,9 @@
       click("[data-ref=treasures]");
       await on("treasures");
       report.treasures.heading = $("h1").textContent;
-      report.treasures.found = $$(".treasure").length;
-      report.treasures.missing = $$(".hidden-grid li").length;
+      report.treasures.shelves = $$(".treasure-set .card-title").map(h => h.textContent);
+      report.treasures.won = $$("button.treasure").length;
+      report.treasures.locked = $$(".treasure.is-locked").length;
       click("[data-ref=back]");
       await on("map", "the map again");
 
@@ -422,7 +425,12 @@
       else if (screen === "class") {
         const { save, zoe } = await classSave();
         localStorage.setItem("ninja-math-cat", JSON.stringify({ ...save, classCodes: [zoe(9)] }));
-      } else if (screen !== "title") localStorage.setItem("ninja-math-cat", JSON.stringify({ ...(await maya()), locked: screen === "lock" }));
+      } else if (screen !== "title") {
+        // A level's end is the Area chapter's boss beaten, with area remembered from six days before: both kinds of treasure.
+        const save = await maya(screen === "level-done" ? 24 : 21);
+        if (screen === "level-done") save.players[0].mastery.area.day = (await import("/src/mastery.js")).dayNumber(Date.now()) - 6;
+        localStorage.setItem("ninja-math-cat", JSON.stringify({ ...save, locked: screen === "lock" }));
+      }
       // A challenge a few minutes long, so the shot catches it mid-run.
       await load(screen === "challenge" ? "?test&seed=11&challenge=170" : "?test&seed=11");
       if (screen === "line") {
@@ -770,6 +778,60 @@
       const after = game().battle;
       report.right = after ? after.tally.answers.length === answers + 1 && after.tally.answers.at(-1).outcome === "secondTry" : game().screen === "level-done";
       report.landed = { screen: game().screen, outcome: after?.tally.answers.at(-1)?.outcome ?? null, field: text("[data-ref=field]") };
+      report.errors = errors;
+      return report;
+    },
+
+    /**
+     * Treasures: Maya beats chapter 1's boss, getting right a kind she last met
+     * six days ago, so the chapter's treasure and a keepsake come with it; then
+     * her shelves, with one treasure opened and closed again.
+     */
+    async treasures() {
+      const { dayNumber } = await import("/src/mastery.js");
+      const save = await maya(4);
+      const today = dayNumber(Date.now());
+      for (const type of ["multiplication", "word_multiplication"]) save.players[0].mastery[type].day = today - 6;
+      localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify(save));
+      await load("?test&seed=5");
+      const report = { done: {}, shelf: {} };
+      report.continue = text("[data-ref=continue]");
+      click("[data-ref=continue]");
+      await on("battle");
+      // The moment it sticks shows on the stage, and is said for a screen reader.
+      let news = "";
+      const watch = setInterval(() => { news += ` ${text("[data-ref=news]") ?? ""}`; }, 20);
+      await winBattle();
+      clearInterval(watch);
+      report.saidStuck = /It stuck! You remembered this from 6 days ago\./.test(news);
+      await on("level-done");
+      report.done.heading = $("h1").textContent;
+      report.done.reveals = $$(".treasure-reveal").map(r => ({ kicker: r.querySelector(".reveal-kicker")?.textContent, name: r.querySelector(".reveal-name")?.textContent, line: r.querySelector(".reveal-line")?.textContent }));
+      report.done.revealAfterStars = $(".stars-big").compareDocumentPosition($(".treasure-reveal")) === Node.DOCUMENT_POSITION_FOLLOWING;
+      const maya_ = saved().players[0];
+      report.remembered = Object.values(maya_.remembered).filter(r => r.day === today);
+      click("[data-ref=map]");
+      await on("map");
+      report.tile = text("[data-ref=treasures]");
+      click("[data-ref=treasures]");
+      await on("treasures");
+      report.shelf.names = $$(".treasure-set .card-title").map(h => h.textContent);
+      report.shelf.chapter = $$(".treasure-set:first-of-type .treasure-name").map(t => t.textContent.replace(/\s+/g, " ").trim());
+      report.shelf.keepsakes = $$(".treasure-set:last-of-type button.treasure").length;
+      // Open the chapter's treasure: big, with what it was won for; Close goes back to it.
+      const button = $(".treasure-set:first-of-type button.treasure");
+      button.click();
+      await until(() => $(".treasure-dialog[open]"), "the treasure to open");
+      report.shelf.opened = { kicker: text(".treasure-dialog .reveal-kicker"), name: text(".treasure-dialog .reveal-name"), line: text(".treasure-dialog .reveal-line") };
+      report.shelf.closeFocused = doc().activeElement?.dataset.act === "close";
+      click(".treasure-dialog [data-act=close]");
+      report.shelf.closed = !$(".treasure-dialog") && doc().activeElement === button;
+      // The newest keepsake says what it was found for.
+      $(".treasure-set:last-of-type button.treasure").click();
+      await until(() => $(".treasure-dialog[open]"), "the keepsake to open");
+      report.shelf.keepsake = { kicker: text(".treasure-dialog .reveal-kicker"), line: text(".treasure-dialog .reveal-line") };
+      click(".treasure-dialog [data-act=close]");
       report.errors = errors;
       return report;
     },

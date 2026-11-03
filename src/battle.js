@@ -7,14 +7,14 @@
 import { mixForGrade, pickQuestion, questionKey } from "./curriculum.js";
 import { isCorrect } from "./questions/common.js";
 import { heroStats, monsterStats, monsterLevel, hitDamage, streakMultiplier, XP, levelForXp, victoryHeal } from "./combat.js";
-import { pickTreasure } from "./treasures.js";
+import { pickKeepsake, stuckAfter } from "./treasures.js";
 
 /** @import { Rng } from "./rng.js" */
 /** @import { Answer, Question } from "./questions/common.js" */
 /** @import { Mix } from "./curriculum.js" */
-/** @import { Outcome } from "./mastery.js" */
+/** @import { Mastery, Outcome } from "./mastery.js" */
 /** @import { Monster } from "./monsters.js" */
-/** @import { Treasure } from "./treasures.js" */
+/** @import { Keepsake } from "./treasures.js" */
 
 /** Tries at each question before the answer is shown. */
 export const TRIES = 2;
@@ -32,7 +32,14 @@ export const TRIES = 2;
  * @property {number} level  set by its tier, or the level's pitch, and the level the hero started at
  * @property {number} hp
  * @property {number} toughness  how much its health is scaled
- * @property {boolean} dropsTreasure  whether beating it still earns a treasure; knocking the hero out costs that
+ */
+
+/**
+ * A kind of question met days ago and answered right the first time: it stuck.
+ * @typedef {object} Stuck
+ * @property {string} type
+ * @property {number} after  days since it was last met
+ * @property {Keepsake | null} keepsake  the surprise it brings; null once every keepsake is had
  */
 
 /**
@@ -63,7 +70,10 @@ export const TRIES = 2;
  * @property {string[]} opening  kinds of question still to bring in, one of each, before any others
  * @property {string[]} asked  every question asked so far, by questionKey, so none comes up twice
  * @property {number} streak  questions right the first time in a row
- * @property {string[]} treasures  ids of every treasure collected, in earlier battles too
+ * @property {string[]} treasures  ids of every keepsake had, in earlier battles too
+ * @property {{ mastery: Mastery, today: number } | null} memory  what the player knew when the battle began,
+ *   and the day, to tell when something stuck; null where nothing can stick in it (one has today already)
+ * @property {Stuck | null} stuck  what stuck in this battle, if anything: once a battle at most
  * @property {Tally} tally
  */
 
@@ -79,7 +89,7 @@ export const TRIES = 2;
  * @property {number} healed  health given back, for beating the monster or levelling up
  * @property {number} xpGained
  * @property {boolean} leveledUp
- * @property {Treasure | null} drop
+ * @property {Stuck | null} stuck  when this answer showed something stuck
  * @property {"again" | "reveal" | "next" | "won"} then  what comes next:
  *   "again" is the same question, with the wrong choice ruled out and a hint;
  *   "reveal" shows the right answer before the next question; "next" moves
@@ -102,10 +112,12 @@ export const TRIES = 2;
  * @param {number[]} [setup.toughness]  for each monster
  * @param {string[]} [setup.opening]  kinds of question to ask one of each first, in order, as a level that brings in new topics does
  * @param {{ level: number, xp: number }} [setup.hero]  carried over from earlier battles; a new player starts at level 1
- * @param {string[]} [setup.treasures]  collected in earlier battles
+ * @param {string[]} [setup.treasures]  keepsakes had already
+ * @param {{ mastery: Mastery, today: number }} [setup.memory]  what the player knows and the day, so that
+ *   getting right something met days ago shows it stuck; left out, nothing can
  * @returns {Battle}
  */
-export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), pitch, toughness, opening = [], hero = { level: 1, xp: 0 }, treasures = [] }) {
+export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), pitch, toughness, opening = [], hero = { level: 1, xp: 0 }, treasures = [], memory }) {
   if (adventure.length === 0) throw new RangeError("An adventure needs at least one monster");
   const setup = {
     pitch: adventure.map((m, i) => pitch?.[i] ?? m.tier - 1),
@@ -124,6 +136,8 @@ export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), p
     ruledOut: [],
     streak: 0,
     treasures: [...treasures],
+    memory: memory ?? null,
+    stuck: null,
     tally: { firstTry: 0, secondTry: 0, missed: 0, knockouts: 0, byType: {}, answers: [] },
   };
 }
@@ -158,7 +172,22 @@ export function answer(battle, choice, rng) {
  */
 function meet({ pitch, toughness }, adventure, index, startLevel) {
   const level = monsterLevel(pitch[index] + 1, startLevel);
-  return { monster: adventure[index], level, toughness: toughness[index], hp: monsterStats(level, toughness[index]).maxHp, dropsTreasure: true };
+  return { monster: adventure[index], level, toughness: toughness[index], hp: monsterStats(level, toughness[index]).maxHp };
+}
+
+/**
+ * Whether a kind answered right the first time shows it stuck: once a
+ * battle, where the battle can tell, for a kind met a while ago. It brings a
+ * keepsake not yet had.
+ * @param {Battle} battle
+ * @param {string} type
+ * @param {Rng} rng
+ * @returns {Stuck | null}
+ */
+function stuckNow({ memory, stuck, treasures }, type, rng) {
+  if (!memory || stuck) return null;
+  const after = stuckAfter(memory.mastery[type], memory.today);
+  return after === null ? null : { type, after, keepsake: pickKeepsake(rng, treasures) };
 }
 
 /**
@@ -189,7 +218,7 @@ function strike(battle, question, foe, rng) {
 
   const beaten = battle.beaten + Number(defeatedFoe);
   const won = beaten === battle.adventure.length;
-  const drop = defeatedFoe && foe.dropsTreasure ? pickTreasure(rng, battle.treasures) : null;
+  const stuck = secondTry ? null : stuckNow(battle, question.type, rng);
   const nextFoe = !defeatedFoe ? { ...foe, hp: foeHp } : won ? null : meet(battle, battle.adventure, beaten, battle.startLevel);
   const outcome = secondTry ? "secondTry" : "firstTry";
   const next = won ? { question: null, again: [], opening: [], asked: battle.asked } : ask(rng, battle, question.type, queueAgain(battle.again, question.type, outcome));
@@ -203,7 +232,8 @@ function strike(battle, question, foe, rng) {
       ...next,
       ruledOut: [],
       streak,
-      treasures: drop && !battle.treasures.includes(drop.id) ? [...battle.treasures, drop.id] : battle.treasures,
+      treasures: stuck?.keepsake ? [...battle.treasures, stuck.keepsake.id] : battle.treasures,
+      stuck: stuck ?? battle.stuck,
       tally: record(battle.tally, question, outcome),
     },
     round: {
@@ -216,7 +246,7 @@ function strike(battle, question, foe, rng) {
       healed: hp - hero.hp,
       xpGained,
       leveledUp,
-      drop,
+      stuck,
       then: won ? "won" : "next",
       hint: null,
       answer: null,
@@ -227,8 +257,7 @@ function strike(battle, question, foe, rng) {
 
 /**
  * A wrong answer: the monster strikes. A knocked-out hero gets straight back
- * up, so there is no game over; the monster keeps the damage it has taken,
- * but no longer drops a treasure.
+ * up, so there is no game over, and the monster keeps the damage it has taken.
  * @param {Battle} battle
  * @param {Question} question
  * @param {Foe} foe
@@ -249,7 +278,6 @@ function takeHit(battle, question, foe, choice, rng) {
     battle: {
       ...battle,
       hero: { ...battle.hero, hp },
-      foe: knockedOut ? { ...foe, dropsTreasure: false } : foe,
       ...next,
       ruledOut: again ? ruledOut : [],
       streak: 0,
@@ -265,7 +293,7 @@ function takeHit(battle, question, foe, choice, rng) {
       healed: 0,
       xpGained: 0,
       leveledUp: false,
-      drop: null,
+      stuck: null,
       then: again ? "again" : "reveal",
       hint: again ? question.hint : null,
       answer: again ? null : question.answer,

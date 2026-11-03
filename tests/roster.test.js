@@ -1,11 +1,11 @@
-// tests/roster.test.js — the monsters (src/monsters.js), heroes (src/heroes.js)
-// and treasures (src/treasures.js), and the sprite strips behind them.
+// tests/roster.test.js — the monsters (src/monsters.js) and heroes
+// (src/heroes.js), and the sprite strips behind them. Treasures have their own
+// tests (tests/treasures.test.js).
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { MONSTERS, buildAdventure, monsterSprite } from "../src/monsters.js";
 import { HEROES, DEFAULT_HERO, heroSprite } from "../src/heroes.js";
-import { TREASURES, pickTreasure } from "../src/treasures.js";
 import { createRng } from "../src/rng.js";
 import { webpSize } from "../tools/webp_size.js";
 
@@ -66,24 +66,5 @@ describe("sprite strips", () => {
     for (const folder of ["assets/sprites/monsters", "assets/sprites/heroes"]) {
       for (const name of readdirSync(folder)) assert.ok(used.has(`${folder}/${name}`), `${folder}/${name} is not used`);
     }
-  });
-});
-
-describe("treasures", () => {
-  it("are all different", () => {
-    assert.equal(new Set(TREASURES.map(t => t.id)).size, TREASURES.length);
-    assert.equal(new Set(TREASURES.map(t => t.name)).size, TREASURES.length);
-    assert.equal(new Set(TREASURES.map(t => t.emoji)).size, TREASURES.length);
-  });
-
-  it("drop ones not collected yet while there are any", () => {
-    const rng = createRng(4);
-    const collected = [];
-    for (let i = 0; i < TREASURES.length; i++) {
-      const t = pickTreasure(rng, collected);
-      assert.ok(!collected.includes(t.id), `${t.id} again after ${i}`);
-      collected.push(t.id);
-    }
-    assert.ok(TREASURES.includes(pickTreasure(rng, collected)), "and any once all are collected");
   });
 });

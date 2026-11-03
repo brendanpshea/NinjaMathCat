@@ -47,13 +47,22 @@ ground builds a short battle from the topics that need it most, a progress
 report shows grown-ups how each topic is going, and after each level there is
 something for a grown-up and the child to talk about together.
 
+Treasures are given for what a child did, never at random for taking part
+(the research behind that is in [`docs/TREASURES.md`](docs/TREASURES.md)).
+Beating a chapter's boss for the first time wins the chapter's treasure,
+which says what the chapter taught ("You can find area by counting rows of
+squares"), and finishing every chapter wins the grade's own. A keepsake
+comes as a surprise, at most one a day, when a child gets something right
+that they last met days ago: "It stuck! You remembered telling time after 6
+days."
+
 For children still learning to read, questions can be read aloud (on to begin
 with up to 2nd grade), and every question and chapter note has a "Read to me"
 button. Graphs come with their numbers for screen readers, everything can be
 played with the keyboard, nothing is timed but the one-minute challenge, which
 is kept off the adventure's path, and the stage keeps still for
 anyone who asks their device for reduced motion. A progress code moves a
-child's hero, levels and treasures to another device, with no account.
+child's hero, levels and keepsakes to another device, with no account.
 
 It installs as an app, on a phone, a tablet, a Chromebook or a computer, and
 once opened it plays with no internet: a service worker keeps a copy of every
@@ -102,8 +111,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | --- | --- |
 | `index.html`, `src/main.js` | The page, and what starts the game on it. |
 | `manifest.webmanifest`, `sw.js`, `assets/icons/` | Installing it as an app: its name and icons, and the service worker that keeps a copy of every file for offline play. `tools/offline_files.js` says which files; `npm run pwa` writes them into `sw.js`, and a test fails until it has. |
-| `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasure collection. |
-| `src/save.js` | What the browser remembers: each player, with their hero, grade, experience, treasures and progress in every grade's adventure. A save from before there were players becomes the first player. |
+| `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasures. |
+| `src/save.js` | What the browser remembers: each player, with their hero, grade, experience, keepsakes and progress in every grade's adventure. A save from before there were players becomes the first player. |
 | `src/adventures.js` | Each grade's adventure: its chapters, with their notes and the question types each brings in; the levels in each chapter, what each asks (pitched by the player's mastery) and which monsters it fights; training levels; and progress, stars and which levels are open. |
 | `src/scenes.js`, `src/scenes/`, `src/ui/scene_view.js` | Teaching scenes: before a chapter's first battle, its monster shows off its trick and the hero works out how to beat it, step by step over a picture, with checks to try; shown again, over a battle, as "Show me how" after a question is missed twice. One file of scenes per grade; `docs/SCENES.md` says how to write one. |
 | `src/speech.js` | Reading aloud: math as a child hears it ("3/4" is "3 fourths"), and the browser's speech, where it has any. |
@@ -118,7 +127,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/visuals/` | Draws a question's picture as SVG: counters, patterns, coins, clocks, shapes, number lines, picture and bar graphs, fraction models. Each renderer is a plain function from data to markup. |
 | `src/battle.js` | A battle as a state machine. `answer(battle, choice, rng)` returns the next state and a `round` saying what happened, for the stage to act out. It has no timers and never touches the page. |
 | `src/combat.js` | The numbers: health, attack, damage, streaks, experience and levels. |
-| `src/monsters.js`, `src/heroes.js`, `src/treasures.js` | Who you fight (four tiers, each with a name and a line for young readers), who you can play as, and what monsters drop. |
+| `src/monsters.js`, `src/heroes.js` | Who you fight (four tiers, each with a name and a line for young readers) and who you can play as. |
+| `src/treasures.js`, `src/treasure_art.js` | The chapter treasures, each saying what its chapter taught; the keepsakes, and when something has stuck; and which treasures have their picture yet. |
 | `src/backdrops.js` | The sixteen settings battles happen in. Each is home to three monsters, and a chapter of an adventure happens in one; its backdrop goes behind the fight. |
 | `src/stage.js` | A round as a sequence of timed beats (the hero lunges, the monster reels…) and as a sentence for screen readers. |
 | `src/ui/stage_view.js`, `css/stage.css` | The battle stage on the page: plays a round's beats with CSS animations, and does nothing at all under reduced motion. |
@@ -130,7 +140,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 
 - Each question gets two tries. A wrong answer lets the monster hit back, rules out that choice, and shows a hint. A second miss shows the right answer and moves on.
 - Right answers hit harder for harder questions and on a streak (1.25× at 3 in a row, 1.5× at 5, 2× at 8). A right answer on the second try hits half as hard.
-- Getting knocked out is never game over. The hero gets straight back up and the monster keeps its damage, but that monster won't drop a treasure.
+- Getting knocked out is never game over. The hero gets straight back up and the monster keeps its damage.
+- Monsters drop nothing. Something answered right the first time that was last met at least three days ago, and was going well then, shows it stuck: once a battle at most, and a keepsake comes with it at most once a day.
 - The hero's level carries over between adventures, and each adventure is pitched at it: the first monsters match the hero's level, the last are three above. Heroes and monsters grow at the same rate, so the game feels the same at level 30 as at level 1.
 
 A question's picture (counters, a clock, a bar graph) is data, not markup.
@@ -170,7 +181,7 @@ same author's quiz game, along with the stage's choreography and animations.
 Each sprite is a strip of three poses (stand, attack, recoil), all facing
 right; the stage mirrors the monster. LotRD's `images/sprites/roster.json`
 and `tools/sprite_prompts.py` and `tools/sprite_sheets.py` make new ones.
-The painted backdrops were made for this game with Gemini (see below). Sound effects
+The painted backdrops and the treasures were made for this game with Gemini (see below). Sound effects
 are made with [ZzFX](https://github.com/KilledByAPixel/ZzFX) by Frank Force
 (MIT license).
 
@@ -191,6 +202,25 @@ painted backdrops are made with Gemini, four to a picture:
 4. Point the setting's `file` in `src/backdrops.js` at its new backdrop, and
    look at it with `npm run backdrops`. Adjust its `floor` until the fighters
    stand on the ground.
+
+### Treasures
+
+The treasures are drawn by Gemini nine to a picture, on magenta so the
+background can be cut away:
+
+1. `tools/icon_sheets.json` describes each treasure, nine to a sheet, and each
+   chapter set's material. `npm run icon-prompts` turns it into the prompts in
+   [`docs/prompts.md`](docs/prompts.md); a test fails until it has.
+2. Save each sheet as `assets/treasures/sheets/<sheet>.png` (or `.jpg`). The
+   sheets stay out of git.
+3. `python tools/cut_icons.py` (it needs Pillow) cuts each sheet into nine
+   256 x 256 pictures with see-through backgrounds, lists them in
+   `src/treasure_art.js`, and writes `out/icons.html` to check them on light
+   and dark. A treasure without a picture shows its emoji. Then `npm run pwa`,
+   so the pictures work offline.
+
+The same file has optional sheets of pictures for questions (apples, cats,
+balls) that would replace their emoji; the game doesn't use them yet.
 
 ## License
 

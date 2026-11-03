@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { encodePlayer, decodePlayer } from "../src/progress_code.js";
 import { newSave, addPlayer, updatePlayer, importPlayer, currentPlayer, MOST_PLAYERS } from "../src/save.js";
 import { levelsFor, newProgress, recordLevel, openChapter } from "../src/adventures.js";
-import { TREASURES } from "../src/treasures.js";
+import { KEEPSAKES } from "../src/treasures.js";
 
 /** A player partway through 3rd grade, with some of 2nd done too. */
 function maya() {
@@ -17,7 +17,8 @@ function maya() {
   save = updatePlayer(save, player.id, {
     xp: 1234,
     played: 9,
-    treasures: [TREASURES[5].id, TREASURES[0].id, TREASURES[40].id],
+    treasures: [KEEPSAKES[5].id, KEEPSAKES[0].id, KEEPSAKES[40].id],
+    remembered: { [KEEPSAKES[40].id]: { type: "multiplication", after: 8, day: 20761 } },
     adventures: { 2: second, 3: third },
     mastery: { multiplication: { score: 0.734, seen: 12, last: 9, day: 20760 }, division: { score: 0.2, seen: 4, last: 6 } },
     challenges: { 3: 14 },
@@ -26,7 +27,7 @@ function maya() {
 }
 
 describe("progress codes", () => {
-  it("carry a player to another device: name, hero, grade, experience, treasures, stars, mastery and challenge bests", () => {
+  it("carry a player to another device: name, hero, grade, experience, keepsakes and what they were for, stars, mastery and challenge bests", () => {
     const player = maya();
     const code = encodePlayer(player);
     assert.match(code, /^NMC1-[A-Za-z0-9_-]+$/);
@@ -35,8 +36,8 @@ describe("progress codes", () => {
     assert.equal(moved.id, "p2", "a new id on the new device");
     assert.equal(currentPlayer(there.save), moved);
     assert.deepEqual(
-      [moved.name, moved.heroId, moved.grade, moved.xp, moved.played, moved.readAloud, moved.treasures],
-      [player.name, player.heroId, player.grade, player.xp, player.played, player.readAloud, player.treasures],
+      [moved.name, moved.heroId, moved.grade, moved.xp, moved.played, moved.readAloud, moved.treasures, moved.remembered],
+      [player.name, player.heroId, player.grade, player.xp, player.played, player.readAloud, player.treasures, player.remembered],
     );
     for (const grade of [2, 3]) {
       for (const level of levelsFor(grade)) assert.equal(moved.adventures[grade].done[level.id]?.stars, player.adventures[grade].done[level.id]?.stars, level.id);
@@ -70,7 +71,7 @@ describe("progress codes", () => {
     const { player } = importPlayer(newSave(), decodePlayer(code));
     assert.equal(player.name.length, 20);
     assert.deepEqual([player.heroId, player.grade, player.xp, player.played], ["cat_ninja", 0, 0, 2]);
-    assert.deepEqual(player.treasures, [TREASURES[0].id]);
+    assert.deepEqual(player.treasures, [KEEPSAKES[0].id]);
     // Of "39x1", only the stars that can be are kept; a chapter past the end is the last one.
     const levels = levelsFor(3);
     assert.deepEqual(Object.keys(player.adventures[3].done), [levels[0].id, levels[3].id]);

@@ -1,0 +1,370 @@
+{
+  "groups": [
+    {
+      "id": "chapters",
+      "title": "Chapter treasures",
+      "folder": "assets/treasures",
+      "size": 256,
+      "about": "One sheet per grade: the treasure for each of its eight chapters, and the grade's own treasure for finishing them all. Each grade's set is made of one material, and the materials grow grander from kindergarten to 6th grade.",
+      "style": "They are rare, precious treasures from a storybook adventure, each a single object standing upright on its own, seen from the front or a slight three-quarter view, with a small sparkle of shine on metal and gems.",
+      "sheets": [
+        {
+          "id": "chapters-k",
+          "title": "Kindergarten",
+          "set": "painted wood and bright, glossy enamel, like precious toys",
+          "items": [
+            { "id": "chapter-0-counting", "look": "A small crown painted red, with five round gold dots in a row along its band and a yellow ball on each of its points." },
+            { "id": "chapter-0-next", "look": "A necklace of big round beads in a repeating pattern: red, blue, red, blue, red, blue, tied with a bow." },
+            { "id": "chapter-0-shapes", "look": "A round shield painted blue, with a yellow triangle, a red square and a green circle on its front." },
+            { "id": "chapter-0-more", "look": "Two golden bells hanging side by side from one wooden bar, one big and one small." },
+            { "id": "chapter-0-adding", "look": "A round glass jar with a cork, holding a heap of red gems and blue gems mixed together." },
+            { "id": "chapter-0-taking", "look": "A wooden scoop holding three seashells, with two more seashells tumbling out of it." },
+            { "id": "chapter-0-pairs", "look": "A little wooden board with two rows of five round holes, seven holes filled with red marbles and three left empty." },
+            { "id": "chapter-0-teens", "look": "A neat stack of ten gold coins, with four more gold coins in a little pile beside it." },
+            { "id": "grade-0", "look": "A big plump golden star standing on a small round painted base, with a red ribbon tied around the base. The grandest of the nine." }
+          ]
+        },
+        {
+          "id": "chapters-1",
+          "title": "1st grade",
+          "set": "polished bronze and warm copper, with teal and orange enamel",
+          "items": [
+            { "id": "chapter-1-facts", "look": "A round bronze medal hanging from a teal ribbon, with a raised plus sign on its left half and a raised minus sign on its right half." },
+            { "id": "chapter-1-stories", "look": "A half-unrolled scroll with copper handles, showing three little painted apples and a curved arrow, with no writing." },
+            { "id": "chapter-1-missing", "look": "Small bronze balance scales, perfectly level, with three orange gems on each pan." },
+            { "id": "chapter-1-tens", "look": "Ten copper wands tied together in a bundle with a teal ribbon, with three loose wands lying beside the bundle." },
+            { "id": "chapter-1-to-120", "look": "A little bronze tower made of ten stacked rings, with a small orange flag on top." },
+            { "id": "chapter-1-time", "look": "A round bronze pocket watch on a short chain, its face marked with twelve little ticks instead of numbers, both hands pointing straight up." },
+            { "id": "chapter-1-graphs", "look": "A cloth banner hanging from a bronze pole, showing three rows of little fruit pictures, each row a different length." },
+            { "id": "chapter-1-shares", "look": "A round bronze shield divided into four equal slices, two slices enamelled orange and two teal." },
+            { "id": "grade-1", "look": "A tall bronze trophy cup with two curly handles and a big teal gem on its front, on a copper base. The grandest of the nine." }
+          ]
+        },
+        {
+          "id": "chapters-2",
+          "title": "2nd grade",
+          "set": "shining silver, set with blue and green gems",
+          "items": [
+            { "id": "chapter-2-to-100", "look": "An open silver coin purse, with ten small silver coins spilling out next to one big shiny coin." },
+            { "id": "chapter-2-stories", "look": "A silver magnifying glass with a blue gem set in its handle." },
+            { "id": "chapter-2-to-1000", "look": "A flat silver square made of a hundred tiny cubes, a rod of ten cubes, and three single cubes, all with blue edges." },
+            { "id": "chapter-2-lines", "look": "A short silver sword whose straight blade is marked along one edge with evenly spaced tick marks, like a ruler, with a green gem in the hilt." },
+            { "id": "chapter-2-bigger", "look": "A small silver treasure chest with three round gem locks in a row on its front: blue, green, blue." },
+            { "id": "chapter-2-groups", "look": "Two matching silver-trimmed pouches side by side, each holding the same number of green gems." },
+            { "id": "chapter-2-money", "look": "A shiny silver piggy bank with a coin dropping into the slot on its back." },
+            { "id": "chapter-2-time", "look": "A small silver mantel clock with twelve little ticks instead of numbers, its long hand pointing to the right and its short hand pointing straight up." },
+            { "id": "grade-2", "look": "A tall silver crown set with blue and green gems. The grandest of the nine." }
+          ]
+        },
+        {
+          "id": "chapters-3",
+          "title": "3rd grade",
+          "set": "gleaming gold, set with red and green gems",
+          "items": [
+            { "id": "chapter-3-groups", "look": "An open box holding golden eggs in three neat rows of four." },
+            { "id": "chapter-3-sharing", "look": "A round golden platter with four small, equal piles of red gems on it." },
+            { "id": "chapter-3-measures", "look": "A round gold stopwatch with a red button on top and little ticks around its face." },
+            { "id": "chapter-3-two-step", "look": "A golden padlock with two keyholes, and two little golden keys beside it, one with a red gem and one with a green gem." },
+            { "id": "chapter-3-area", "look": "A rectangular golden shield covered in a grid of small red and green squares, like a checkerboard." },
+            { "id": "chapter-3-fractions", "look": "A golden pendant on a chain, its round face cut into eight equal slices, three of them set with red gems." },
+            { "id": "chapter-3-graphs", "look": "A small golden trophy whose top is a row of four golden bars of different heights." },
+            { "id": "chapter-3-perimeter", "look": "A square of little golden fence posts and rails running all the way around a patch of green grass." },
+            { "id": "grade-3", "look": "A tall golden goblet set with a ring of red and green gems. The grandest of the nine." }
+          ]
+        },
+        {
+          "id": "chapters-4",
+          "title": "4th grade",
+          "set": "clear crystal and ice-blue glass, trimmed with gold",
+          "items": [
+            { "id": "chapter-4-place", "look": "A small gold-framed abacus with clear crystal beads on four rods." },
+            { "id": "chapter-4-measures", "look": "A crystal jug with gold tick marks up its side, half full of glowing blue water." },
+            { "id": "chapter-4-multiply", "look": "A gold hand mirror whose glass shows many copies of one blue gem in neat rows." },
+            { "id": "chapter-4-divide", "look": "Three equal crystal jars of blue sweets in a row, with two sweets left over in front of them." },
+            { "id": "chapter-4-angles", "look": "A gold drawing compass, the two-legged kind for drawing circles, opened to a square corner, with a crystal at its hinge." },
+            { "id": "chapter-4-fractions", "look": "Three little crystal bottles with gold stoppers, filled with glowing blue liquid to three different heights." },
+            { "id": "chapter-4-decimals", "look": "A gold bracelet set with ten crystals in a row, three of them glowing bright blue." },
+            { "id": "chapter-4-area", "look": "A rectangular gold window frame filled with a grid of ice-blue glass panes." },
+            { "id": "grade-4", "look": "A crown of tall, clear crystal spikes on a gold band. The grandest of the nine." }
+          ]
+        },
+        {
+          "id": "chapters-5",
+          "title": "5th grade",
+          "set": "deep midnight-blue enamel and gold, scattered with tiny glowing stars",
+          "items": [
+            { "id": "chapter-5-decimals", "look": "Three gold measuring spoons hanging on a ring, one big, one smaller and one tiny, each with a little star." },
+            { "id": "chapter-5-multiply", "look": "A tall midnight-blue wizard hat covered in rows of little gold stars." },
+            { "id": "chapter-5-expressions", "look": "A glowing blue gem held between two curved gold bands, like a pair of round brackets." },
+            { "id": "chapter-5-fractions", "look": "A round midnight-blue box whose lid is cut into six equal slices, five of them gold, with a star in the middle." },
+            { "id": "chapter-5-stories", "look": "Three round golden moon cakes on a midnight-blue plate, each cut into four equal pieces." },
+            { "id": "chapter-5-units", "look": "A round gold tape measure with its midnight-blue tape pulled out, marked with gold ticks." },
+            { "id": "chapter-5-volume", "look": "A clear glass box filled with little gold cubes stacked in neat layers." },
+            { "id": "chapter-5-coordinates", "look": "A square midnight-blue map with a gold grid of lines, and one bright star sitting where two lines cross." },
+            { "id": "grade-5", "look": "A tall gold scepter topped with a big glowing star. The grandest of the nine." }
+          ]
+        },
+        {
+          "id": "chapters-6",
+          "title": "6th grade",
+          "set": "carved green jade and gold, set with orange gems",
+          "items": [
+            { "id": "chapter-6-ratios", "look": "Two jade bowls side by side, one holding two orange gems and the other holding three green gems." },
+            { "id": "chapter-6-dividing", "look": "One big jade cup with four small gold quarter-cups lined up in front of it." },
+            { "id": "chapter-6-factors", "look": "Two gold gears with jade centres, one big and one small, their teeth fitted together." },
+            { "id": "chapter-6-negatives", "look": "A gold thermometer with a jade bulb and a white snowflake beside it, its red line low, below the middle mark." },
+            { "id": "chapter-6-expressions", "look": "A closed jade box with a gold lid and a star-shaped gold keyhole, glowing softly." },
+            { "id": "chapter-6-equations", "look": "Gold balance scales, perfectly level, with a small closed jade box on one pan and a pile of orange gems on the other." },
+            { "id": "chapter-6-area", "look": "A jade box opened out flat into its six square faces, laid out in a cross shape and edged in gold." },
+            { "id": "chapter-6-statistics", "look": "Five small jade pillars in a row from shortest to tallest, the middle one topped with a gold cap." },
+            { "id": "grade-6", "look": "A grand crown of carved jade and gold, set with orange gems. The grandest of the nine." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "keepsakes",
+      "title": "Keepsakes",
+      "folder": "assets/treasures",
+      "size": 256,
+      "about": "The surprises a child finds when something learned days ago has stuck. Playful and a little silly, in no particular order.",
+      "style": "They are playful magical keepsakes, a little silly, each a single object on its own, seen from the front or a slight three-quarter view, with a small sparkle of shine on metal and gems.",
+      "sheets": [
+        {
+          "id": "keepsakes-1",
+          "items": [
+            { "id": "sparkly_gemstone", "look": "A large faceted gemstone that shines with stripes of red, orange, yellow, green and blue, sparkling." },
+            { "id": "crystal_ball_of_mild_predictions", "look": "A clear pale-blue crystal ball on a little gold stand, with a swirl of white mist inside." },
+            { "id": "wand_of_whimsy", "look": "A short golden magic wand with a white star on its tip and two little sparkles." },
+            { "id": "rainbow_power", "look": "A small rainbow arc of red, orange, yellow, green and blue stripes, with a fluffy white cloud at each end." },
+            { "id": "magical_butterfly", "look": "A butterfly with bright blue and orange wings and a few sparkles around it." },
+            { "id": "mirror_of_many_faces", "look": "An oval hand mirror with a fancy gold frame and shiny pale-blue glass." },
+            { "id": "moon_charm", "look": "A golden crescent moon charm hanging from a little loop." },
+            { "id": "transformation_frog", "look": "A cheerful green frog wearing a tiny golden crown, sitting up." },
+            { "id": "mystic_hook", "look": "A big curved silver hook on a short chain, with a blue gem at its top." }
+          ]
+        },
+        {
+          "id": "keepsakes-2",
+          "items": [
+            { "id": "sun_medallion", "look": "A round golden medallion shaped like the sun, with pointed rays all around and an orange gem in the middle." },
+            { "id": "time_yo_yo", "look": "A red and yellow yo-yo with its string looping up." },
+            { "id": "cookie_of_speed", "look": "A round chocolate-chip cookie with a yellow lightning-bolt sprinkle on top and little white speed lines behind it." },
+            { "id": "rainbow_brush", "look": "A paintbrush with a wooden handle, its bristles striped red, yellow, green and blue." },
+            { "id": "bard_s_guitar", "look": "A small wooden guitar with a red body and a golden star on it." },
+            { "id": "disco_crystal", "look": "A silver mirror ball made of tiny square mirrors, sparkling." },
+            { "id": "bag_of_giggling_gold", "look": "A brown cloth sack tied at the top, bulging with gold coins, a few coins peeking out." },
+            { "id": "crown_of_mild_command", "look": "A slightly lopsided golden crown with three red gems." },
+            { "id": "mask_of_many_voices", "look": "A theatre mask with empty eye holes, half gold and half blue, with two ribbons." }
+          ]
+        },
+        {
+          "id": "keepsakes-3",
+          "items": [
+            { "id": "shield_of_selective_bouncing", "look": "A round blue shield with a big springy coil fixed to its front." },
+            { "id": "bow_of_boomerang_arrows", "look": "A wooden bow with an arrow whose tip is a curved wooden boomerang." },
+            { "id": "heart_of_helpfulness", "look": "A shiny red heart-shaped gem." },
+            { "id": "ever_changing_apple", "look": "An apple that is half red and half green, with a leaf on its stalk." },
+            { "id": "scroll_of_silly_spells", "look": "A rolled parchment scroll tied with a red ribbon, with little stars drawn on it and no writing." },
+            { "id": "ring_of_random_ringing", "look": "A gold ring with a tiny golden bell where its gem would be." },
+            { "id": "amulet_of_awesome_alibis", "look": "A round blue glass amulet with rings of white and dark blue, hanging on a cord." },
+            { "id": "compass_of_curiosity", "look": "An open brass compass with a red and white needle." },
+            { "id": "hourglass_of_holding_on", "look": "A wooden hourglass with golden sand, more sand in its top half than its bottom." }
+          ]
+        },
+        {
+          "id": "keepsakes-4",
+          "items": [
+            { "id": "seed_of_sudden_songs", "look": "A brown seed with a green sprout, and two little musical notes floating above it." },
+            { "id": "mushroom_of_many_moods", "look": "A red mushroom with white spots, and a few spots in yellow, green and blue." },
+            { "id": "dragon_scale_mail", "look": "A small shirt of armour made of overlapping green dragon scales." },
+            { "id": "fox_tail_of_mischief", "look": "A fluffy orange fox tail with a white tip, tied with a blue ribbon." },
+            { "id": "owl_specs_of_wisdom", "look": "A pair of round golden spectacles with little brown owl feathers on the frame." },
+            { "id": "horn_of_heroic_hints", "look": "A curly golden horn with a red tassel." },
+            { "id": "vessel_of_various_voices", "look": "An old clay urn with a lid, painted with blue swirls." },
+            { "id": "water_drop_of_wetness", "look": "A big shiny blue water drop." },
+            { "id": "fireball_of_friendship", "look": "A round fireball of orange and yellow flames with a small heart shape in the middle." }
+          ]
+        },
+        {
+          "id": "keepsakes-5",
+          "items": [
+            { "id": "pocket_tornado", "look": "A small grey-blue swirling tornado." },
+            { "id": "ice_shard_of_infinite_brain_freeze", "look": "A pointy pale-blue ice crystal." },
+            { "id": "rod_of_ridiculous_fishing", "look": "A fishing rod with a little fish dangling from its line." },
+            { "id": "shooting_star_fragment", "look": "A golden shooting star with a sparkly tail." },
+            { "id": "ancient_allowance_coin", "look": "A big old gold coin with a star stamped on it." },
+            { "id": "pocket_fireworks", "look": "A small round firework burst of red, blue and gold sparks." },
+            { "id": "thread_of_tangled_tales", "look": "A ball of blue yarn with one loose end." },
+            { "id": "magnet_of_mystery", "look": "A red horseshoe magnet with silver tips." },
+            { "id": "balloon_of_bouncy_bravery", "look": "A round red balloon on a curly string." }
+          ]
+        },
+        {
+          "id": "keepsakes-6",
+          "items": [
+            { "id": "honey_of_heroic_happiness", "look": "A round honey pot with honey dripping over its edge and a wooden dipper in it." },
+            { "id": "coconut_of_clever_comebacks", "look": "A coconut cracked open, showing the white inside." },
+            { "id": "berries_of_better_bedtime", "look": "A small bunch of dark blue berries with a green leaf." },
+            { "id": "pretzel_of_protection", "look": "A golden-brown pretzel with white salt crystals." },
+            { "id": "wonder_wheel_of_why_not", "look": "A small Ferris wheel with colourful cabins." },
+            { "id": "pocket_circus", "look": "A little circus tent striped red and yellow, with a flag on top." },
+            { "id": "stone_face_of_seriousness", "look": "A grey stone head statue with a long, very serious face." },
+            { "id": "battery_of_boundless_bounciness", "look": "A green battery standing on a silver spring." },
+            { "id": "clover_of_convenient_coincidences", "look": "A bright green four-leaf clover." }
+          ]
+        },
+        {
+          "id": "keepsakes-7",
+          "items": [
+            { "id": "piano_keys_of_possibility", "look": "A short row of black and white piano keys." },
+            { "id": "drum_of_daily_dancing", "look": "A small wooden hand drum with a red rim." },
+            { "id": "sparkler_of_spectacular_speeches", "look": "A sparkler stick fizzing with golden sparks." },
+            { "id": "robe_of_rushing_ready", "look": "A flowing blue robe with a hood, covered in gold stars." },
+            { "id": "hat_of_hundred_happenings", "look": "A black top hat with a red band." },
+            { "id": "pebble_of_peak_performance", "look": "A smooth grey pebble shaped like a tiny mountain with a snowy top." },
+            { "id": "dolls_of_delightful_duplication", "look": "Two matching wooden nesting dolls, one big and one small, painted red and gold." },
+            { "id": "ladder_of_unlikely_locations", "look": "A wooden ladder with a little white cloud at its top." },
+            { "id": "sparkles_of_spontaneous_style", "look": "A cluster of three golden sparkle stars, one big and two small." }
+          ]
+        },
+        {
+          "id": "keepsakes-8",
+          "items": [
+            { "id": "trophy_of_trying_your_best", "look": "A small gold trophy cup with two handles, on a wooden base." },
+            { "id": "key_of_keeping_secrets", "look": "A golden key with a heart-shaped top." },
+            { "id": "sword_of_silliness", "look": "A short silver sword with a wiggly, wavy blade and a gold hilt." },
+            { "id": "star_of_starting_over", "look": "A plump golden star with a curved arrow circling around it." },
+            { "id": "potion_of_peculiar_perspectives", "look": "A round glass potion bottle with a cork, full of swirling green liquid." },
+            { "id": "lightning_in_a_bottle", "look": "A glass bottle with a cork, with a bright yellow lightning bolt inside." },
+            { "id": "bell_of_brilliant_ideas", "look": "A golden hand bell with a wooden handle." },
+            { "id": "beads_of_better_bedtime", "look": "A loop of round beads in soft blue and gold." },
+            { "id": "skeleton_key_of_sneaking", "look": "An old dark iron key with a long shaft and a fancy, curly top." }
+          ]
+        },
+        {
+          "id": "keepsakes-9",
+          "items": [
+            { "id": "comet_crumbs_of_chaos", "look": "A small blue-white comet with a fiery orange tail." },
+            { "id": "moon_phase_phaser", "look": "A round silver disc, half dark and half glowing, like a half moon." },
+            { "id": "forever_firework", "look": "A party popper bursting with gold and blue confetti and streamers." },
+            { "id": "teapot_of_tiny_tempests", "look": "A round blue teapot with a tiny grey rain cloud puffing out of its spout." },
+            { "id": "snail_shell_of_steady_speed", "look": "An orange and cream spiral snail shell with two little silver wings." },
+            { "id": "lantern_of_lost_things", "look": "An old brass lantern glowing warm yellow." },
+            { "id": "acorn_of_ambitious_oaks", "look": "A shiny golden-brown acorn with a tiny green sprout." },
+            { "id": "kite_of_kind_winds", "look": "A diamond-shaped kite in blue and yellow with a ribbon tail." },
+            { "id": "umbrella_of_upside_down_weather", "look": "An open green and yellow striped umbrella, upside down, holding a little puddle of water." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pictures",
+      "title": "Question pictures (optional)",
+      "folder": "assets/pictures",
+      "size": 128,
+      "about": "The things questions ask children to count, compare and spot patterns in, which are emoji now and look different on every device. Not used by the game yet: worth making once the treasures are done.",
+      "style": "They are counting pictures for young children, so each must be recognisable at a glance even when small: one simple object, a clear silhouette, little detail, no scenery, no ground or shadow beneath it, and no sparkles.",
+      "sheets": [
+        {
+          "id": "pictures-1",
+          "items": [
+            { "id": "apple_red", "look": "A red apple with a green leaf." },
+            { "id": "apple_green", "look": "A green apple with a brown stalk." },
+            { "id": "banana", "look": "A yellow banana." },
+            { "id": "grapes", "look": "A bunch of green grapes." },
+            { "id": "orange", "look": "A round orange with a green leaf." },
+            { "id": "pear", "look": "A yellow-green pear." },
+            { "id": "strawberry", "look": "A red strawberry with green leaves on top." },
+            { "id": "cookie", "look": "A round chocolate-chip cookie." },
+            { "id": "tomato", "look": "A round red tomato with a green top." }
+          ]
+        },
+        {
+          "id": "pictures-2",
+          "items": [
+            { "id": "carrot", "look": "An orange carrot with green leaves." },
+            { "id": "corn", "look": "A yellow ear of corn with green husks." },
+            { "id": "sweet", "look": "A wrapped sweet in a yellow wrapper, twisted at both ends." },
+            { "id": "lollipop", "look": "A round swirly lollipop in red, yellow and white on a stick." },
+            { "id": "cat", "look": "A sitting orange cat, seen from the front." },
+            { "id": "dog", "look": "A sitting brown dog with floppy ears, seen from the front." },
+            { "id": "bird", "look": "A small blue bird, seen from the side." },
+            { "id": "fish", "look": "A small orange fish, seen from the side." },
+            { "id": "bunny", "look": "A sitting white bunny with long ears, seen from the front." }
+          ]
+        },
+        {
+          "id": "pictures-3",
+          "items": [
+            { "id": "frog", "look": "A sitting green frog, seen from the front." },
+            { "id": "monkey", "look": "A sitting brown monkey, seen from the front." },
+            { "id": "pig", "look": "A light peach-coloured pig, seen from the side." },
+            { "id": "ladybug", "look": "A red ladybug with black spots, seen from above." },
+            { "id": "octopus", "look": "An orange octopus." },
+            { "id": "turtle", "look": "A green turtle, seen from the side." },
+            { "id": "crab", "look": "A red crab, seen from the front." },
+            { "id": "whale", "look": "A blue whale, seen from the side." },
+            { "id": "shell", "look": "A cream and orange seashell." }
+          ]
+        },
+        {
+          "id": "pictures-4",
+          "items": [
+            { "id": "daisy", "look": "A white daisy with a yellow middle." },
+            { "id": "sunflower", "look": "A yellow sunflower with a brown middle and a green stalk." },
+            { "id": "cactus", "look": "A green cactus in a small clay pot." },
+            { "id": "mushroom", "look": "A red mushroom with white spots." },
+            { "id": "pine_tree", "look": "A green pine tree with a brown trunk." },
+            { "id": "maple_leaf", "look": "An orange maple leaf." },
+            { "id": "star", "look": "A yellow five-pointed star." },
+            { "id": "moon", "look": "A yellow crescent moon." },
+            { "id": "sun", "look": "A round yellow sun with short rays." }
+          ]
+        },
+        {
+          "id": "pictures-5",
+          "items": [
+            { "id": "rainbow", "look": "A rainbow arc of red, orange, yellow, green and blue." },
+            { "id": "lightning", "look": "A yellow lightning bolt." },
+            { "id": "umbrella", "look": "An open blue umbrella with raindrops falling on it." },
+            { "id": "cloud", "look": "A white cloud with the sun peeking out from behind it." },
+            { "id": "snowman", "look": "A snowman with a carrot nose and a red scarf." },
+            { "id": "soccer_ball", "look": "A black and white soccer ball." },
+            { "id": "basketball", "look": "An orange basketball." },
+            { "id": "tennis_ball", "look": "A yellow-green tennis ball." },
+            { "id": "football", "look": "A brown American football." }
+          ]
+        },
+        {
+          "id": "pictures-6",
+          "items": [
+            { "id": "baseball", "look": "A white baseball with red stitching." },
+            { "id": "balloon", "look": "A red balloon on a curly string." },
+            { "id": "teddy_bear", "look": "A sitting brown teddy bear." },
+            { "id": "car", "look": "A red car, seen from the side." },
+            { "id": "bike", "look": "A green bicycle, seen from the side." },
+            { "id": "rocket", "look": "A white and red rocket pointing up." },
+            { "id": "train", "look": "A green steam train engine, seen from the side." },
+            { "id": "sailboat", "look": "A small sailboat with a white sail." },
+            { "id": "bus", "look": "A yellow school bus, seen from the side." }
+          ]
+        },
+        {
+          "id": "pictures-7",
+          "items": [
+            { "id": "scooter", "look": "A blue kick scooter, seen from the side." },
+            { "id": "walker", "look": "A child walking, seen from the side, in a blue shirt." },
+            { "id": "gem", "look": "A blue faceted gem." },
+            { "id": "coin", "look": "A round gold coin." },
+            { "id": "box", "look": "A closed brown cardboard box." },
+            { "id": "chair", "look": "A wooden chair, seen from the side." },
+            { "id": "basket", "look": "A woven brown basket with a handle." },
+            { "id": "duck", "look": "A yellow rubber duck, seen from the side." },
+            { "id": "crayon", "look": "A blue crayon." }
+          ]
+        }
+      ]
+    }
+  ]
+}

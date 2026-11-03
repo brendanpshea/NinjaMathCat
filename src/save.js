@@ -1,14 +1,15 @@
 // What the game remembers in this browser: everyone who plays on it, each
 // with a name, a hero, the grade of their adventure, their experience and
-// treasures, and how far they have got in each grade's adventure; and whether
-// the sound is off. Nothing leaves the browser.
+// keepsakes, and how far they have got in each grade's adventure; and whether
+// the sound is off. Nothing leaves the browser. (Chapter treasures need no
+// saving: they follow from the adventure's progress, src/treasures.js.)
 //
 // Storage can be missing, full or blocked (a private window, a locked-down
 // school device), so every read and write is allowed to fail: the game then
 // plays on and simply forgets.
 
 import { HEROES, DEFAULT_HERO } from "./heroes.js";
-import { TREASURES } from "./treasures.js";
+import { KEEPSAKES } from "./treasures.js";
 import { ADVENTURE_GRADES, levelsFor, newProgress } from "./adventures.js";
 import { CURRICULUM } from "./curriculum.js";
 
@@ -31,13 +32,22 @@ export const MOST_CODES = 60;
  * @property {string} heroId
  * @property {number} grade  the adventure being played: a whole grade, 0 for kindergarten
  * @property {number} xp  all the experience ever earned
- * @property {string[]} treasures  ids, in the order found
+ * @property {string[]} treasures  the keepsakes had, by id, in the order found
+ * @property {Record<string, Remembered>} remembered  for each keepsake found by remembering, by id, what it was for
  * @property {Record<string, AdventureProgress>} adventures  progress in each grade's adventure, by grade
  * @property {Mastery} mastery  how well they know each kind of question
  * @property {number} played  battles started, the clock that review is timed by
  * @property {boolean} readAloud  read each question aloud as it comes
  * @property {number} backedUp  battles played when a progress code was last offered, to keep a copy
  * @property {Record<string, number>} challenges  the best one-minute challenge score in each grade, by grade
+ */
+
+/**
+ * What a keepsake was found for: a kind of question got right after days away.
+ * @typedef {object} Remembered
+ * @property {string} type
+ * @property {number} after  days since it was last met
+ * @property {number} day  the day it was found (dayNumber), as only one is found a day
  */
 
 /** Up to this grade, questions are read aloud unless a grown-up turns it off. */
@@ -77,6 +87,7 @@ export function addPlayer(save, { name, heroId, grade, readAloud }) {
     readAloud: readAloud ?? year <= READ_ALOUD_UP_TO,
     xp: 0,
     treasures: [],
+    remembered: {},
     adventures: {},
     mastery: {},
     played: 0,
@@ -207,7 +218,7 @@ export function loadSave(storage) {
 function cleanPlayer(stored, seen) {
   if (!stored || typeof stored !== "object" || typeof stored.id !== "string" || !/^p\d+$/.test(stored.id) || seen.has(stored.id)) return null;
   seen.add(stored.id);
-  const known = new Set(TREASURES.map(t => t.id));
+  const known = new Set(KEEPSAKES.map(t => t.id));
   /** @type {Record<string, AdventureProgress>} */
   const adventures = {};
   for (const grade of ADVENTURE_GRADES) {
@@ -230,6 +241,15 @@ function cleanPlayer(stored, seen) {
     const best = stored.challenges?.[year];
     if (Number.isInteger(best) && best > 0 && best < 1000) challenges[year] = best;
   }
+  const treasures = Array.isArray(stored.treasures) ? [...new Set(stored.treasures.filter((/** @type {unknown} */ id) => typeof id === "string" && known.has(id)))] : [];
+  /** @type {Record<string, Remembered>} */
+  const remembered = {};
+  for (const id of treasures) {
+    const r = stored.remembered?.[id];
+    if (r && mastery[r.type] && Number.isInteger(r.after) && r.after > 0 && Number.isInteger(r.day) && r.day > 0) {
+      remembered[id] = { type: r.type, after: r.after, day: r.day };
+    }
+  }
   return {
     id: stored.id,
     name: cleanName(stored.name) || `Player ${stored.id.slice(1)}`,
@@ -237,7 +257,8 @@ function cleanPlayer(stored, seen) {
     grade,
     readAloud: typeof stored.readAloud === "boolean" ? stored.readAloud : grade <= READ_ALOUD_UP_TO,
     xp: Number.isInteger(stored.xp) && stored.xp >= 0 ? stored.xp : 0,
-    treasures: Array.isArray(stored.treasures) ? [...new Set(stored.treasures.filter((/** @type {unknown} */ id) => typeof id === "string" && known.has(id)))] : [],
+    treasures,
+    remembered,
     adventures,
     mastery,
     played,

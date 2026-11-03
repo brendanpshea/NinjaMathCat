@@ -1,3 +1,6 @@
 node_modules/
+__pycache__/
 out/
 assets/backdrops/sheets/
+assets/treasures/sheets/
+assets/pictures/sheets/

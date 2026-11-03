@@ -13,7 +13,8 @@ import { MONSTERS, buildAdventure, monsterSprite } from "../monsters.js";
 import { backdropFor } from "../backdrops.js";
 import { startBattle } from "../battle.js";
 import { levelForXp } from "../combat.js";
-import { TREASURES } from "../treasures.js";
+import { KEEPSAKES, chapterTreasure, gradeTreasure, treasuresWon, newlyWon } from "../treasures.js";
+import { DRAWN } from "../treasure_art.js";
 import {
   ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, planTraining, settingFor, exampleFor,
   recordLevel, levelStates, nextLevel, openChapter, starsFor, residents,
@@ -95,6 +96,66 @@ export function gradeWords(grade) {
  */
 function starsHtml(stars) {
   return `<span class="stars" role="img" aria-label="${stars} of 3 stars">${"★".repeat(stars)}<span class="stars-off">${"★".repeat(3 - stars)}</span></span>`;
+}
+
+/**
+ * A treasure's picture: its drawing once it has one, its emoji until then.
+ * The name beside it says what it is, so the picture is left unread.
+ * @param {{ id: string, emoji: string }} t
+ * @param {string} [size]  "big" for a treasure just won
+ */
+function treasureArt(t, size = "") {
+  const className = `treasure-art${size ? ` treasure-art--${size}` : ""}`;
+  return DRAWN.has(t.id)
+    ? `<img class="${className}" src="assets/treasures/${t.id}.webp" alt="" width="256" height="256" decoding="async">`
+    : `<span class="${className} is-emoji" aria-hidden="true">${t.emoji}</span>`;
+}
+
+/**
+ * What a keepsake found by remembering was for: "You remembered telling time after 5 days."
+ * @param {import("../save.js").Remembered | import("../battle.js").Stuck} r
+ */
+function rememberedLine(r) {
+  return `You remembered ${typeById(r.type).name.toLowerCase()} after ${r.after} days.`;
+}
+
+/**
+ * A treasure just won, shown big, with what it was won for.
+ * @param {{ id: string, emoji: string, name: string }} t
+ * @param {string} kicker  what kind of treasure: "Chapter treasure", "It stuck!"
+ * @param {string} line
+ */
+function revealCard(t, kicker, line) {
+  return `<div class="card treasure-reveal">
+    ${treasureArt(t, "big")}
+    <div class="reveal-words">
+      <p class="reveal-kicker">${esc(kicker)}</p>
+      <h2 class="reveal-name">${esc(t.name)}</h2>
+      <p class="reveal-line">${esc(line)}</p>
+    </div>
+  </div>`;
+}
+
+/**
+ * The treasures a battle brought: chapter treasures won with it, and a
+ * keepsake if something stuck (or, once every keepsake is had, just the news).
+ * @param {import("../treasures.js").ChapterTreasure[]} won
+ * @param {import("../battle.js").Stuck | null} stuck
+ */
+function revealsHtml(won, stuck) {
+  const chapters = won.map(t => revealCard(t, t.chapter === null ? "Grade treasure" : "Chapter treasure", t.line));
+  const kept = stuck?.keepsake ? [revealCard(stuck.keepsake, "It stuck!", rememberedLine(stuck))]
+    : stuck ? [`<div class="card treasure-reveal is-plain"><div class="reveal-words"><p class="reveal-kicker">It stuck!</p><p class="reveal-line">${esc(rememberedLine(stuck))}</p></div></div>`]
+    : [];
+  return [...chapters, ...kept].join("");
+}
+
+/**
+ * How many treasures a player has: keepsakes, and chapter and grade treasures in every grade.
+ * @param {Player} player
+ */
+function treasureCount(player) {
+  return player.treasures.length + ADVENTURE_GRADES.reduce((sum, g) => sum + treasuresWon(g, player.adventures[g]).length, 0);
 }
 
 /**
@@ -551,7 +612,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
           <button type="button" class="tile tile--training" data-ref="training">${icon("training", "tile-icon")}<span class="tile-word">Training</span></button>
           <button type="button" class="tile tile--quick" data-ref="quick">${icon("battle", "tile-icon")}<span class="tile-word">Quick battle</span></button>
           ${grade >= CHALLENGE_FROM ? `<button type="button" class="tile tile--challenge" data-ref="challenge">${icon("challenge", "tile-icon")}<span class="tile-word">Challenge</span></button>` : ""}
-          <button type="button" class="tile tile--treasures" data-ref="treasures">${icon("treasures", "tile-icon")}<span class="tile-word">Treasures</span><span class="tile-count">${player.treasures.length} of ${TREASURES.length}</span></button>
+          <button type="button" class="tile tile--treasures" data-ref="treasures">${icon("treasures", "tile-icon")}<span class="tile-word">Treasures</span><span class="tile-count">${treasureCount(player) || "None yet"}</span></button>
         </nav>
         <ol class="chapters">${chapters.map((chapter, c) => {
           const mine = levels.filter(l => l.chapter === c);
@@ -737,7 +798,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     const player = me();
     const chapter = chaptersFor(level.grade)[level.chapter];
     const startLevel = levelForXp(player.xp);
-    const foundBefore = new Set(player.treasures);
+    const before = player.adventures[level.grade];
     // A sitting's first level warms up with what is most due from earlier chapters.
     const warmUp = !session.warmedUp.has(player.id);
     session.warmedUp.add(player.id);
@@ -746,10 +807,11 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
       ...planLevel(level, player.mastery, player.played, { today: dayNumber(Date.now()), warmUp }),
       hero: { level: startLevel, xp: player.xp },
       treasures: player.treasures,
+      memory: memoryFor(player),
     });
     fight(battle, {
       title: `${levelName(level)} · ${chapter.title}`,
-      onWin: b => levelDone(level, b, startLevel, foundBefore),
+      onWin: b => levelDone(level, b, startLevel, before),
       grade: level.grade,
       upTo: level.chapter,
       fresh: chapter.learn,
@@ -762,14 +824,24 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     const levels = levelsFor(player.grade);
     const reached = nextLevel(levels, progressIn(player, player.grade)) ?? levels[levels.length - 1];
     const startLevel = levelForXp(player.xp);
-    const foundBefore = new Set(player.treasures);
     const battle = startBattle(rng, {
       grade: chaptersFor(player.grade)[reached.chapter].at,
       adventure: buildAdventure(rng),
       hero: { level: startLevel, xp: player.xp },
       treasures: player.treasures,
+      memory: memoryFor(player),
     });
-    fight(battle, { onWin: b => victory(b, startLevel, foundBefore), grade: player.grade, upTo: reached.chapter });
+    fight(battle, { onWin: b => victory(b, startLevel), grade: player.grade, upTo: reached.chapter });
+  }
+
+  /**
+   * What a battle needs to tell when something stuck: what the player knows,
+   * and the day. Nothing, once a keepsake has been found today.
+   * @param {Player} player
+   */
+  function memoryFor(player) {
+    const today = dayNumber(Date.now());
+    return Object.values(player.remembered).some(r => r.day === today) ? undefined : { mastery: player.mastery, today };
   }
 
   /**
@@ -779,16 +851,16 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     const player = me();
     const plan = planTraining(player.grade, progressIn(player, player.grade), player.mastery, player.played, dayNumber(Date.now()));
     const startLevel = levelForXp(player.xp);
-    const foundBefore = new Set(player.treasures);
     const battle = startBattle(rng, {
       grade: plan.mix[0].grade,
       ...plan,
       hero: { level: startLevel, xp: player.xp },
       treasures: player.treasures,
+      memory: memoryFor(player),
     });
     fight(battle, {
       title: `Training ground · ${list(plan.kinds.map(k => typeById(k).name))}`,
-      onWin: b => trainingDone(b, startLevel, foundBefore),
+      onWin: b => trainingDone(b, startLevel),
       grade: player.grade,
       upTo: (nextLevel(levelsFor(player.grade), progressIn(player, player.grade)) ?? levelsFor(player.grade).at(-1))?.chapter ?? 0,
     });
@@ -965,7 +1037,14 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
           session.firstTry += Number(outcome === "firstTry");
         }
         learned = b.tally.answers.length;
-        change({ xp: b.hero.xp, treasures: b.treasures, mastery });
+        // A keepsake found by remembering is kept with what it was for, and the day, as one comes a day.
+        const found = b.stuck?.keepsake && !me().remembered[b.stuck.keepsake.id] ? b.stuck : null;
+        change({
+          xp: b.hero.xp,
+          treasures: b.treasures,
+          mastery,
+          ...(found?.keepsake ? { remembered: { ...me().remembered, [found.keepsake.id]: { type: found.type, after: found.after, day: b.memory?.today ?? dayNumber(Date.now()) } } } : {}),
+        });
       },
       onWin,
       onLeave: map,
@@ -976,20 +1055,13 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
   }
 
   /**
-   * The treasures a battle found that weren't found before.
-   * @param {Battle} battle
-   * @param {Set<string>} foundBefore
-   */
-  const newTreasures = (battle, foundBefore) => TREASURES.filter(t => battle.treasures.includes(t.id) && !foundBefore.has(t.id));
-
-  /**
    * How a level went, and what comes next.
    * @param {Level} level
    * @param {Battle} battle
    * @param {number} startLevel
-   * @param {Set<string>} foundBefore
+   * @param {import("../adventures.js").AdventureProgress | undefined} before  the grade's progress before the level
    */
-  function levelDone(level, battle, startLevel, foundBefore) {
+  function levelDone(level, battle, startLevel, before) {
     sound.play("victory");
     const player = me();
     const chapters = chaptersFor(level.grade);
@@ -999,7 +1071,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     change({ adventures: { ...player.adventures, [level.grade]: progress } });
     const { tally } = battle;
     const asked = tally.firstTry + tally.secondTry + tally.missed;
-    const found = newTreasures(battle, foundBefore);
+    const won = newlyWon(level.grade, before, progress);
     const gained = battle.hero.level - startLevel;
     const next = nextLevel(levels, progress);
     const chapterLevels = levels.filter(l => l.chapter === level.chapter);
@@ -1025,12 +1097,11 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         </div>
         <p class="stars-big">${starsHtml(stars)}</p>
         ${note ? `<p class="topic-note">${esc(note)}</p>` : ""}
+        ${revealsHtml(won, battle.stuck)}
         <ul class="facts">
           <li><strong>${tally.firstTry} of ${asked}</strong> right the first time</li>
           <li><strong>Level ${battle.hero.level}</strong> ${gained > 0 ? `up ${gained} ${gained === 1 ? "level" : "levels"}!` : "and climbing"}</li>
-          <li><strong>${found.length}</strong> new ${found.length === 1 ? "treasure" : "treasures"}</li>
         </ul>
-        ${found.length > 0 ? `<ul class="treasure-grid">${found.map(treasureCard).join("")}</ul>` : ""}
         ${rest ? `<div class="card rest-offer">
           <p><strong>That's ${minutes} minutes of play.</strong> A good time for a stretch, a drink of water, or a break. Everything is saved.</p>
         </div>` : ""}
@@ -1069,12 +1140,10 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
    * How training went: each kind of question it worked on, and how well it is known now.
    * @param {Battle} battle
    * @param {number} startLevel
-   * @param {Set<string>} foundBefore
    */
-  function trainingDone(battle, startLevel, foundBefore) {
+  function trainingDone(battle, startLevel) {
     sound.play("victory");
     const player = me();
-    const found = newTreasures(battle, foundBefore);
     const gained = battle.hero.level - startLevel;
     const hero = heroOf(player);
     show("training-done", `
@@ -1090,8 +1159,8 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
           <li><strong>${k.firstTry} of ${k.asked}</strong> ${esc(k.name)}, right the first time
             <span class="fact-note">${esc(STRENGTH_WORDS[strength(player.mastery[k.type])])}</span></li>`).join("")}
         </ul>
-        <p class="tagline">Level ${battle.hero.level}${gained > 0 ? `, up ${gained}!` : ""} · ${found.length} new ${found.length === 1 ? "treasure" : "treasures"}</p>
-        ${found.length > 0 ? `<ul class="treasure-grid">${found.map(treasureCard).join("")}</ul>` : ""}
+        <p class="tagline">Level ${battle.hero.level}${gained > 0 ? `, up ${gained}!` : ""}</p>
+        ${revealsHtml([], battle.stuck)}
         <div class="card talk-card">
           <p><strong>For a grown-up, to talk about together:</strong> ${esc(talkAbout(rng, battle.tally.answers))}</p>
         </div>
@@ -1258,13 +1327,11 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
    * How a quick battle went.
    * @param {Battle} battle
    * @param {number} startLevel
-   * @param {Set<string>} foundBefore
    */
-  function victory(battle, startLevel, foundBefore) {
+  function victory(battle, startLevel) {
     sound.play("victory");
     const { tally } = battle;
     const asked = tally.firstTry + tally.secondTry + tally.missed;
-    const found = newTreasures(battle, foundBefore);
     const gained = battle.hero.level - startLevel;
     const hero = heroOf(me());
     show("victory", `
@@ -1279,13 +1346,8 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         <ul class="facts">
           <li><strong>${tally.firstTry} of ${asked}</strong> right the first time</li>
           <li><strong>Level ${battle.hero.level}</strong> ${gained > 0 ? `up ${gained} ${gained === 1 ? "level" : "levels"}!` : "and climbing"}</li>
-          <li><strong>${found.length}</strong> new ${found.length === 1 ? "treasure" : "treasures"}</li>
         </ul>
-        <div class="card">
-          <h2 class="card-title">${found.length > 0 ? "Treasures you found" : "No new treasures this time"}</h2>
-          ${found.length > 0 ? `<ul class="treasure-grid">${found.map(treasureCard).join("")}</ul>`
-            : `<p>${foundBefore.size >= TREASURES.length ? "You have found every treasure there is!" : "Monsters keep their treasure if they knock you out. Try again!"}</p>`}
-        </div>
+        ${revealsHtml([], battle.stuck)}
         <div class="actions">
           <button type="button" class="primary big" data-ref="again">Play again</button>
           <button type="button" class="quiet" data-ref="map">Back to the map</button>
@@ -1298,28 +1360,90 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
 
   // ------------------------------------------------------------ the treasures
 
-  /** @param {typeof TREASURES[number]} t */
-  function treasureCard(t) {
-    return `<li class="treasure"><span class="treasure-emoji" aria-hidden="true">${t.emoji}</span>
-      <span class="treasure-name">${esc(t.name)}</span><span class="treasure-line">${esc(t.description)}</span></li>`;
-  }
-
+  /**
+   * The treasures: for each grade played, a shelf of its chapters' treasures,
+   * with a locked place for each chapter not finished yet; then the
+   * keepsakes, newest first. A shelf shows only pictures and names: tapping
+   * one opens it, with what it was won for.
+   */
   function treasures() {
-    // Newest first, then a tile for each one still out there.
-    const found = [...me().treasures].reverse().map(id => TREASURES.find(t => t.id === id)).filter(t => t !== undefined);
-    const hidden = TREASURES.length - found.length;
+    const player = me();
+    /** @type {Map<string, { t: { id: string, emoji: string, name: string }, kicker: string, line: string }>} */
+    const opened = new Map();
+    /**
+     * @param {{ id: string, emoji: string, name: string }} t
+     * @param {string} kicker
+     * @param {string} line
+     */
+    const item = (t, kicker, line) => {
+      opened.set(t.id, { t, kicker, line });
+      return `<li><button type="button" class="treasure" data-treasure="${t.id}">${treasureArt(t)}<span class="treasure-name">${esc(t.name)}</span></button></li>`;
+    };
+    /** @param {string} label */
+    const locked = label => `<li class="treasure is-locked"><span class="treasure-art is-locked" aria-hidden="true">${icon("lock")}</span><span class="treasure-name">${esc(label)}<span class="visually-hidden">, not won yet</span></span></li>`;
+    const grades = ADVENTURE_GRADES.filter(g => g === player.grade || treasuresWon(g, player.adventures[g]).length > 0);
+    const shelves = grades.map(g => {
+      const won = new Set(treasuresWon(g, player.adventures[g]).map(t => t.id));
+      const words = gradeWords(g);
+      const places = chaptersFor(g).map((chapter, c) => {
+        const t = chapterTreasure(g, c);
+        return won.has(t.id) ? item(t, `Chapter ${c + 1}: ${chapter.title}`, t.line) : locked(`Chapter ${c + 1}`);
+      });
+      const crown = gradeTreasure(g);
+      places.push(won.has(crown.id) ? item(crown, "Grade treasure", crown.line) : locked("Every chapter"));
+      return `<section class="treasure-set">
+        <h2 class="card-title">${esc(words[0].toUpperCase() + words.slice(1))}</h2>
+        <ul class="treasure-shelf">${places.join("")}</ul>
+      </section>`;
+    });
+    const keepsakes = [...player.treasures].reverse().map(id => KEEPSAKES.find(k => k.id === id)).filter(k => k !== undefined);
     show("treasures", `
       <section class="treasures-screen">
-        <h1 tabindex="-1">${esc(me().name)}'s treasures</h1>
-        <p class="tagline">${found.length} of ${TREASURES.length} found. Beat monsters to find more.</p>
-        ${found.length > 0 ? `<ul class="treasure-grid">${found.map(treasureCard).join("")}</ul>` : ""}
-        ${hidden > 0 ? `<div class="card">
-          <h2 class="card-title">Still hidden: ${hidden}</h2>
-          <ul class="hidden-grid" aria-hidden="true">${"<li>?</li>".repeat(hidden)}</ul>
-        </div>` : `<p class="tagline">You have found every treasure there is!</p>`}
+        <h1 tabindex="-1">${esc(player.name)}'s treasures</h1>
+        ${shelves.join("")}
+        <section class="treasure-set">
+          <h2 class="card-title">Keepsakes</h2>
+          ${keepsakes.length > 0
+            ? `<ul class="treasure-shelf">${keepsakes.map(k => item(k, player.remembered[k.id] ? "It stuck!" : "Keepsake", player.remembered[k.id] ? rememberedLine(player.remembered[k.id]) : "Found on an earlier adventure.")).join("")}</ul>`
+            : `<p class="field-hint">None yet. They're surprises, for remembering something you learned on another day.</p>`}
+        </section>
         <button type="button" class="primary" data-ref="back">Back to the map</button>
       </section>`);
     onTap(part("back"), () => map());
+    screenEl.querySelector(".treasures-screen")?.addEventListener("click", event => {
+      const button = /** @type {HTMLElement} */ (event.target).closest("[data-treasure]");
+      const shown = button && opened.get(/** @type {HTMLElement} */ (button).dataset.treasure ?? "");
+      if (!shown) return;
+      sound.play("click");
+      openTreasure(shown.t, shown.kicker, shown.line, /** @type {HTMLElement} */ (button));
+    });
+  }
+
+  /**
+   * One treasure, big, with what it was won for, in a dialog over the shelf.
+   * @param {{ id: string, emoji: string, name: string }} t
+   * @param {string} kicker
+   * @param {string} line
+   * @param {HTMLElement} from  the button that opened it, to go back to
+   */
+  function openTreasure(t, kicker, line, from) {
+    const dialog = document.createElement("dialog");
+    dialog.className = "treasure-dialog";
+    dialog.setAttribute("aria-label", t.name);
+    dialog.innerHTML = `${revealCard(t, kicker, line)}<button type="button" class="primary" data-act="close">Close</button>`;
+    root.append(dialog);
+    const close = () => {
+      dialog.close();
+      dialog.remove();
+      from.focus();
+    };
+    dialog.addEventListener("click", event => {
+      // The close button, or a tap outside the card.
+      if (/** @type {HTMLElement} */ (event.target).closest("[data-act=close]") || event.target === dialog) close();
+    });
+    dialog.addEventListener("cancel", event => { event.preventDefault(); close(); });
+    dialog.showModal();
+    /** @type {HTMLElement} */ (dialog.querySelector("[data-act=close]")).focus();
   }
 
   // A returning player goes straight back to their map; anyone else to the title.

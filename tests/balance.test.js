@@ -45,13 +45,6 @@ describe("an adventure", () => {
     assert.ok(knockouts >= 1 && knockouts <= 8, `${knockouts}`);
   });
 
-  it("rewards accuracy with treasures", () => {
-    const treasures = results => median(results.map(r => r.treasures));
-    assert.equal(treasures(strong), 8);
-    assert.ok(treasures(typical) >= 6);
-    assert.ok(treasures(guessing) < treasures(struggling) && treasures(struggling) < treasures(typical));
-  });
-
   it("is worth two to four levels", () => {
     for (const results of [struggling, typical, strong]) {
       const gained = median(results.map(r => r.level - 1));

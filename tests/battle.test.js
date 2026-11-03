@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { startBattle, answer, TRIES } from "../src/battle.js";
 import { heroStats, monsterStats, hitDamage, XP, xpToReach } from "../src/combat.js";
 import { MONSTERS } from "../src/monsters.js";
-import { TREASURES } from "../src/treasures.js";
+import { KEEPSAKES, STUCK_AFTER } from "../src/treasures.js";
 import { typesForGrade } from "../src/curriculum.js";
 import { createRng } from "../src/rng.js";
 
@@ -229,16 +229,16 @@ describe("a wrong answer", () => {
 });
 
 describe("beating a monster", () => {
-  it("heals the hero, drops a new treasure, and brings on the next monster", () => {
+  it("heals the hero and brings on the next monster, but drops nothing: treasures are for what a child did", () => {
     const { rng, battle } = begin();
-    const nearlyBeaten = { ...battle, hero: { ...battle.hero, hp: 50 }, foe: { ...battle.foe, hp: 1 }, treasures: [TREASURES[0].id] };
+    const nearlyBeaten = { ...battle, hero: { ...battle.hero, hp: 50 }, foe: { ...battle.foe, hp: 1 }, treasures: [KEEPSAKES[0].id] };
     const { battle: after, round } = answer(nearlyBeaten, right(battle), rng);
     assert.equal(round.defeatedFoe, true);
     assert.equal(round.healed, 25);
     assert.equal(after.hero.hp, 75);
     assert.equal(after.hero.xp, XP.firstTry + XP.perTier * duck.tier);
-    assert.ok(round.drop && round.drop.id !== TREASURES[0].id);
-    assert.deepEqual(after.treasures, [TREASURES[0].id, round.drop.id]);
+    assert.equal(round.stuck, null);
+    assert.deepEqual(after.treasures, [KEEPSAKES[0].id]);
     assert.equal(after.foe.monster, goblin);
     assert.equal(after.foe.level, 2);
     assert.equal(after.foe.hp, monsterStats(2).maxHp);
@@ -266,19 +266,72 @@ describe("beating a monster", () => {
 });
 
 describe("being knocked out", () => {
-  it("is never game over: the hero gets back up, but that monster won't drop a treasure", () => {
+  it("is never game over: the hero gets back up, and the monster keeps the damage it has taken", () => {
     const { rng, battle } = begin();
     const weak = { ...battle, hero: { ...battle.hero, hp: 5 }, foe: { ...battle.foe, hp: 30 } };
     const { battle: after, round } = answer(weak, wrong(battle), rng);
     assert.equal(round.knockedOut, true);
     assert.equal(after.hero.hp, heroStats(1).maxHp);
-    assert.equal(after.foe.hp, 30, "the monster keeps the damage it has taken");
-    assert.equal(after.foe.dropsTreasure, false);
+    assert.equal(after.foe.hp, 30);
     assert.equal(after.tally.knockouts, 1);
+  });
+});
 
-    const { round: win } = answer({ ...after, foe: { ...after.foe, hp: 1 } }, after.question.answer, rng);
-    assert.equal(win.defeatedFoe, true);
-    assert.equal(win.drop, null);
+describe("something sticking", () => {
+  const today = 20000;
+  /** Mastery of every kind the battle can ask, known well and last met `ago` days back. */
+  const knownFrom = (battle, ago, extra = {}) => ({
+    mastery: Object.fromEntries(battle.mix.map(p => [p.type, { score: 0.8, seen: 6, last: 1, day: today - ago, ...extra }])),
+    today,
+  });
+
+  it("happens on a first-try answer to a kind met days ago, and brings a keepsake not had yet", () => {
+    const { rng, battle: plain } = begin();
+    const { battle } = begin({ memory: knownFrom(plain, 9), treasures: [KEEPSAKES[0].id] });
+    const { battle: after, round } = answer(battle, right(battle), rng);
+    assert.equal(round.stuck?.type, battle.question.type);
+    assert.equal(round.stuck?.after, 9);
+    assert.ok(round.stuck?.keepsake && round.stuck.keepsake.id !== KEEPSAKES[0].id);
+    assert.deepEqual(after.treasures, [KEEPSAKES[0].id, round.stuck.keepsake.id]);
+    assert.equal(after.stuck, round.stuck);
+  });
+
+  it("happens once a battle at most", () => {
+    const { rng, battle: plain } = begin();
+    let { battle } = begin({ memory: knownFrom(plain, 9) });
+    let stuck = 0;
+    for (let i = 0; i < 6 && battle.question; i++) {
+      const result = answer(battle, right(battle), rng);
+      stuck += Number(result.round.stuck !== null);
+      battle = result.battle;
+    }
+    assert.equal(stuck, 1);
+    assert.equal(battle.treasures.length, 1);
+  });
+
+  it("doesn't happen after a hint, for a kind met only lately, for one not yet learned, or without the memory", () => {
+    const { rng, battle: plain } = begin();
+    const cases = [
+      { setup: { memory: knownFrom(plain, STUCK_AFTER - 1) }, why: "met too lately" },
+      { setup: { memory: knownFrom(plain, 9, { score: 0.4 }) }, why: "not learned yet" },
+      { setup: { memory: knownFrom(plain, 9, { seen: 2 }) }, why: "met too few times" },
+      { setup: {}, why: "no memory: one was found today already" },
+    ];
+    for (const { setup, why } of cases) {
+      const { battle } = begin(setup);
+      assert.equal(answer(battle, right(battle), rng).round.stuck, null, why);
+    }
+    const { battle } = begin({ memory: knownFrom(plain, 9) });
+    const hinted = answer(battle, wrong(battle), rng).battle;
+    assert.equal(answer(hinted, right(hinted), rng).round.stuck, null, "right only after a hint");
+  });
+
+  it("still says so once every keepsake is had, with none to bring", () => {
+    const { rng, battle: plain } = begin();
+    const { battle } = begin({ memory: knownFrom(plain, 9), treasures: KEEPSAKES.map(k => k.id) });
+    const { round } = answer(battle, right(battle), rng);
+    assert.equal(round.stuck?.after, 9);
+    assert.equal(round.stuck?.keepsake, null);
   });
 });
 

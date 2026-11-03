@@ -1,6 +1,6 @@
 // Every file the game needs to play, relative to the site's root: the page,
-// its manifest and icons, the styles, every module, and every backdrop and
-// sprite the game can show. The service worker (sw.js) keeps a copy of each,
+// its manifest and icons, the styles, every module, and every backdrop,
+// sprite and treasure picture the game can show. The service worker (sw.js) keeps a copy of each,
 // so the game plays offline; tools/pwa.js writes this list into it, and
 // tests/pwa.test.js checks that it's complete.
 
@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { BACKDROPS } from "../src/backdrops.js";
 import { HEROES, heroSprite } from "../src/heroes.js";
 import { MONSTERS, monsterSprite } from "../src/monsters.js";
+import { DRAWN } from "../src/treasure_art.js";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
@@ -36,5 +37,6 @@ export function offlineFiles() {
     ...BACKDROPS.map(b => b.file),
     ...HEROES.map(heroSprite),
     ...MONSTERS.map(monsterSprite),
+    ...[...DRAWN].map(id => `assets/treasures/${id}.webp`),
   ])].sort();
 }

@@ -18,6 +18,7 @@
     "scene-sheet": "node tools/scene_sheet.js",
     "backdrop-prompts": "node tools/backdrop_prompts.js",
     "backdrops": "node tools/backdrop_review.js",
+    "icon-prompts": "node tools/icon_prompts.js",
     "pwa": "node tools/pwa.js",
     "card": "node tools/social_card.js"
   },

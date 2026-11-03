@@ -284,8 +284,11 @@ export function createStage(root) {
         setHp("hero", after.hero.hp, heroStats(after.hero.level).maxHp);
         ref("heroLevel").textContent = `Level ${after.hero.level}`;
         break;
-      case "drop":
-        break; // the treasure floats up as the beat's text
+      case "stuck":
+        actor.dataset.tone = "gold";
+        animate(actor, ["is-glowing"], BEAT.glow);
+        sparks(sprite, "#7dd3fc"); // brighter than a level's gold, and not to be mistaken for it
+        break;
     }
   }
 

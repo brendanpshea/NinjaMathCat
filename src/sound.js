@@ -27,7 +27,7 @@ export const SFX = {
   down: [.8, 0, 380, .02, .35, .55, 2, 1, -.6], // the hero is knocked out
   revive: [.7, 0, 330, .03, .3, .25, 1, 1, , , 82.5, .09, .09], // ...and gets back up
   heal: [.6, 0, 520, .05, .2, .3, 0, 1, 1], // health comes back
-  drop: [.6, 0, 560, .01, .03, .12, 1, 1, , , 560, .04], // a beaten monster drops a treasure
+  stuck: [.6, 0, 660, .01, .12, .25, 1, 1, , , 330, .06, .08], // something from days ago was remembered
   levelUp: [.8, 0, 392, .01, .36, .2, 1, 1, , , 98, .09, .09],
   // Outside the fight.
   victory: [1, 0, 330, .02, .5, .2, 1, 1, , , 165, .15, .15, , , , .12],

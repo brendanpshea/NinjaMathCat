@@ -12,7 +12,7 @@
 //   down    the hero is knocked out
 //   revive  the hero gets back up
 //   glow    health comes back, or the hero levels up
-//   drop    the treasure a beaten monster leaves pops out of it
+//   stuck   something met days ago was remembered: a sparkle over the hero
 
 /** @import { Round } from "./battle.js" */
 
@@ -20,7 +20,7 @@
  * @typedef {object} Beat
  * @property {number} at
  * @property {"hero" | "monster"} who
- * @property {"attack" | "hit" | "vanish" | "down" | "revive" | "glow" | "drop"} act
+ * @property {"attack" | "hit" | "vanish" | "down" | "revive" | "glow" | "stuck"} act
  * @property {string} [text]
  * @property {"hit" | "hurt" | "heal" | "gold" | "item"} [tone]
  * @property {boolean} [charged]  on a streak: the attack glows, and the blow it lands hits bigger
@@ -68,7 +68,6 @@ export function planRound(round) {
     if (round.defeatedFoe) {
       beats.push({ at: lands, who: "monster", act: "vanish", text: blow, tone: "hit", charged });
       end = lands + BEAT.vanish;
-      if (round.drop) beats.push({ at: lands + BEAT.vanish / 2, who: "monster", act: "drop", text: round.drop.emoji, tone: "item" });
     } else {
       beats.push({ at: lands, who: "monster", act: "hit", text: blow, tone: "hit", charged });
       end = Math.max(lands + BEAT.hit, BEAT.attack);
@@ -81,6 +80,12 @@ export function planRound(round) {
         ? { at, who: "hero", act: "glow", text: "Level up!", tone: "gold" }
         : { at, who: "hero", act: "glow", text: `+${round.healed}`, tone: "heal" });
       end = Math.max(end, at + BEAT.glow);
+    }
+    // Remembering something from days ago gets its own moment, once the rest is done.
+    if (round.stuck) {
+      const at = end + BEAT.gap;
+      beats.push({ at, who: "hero", act: "stuck", text: "It stuck!", tone: "item" });
+      end = at + BEAT.glow;
     }
   } else {
     beats.push({ at: 0, who: "monster", act: "attack" });
@@ -108,7 +113,7 @@ export function sfxFor(beat) {
     case "hit": return hero ? "hurt" : "hit";
     case "vanish": return "defeat";
     case "glow": return beat.tone === "gold" ? "levelUp" : "heal";
-    case "down": case "revive": case "drop": return beat.act;
+    case "down": case "revive": case "stuck": return beat.act;
   }
 }
 
@@ -126,8 +131,8 @@ export function narrate(round, { hero, monster }) {
   const streak = round.streakMultiplier > 1 ? " A streak makes it extra strong!" : "";
   const parts = [`${hero} hits ${monster} for ${round.heroDamage}.${streak}`];
   if (round.defeatedFoe) parts.push(`${monster} is beaten!`);
-  if (round.drop) parts.push(`It leaves behind a treasure: ${round.drop.name}.`);
   if (round.leveledUp) parts.push(`${hero} levels up!`);
   else if (round.healed > 0) parts.push(`${hero} gets ${round.healed} health back.`);
+  if (round.stuck) parts.push(`It stuck! You remembered this from ${round.stuck.after} days ago.${round.stuck.keepsake ? ` You found a keepsake: ${round.stuck.keepsake.name}.` : ""}`);
   return parts.join(" ");
 }
