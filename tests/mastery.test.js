@@ -4,7 +4,7 @@
 // (src/battle.js).
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { learn, strength, need, steer, dayNumber, waitDays, dueToday, UNKNOWN, SPACING, NEW_NEED } from "../src/mastery.js";
+import { learn, strength, need, steer, dayNumber, waitDays, dueToday, canType, UNKNOWN, SPACING, NEW_NEED } from "../src/mastery.js";
 import { levelsFor, planLevel, planTraining, chaptersFor, newProgress, recordLevel, TRAINING_KINDS } from "../src/adventures.js";
 import { startBattle, answer, ASK_AGAIN } from "../src/battle.js";
 import { MONSTERS } from "../src/monsters.js";
@@ -66,6 +66,26 @@ describe("spacing review over days", () => {
     assert.deepEqual(planLevel(level, mastery, 5, { today: 100 }).opening, chapters[2].learn, "not the first level, no warm-up");
     const first = levelsFor(3).find(l => l.chapter === 0 && l.kind === "learn");
     assert.deepEqual(planLevel(first, mastery, 5, { today: 100, warmUp: true }).warmUp, [], "nothing earlier to warm up with");
+  });
+});
+
+describe("typing answers once a kind is known", () => {
+  it("types a kind seen enough and known well, but not in kindergarten", () => {
+    const known = { score: 0.7, seen: 5, last: 1 };
+    assert.equal(canType(known, 3), true);
+    assert.equal(canType(known, 0.5), false, "kindergarten picks from choices");
+    assert.equal(canType({ ...known, seen: 2 }, 3), false, "too few answers to say");
+    assert.equal(canType({ ...known, score: 0.5 }, 3), false, "still shaky: choices help");
+    assert.equal(canType(undefined, 3), false, "new: choices first");
+  });
+
+  it("marks such kinds as typed in a level's mix, and leaves a chapter's new topics to be chosen", () => {
+    const level = levelsFor(3).find(l => l.chapter === 2 && l.kind === "practice");
+    const chapters = chaptersFor(3);
+    const [old, fresh] = [chapters[0].learn[0], chapters[2].learn[0]];
+    const { mix } = planLevel(level, { [old]: { score: 0.9, seen: 9, last: 1 } }, 5);
+    assert.equal(mix.find(p => p.type === old)?.typed, true);
+    assert.equal(mix.find(p => p.type === fresh)?.typed, undefined);
   });
 });
 

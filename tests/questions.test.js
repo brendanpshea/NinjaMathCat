@@ -89,6 +89,18 @@ for (const { type } of CURRICULUM) {
       }
     });
 
+    it("know mistakes, for a typed answer, only for wrong answers, and never say the answer", () => {
+      for (const { question: q, at } of questionsOf(type)) {
+        for (const [wrong, why] of Object.entries(q.mistakes ?? {})) {
+          assert.notEqual(wrong, String(q.answer), at);
+          const whole = typeof q.answer === "number" ? q.answer : /^\d+$/.test(q.answer) ? Number(q.answer) : null;
+          const tells = whole !== null ? whole >= 10 && numbersIn(why).includes(whole) && !numbersIn(q.prompt).includes(whole) : says(why, q.answer) && !says(q.prompt, q.answer);
+          assert.ok(!tells, `${at} → the mistake for ${wrong} says the answer: ${why}`);
+          if (q.slips?.[wrong]) assert.equal(q.slips[wrong], why, `${at}: a choice's slip and its mistake are the same`);
+        }
+      }
+    });
+
     it("name the mistake behind a wrong choice only for a wrong choice, and never say the answer", () => {
       for (const { question: q, at } of questionsOf(type)) {
         for (const [choice, why] of Object.entries(q.slips ?? {})) {

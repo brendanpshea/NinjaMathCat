@@ -20,13 +20,13 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline;
+  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed;
 
   before(async () => {
     server = await startServer();
     // The offline test takes its server offline, so it has one to itself.
     lonely = await startServer();
-    [played, still, marathon, showHow, grownUps, challenge, classView, offline] = await Promise.all([
+    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
@@ -35,6 +35,7 @@ describe("in a real browser", { skip }, () => {
       runScenario(browser, server.origin, "challenge"),
       runScenario(browser, server.origin, "classView"),
       runScenarioLive(browser, lonely.origin, "offline"),
+      runScenario(browser, server.origin, "typed"),
     ]);
   });
 
@@ -49,6 +50,19 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(challenge.errors, []);
     assert.deepEqual(classView.errors, []);
     assert.deepEqual(offline.errors, []);
+    assert.deepEqual(typed.errors, []);
+  });
+
+  it("asks for typed answers once a kind is known: a number pad, any number taken, a repeat free, the keyboard too", () => {
+    assert.ok(typed.typed, "a question of a well-known kind is typed");
+    assert.ok(typed.padShown, "the number pad, not the choices");
+    assert.deepEqual(typed.keys, ["back", "enter", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], "no minus sign before sixth grade");
+    assert.match(typed.hint, /^Not quite\. /);
+    assert.match(typed.tried, /^Tried: \d/);
+    assert.ok(typed.cleared, "the field is cleared for another go");
+    assert.match(typed.again, /^You tried .+ already\. Try another number!$/);
+    assert.ok(typed.unhurt, "a repeat costs nothing");
+    assert.ok(typed.right, `typed on the keyboard, the right answer lands on the second try: ${JSON.stringify(typed.landed)}`);
   });
 
   it("installs a service worker that keeps every file, and plays with the network gone", () => {

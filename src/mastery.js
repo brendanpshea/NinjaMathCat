@@ -116,6 +116,18 @@ export function dueToday(mastery, kinds, today, count) {
 }
 
 /**
+ * Whether a kind is known well enough that its answers are typed rather than
+ * chosen. While a kind is new, picking from choices helps; once it's known,
+ * bringing the answer up from memory helps more, and can't be done by
+ * guessing among choices. Not in kindergarten, where typing is a hurdle.
+ * @param {TypeMastery | undefined} m
+ * @param {number} grade  the grade the kind is asked at
+ */
+export function canType(m, grade) {
+  return grade >= 1 && m !== undefined && m.seen >= 3 && m.score >= 0.6;
+}
+
+/**
  * How to pitch a kind for this player: easier questions while it's shaky
  * (and, once it has been shaky for a while, from earlier in the year), and
  * harder ones once it's strong. Too few answers say nothing.

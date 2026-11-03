@@ -138,7 +138,9 @@ export function startBattle(rng, { grade, adventure, mix = mixForGrade(grade), p
 export function answer(battle, choice, rng) {
   const { question, foe } = battle;
   if (!question || !foe) throw new Error("The battle is over");
-  if (!question.choices.includes(choice) || battle.ruledOut.includes(choice)) {
+  // A typed answer can be any whole number; a chosen one must be a choice. Neither may be tried twice.
+  const allowed = question.input === "type" ? Number.isInteger(choice) : question.choices.includes(choice);
+  if (!allowed || battle.ruledOut.includes(choice)) {
     throw new RangeError(`"${choice}" cannot be picked now`);
   }
   return isCorrect(question, choice)
@@ -171,7 +173,7 @@ function strike(battle, question, foe, rng) {
   const { hero } = battle;
   const secondTry = battle.ruledOut.length > 0;
   const streak = secondTry ? 0 : battle.streak + 1;
-  const heroDamage = hitDamage({ attack: heroStats(hero.level).attack, difficulty: question.difficulty, streak, secondTry });
+  const heroDamage = hitDamage({ attack: heroStats(hero.level).attack, difficulty: question.difficulty, streak, secondTry, typed: question.input === "type" });
   const foeHp = Math.max(0, foe.hp - heroDamage);
   const defeatedFoe = foeHp === 0;
 
@@ -267,7 +269,7 @@ function takeHit(battle, question, foe, choice, rng) {
       then: again ? "again" : "reveal",
       hint: again ? question.hint : null,
       answer: again ? null : question.answer,
-      slip: question.slips?.[String(choice)] ?? null,
+      slip: question.slips?.[String(choice)] ?? (question.input === "type" ? question.mistakes?.[String(choice)] : undefined) ?? null,
     },
   };
 }

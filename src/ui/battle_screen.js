@@ -106,6 +106,16 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
           <div class="picture" data-ref="picture"></div>
         </div>
         <div class="choices" role="group" aria-label="Answers" data-ref="choices"></div>
+        <div class="numpad" data-ref="pad" hidden>
+          <div class="numpad-top">
+            <output class="numpad-field" data-ref="field" aria-label="Your answer" aria-live="polite"></output>
+            <button type="button" class="numpad-key" data-key="back" aria-label="delete">⌫</button>
+            <button type="button" class="primary numpad-enter" data-key="enter">Strike!</button>
+          </div>
+          <div class="numpad-keys" role="group" aria-label="Number keys" data-ref="keys"></div>
+          <p class="numpad-note">A typed answer hits harder! Tap the numbers, or type them on a keyboard.</p>
+          <p class="numpad-tried" data-ref="tried"></p>
+        </div>
         <p class="feedback" aria-live="polite" data-ref="feedback"></p>
         <div class="actions after-reveal">
           <button type="button" class="primary next" data-ref="next" hidden>Next question</button>
@@ -135,7 +145,42 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
    */
   function readQuestion() {
     const q = battle.question;
-    if (q) speaker?.say(q.input === "line" ? q.prompt : questionSpeech(q.prompt, q.choices.filter(c => !battle.ruledOut.includes(c))), { ratios: q.type === "ratios" });
+    if (q) speaker?.say(q.input ? q.prompt : questionSpeech(q.prompt, q.choices.filter(c => !battle.ruledOut.includes(c))), { ratios: q.type === "ratios" });
+  }
+
+  /** What is typed so far, on a question answered by typing: digits, maybe after a minus sign. */
+  let typing = "";
+  /** The most digits an answer can have: a million has seven. */
+  const MOST_DIGITS = 7;
+
+  function showTyping() {
+    ref("field").textContent = typing === "" ? " " : typing;
+  }
+
+  /**
+   * A key of the number pad, pressed or typed: a digit, minus, back or enter.
+   * @param {string} key
+   */
+  function press(key) {
+    const q = battle.question;
+    if (busy || q?.input !== "type" || !ref("next").hidden) return;
+    const digits = typing.replace("−", "");
+    if (/^\d$/.test(key) && digits.length < MOST_DIGITS) typing += key;
+    else if (key === "minus") typing = typing.startsWith("−") ? typing.slice(1) : `−${typing}`;
+    else if (key === "back") typing = typing.slice(0, -1);
+    else if (key === "enter" && digits !== "") {
+      const value = Number(typing.replace("−", "-"));
+      if (battle.ruledOut.includes(value)) {
+        // Trying it again costs nothing, and teaches nothing either; the field clears for another.
+        ref("feedback").textContent = `You tried ${formatNumber(value)} already. Try another number!`;
+        typing = "";
+        showTyping();
+        return;
+      }
+      give(value);
+      return;
+    }
+    showTyping();
   }
 
   /**
@@ -174,10 +219,24 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     ref("prompt").textContent = q.prompt;
     ref("picture").innerHTML = q.visual ? pictureHtml(q.visual) : "";
     const onLine = q.input === "line";
-    ref("choices").hidden = onLine;
+    const typed = q.input === "type";
+    ref("choices").hidden = onLine || typed;
+    // Typed: a number pad, with a minus sign from sixth grade, when negative numbers come in.
+    ref("pad").hidden = !typed;
+    // Cleared every time, so nothing of a typed answer is left on the hidden pad.
+    typing = "";
+    showTyping();
+    ref("field").classList.remove("right", "wrong");
+    ref("tried").textContent = "";
+    if (typed) {
+      const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ...(battle.grade >= 6 ? ["minus"] : [])];
+      ref("keys").innerHTML = keys.map(k => k === "minus"
+        ? `<button type="button" class="numpad-key" data-key="minus" aria-label="minus">−</button>`
+        : `<button type="button" class="numpad-key" data-key="${k}">${k}</button>`).join("");
+    }
     // Long choices, such as the steps of a way to work something out, get a row each.
     ref("choices").classList.toggle("long", q.choices.some(c => String(c).length > 32));
-    ref("choices").innerHTML = onLine ? "" : q.choices.map((c, i) => {
+    ref("choices").innerHTML = onLine || typed ? "" : q.choices.map((c, i) => {
       const out = battle.ruledOut.includes(c);
       return `<button type="button" class="choice${out ? " wrong" : ""}" data-index="${i}"${out ? " disabled" : ""}>
         <span class="key" aria-hidden="true">${i + 1}</span><span class="choice-text">${choiceHtml(c)}</span></button>`;
@@ -201,20 +260,31 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
   /** After an answer is shown, the way to see how it's done, if there is one. */
   let teach = /** @type {((done: () => void) => void) | null} */ (null);
 
-  /** @param {number} index */
-  async function choose(index) {
+  /**
+   * Pick a choice, or a tick of a number line, by its place.
+   * @param {number} index
+   */
+  function choose(index) {
     const q = battle.question;
-    if (busy || !q) return;
-    const choice = q.choices[index];
-    if (choice === undefined || battle.ruledOut.includes(choice)) return;
+    if (q && q.input !== "type") give(q.choices[index]);
+  }
+
+  /**
+   * Give an answer: a choice, a tick, or a number typed in.
+   * @param {Answer | undefined} choice
+   */
+  async function give(choice) {
+    const q = battle.question;
+    if (busy || !q || choice === undefined || battle.ruledOut.includes(choice)) return;
     setBusy(true);
     const onLine = q.input === "line";
-    // The choice buttons, or on a number line its ticks; `disabled` only means anything on a button.
-    const buttons = /** @type {HTMLButtonElement[]} */ (onLine ? ticksOf(q) : [...ref("choices").querySelectorAll(".choice")]);
+    const typed = q.input === "type";
+    // The choice buttons, a number line's ticks, or the typed answer's field; `disabled` only means anything on a button.
+    const buttons = /** @type {HTMLButtonElement[]} */ (typed ? [] : onLine ? ticksOf(q) : [...ref("choices").querySelectorAll(".choice")]);
     /** @param {Element} el @param {boolean} right */
     const mark = (el, right) => el.classList.add(onLine ? (right ? "is-right" : "is-wrong") : (right ? "right" : "wrong"));
     buttons.forEach(b => { b.disabled = true; });
-    mark(buttons[index], isCorrect(q, choice));
+    mark(typed ? ref("field") : buttons[q.choices.indexOf(choice)], isCorrect(q, choice));
 
     const before = battle;
     const result = answer(battle, choice, rng);
@@ -232,10 +302,21 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
         return;
       case "again":
         buttons.forEach((b, i) => { b.disabled = battle.ruledOut.includes(q.choices[i]); });
+        if (typed) {
+          // What was tried stays in sight, and the field is clear for another go.
+          ref("tried").textContent = `Tried: ${battle.ruledOut.map(c => formatNumber(Number(c))).join(", ")}`;
+          typing = "";
+          showTyping();
+          ref("field").classList.remove("wrong");
+        }
         setBusy(false);
         return;
       case "reveal": {
-        mark(buttons[q.choices.indexOf(q.answer)], true);
+        if (typed) {
+          ref("field").textContent = formatNumber(Number(q.answer));
+          ref("field").classList.remove("wrong");
+        }
+        mark(typed ? ref("field") : buttons[q.choices.indexOf(q.answer)], true);
         const next = ref("next");
         next.hidden = false;
         // Missed twice: a teaching scene for this kind of question can show how.
@@ -253,6 +334,13 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
   ref("choices").addEventListener("click", event => {
     const button = /** @type {HTMLElement} */ (event.target).closest(".choice");
     if (button instanceof HTMLButtonElement) choose(Number(button.dataset.index));
+  });
+  ref("pad").addEventListener("click", event => {
+    const key = /** @type {HTMLElement} */ (event.target).closest("[data-key]");
+    if (key instanceof HTMLElement) {
+      sound.play("click");
+      press(key.dataset.key ?? "");
+    }
   });
   // A tick tapped, on a question answered on the number line.
   ref("picture").addEventListener("click", event => {
@@ -301,6 +389,17 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     // While "Leave this adventure?" is asked, the number keys wait, and Escape means keep playing.
     if (ref("leave").querySelector("[data-act=go]")) {
       if (event.key === "Escape") showRest();
+      return;
+    }
+    // A typed answer takes the digit keys, minus, Backspace and Enter, unless a button other than
+    // the number pad's has the focus, where Enter is that button's.
+    if (battle.question?.input === "type") {
+      const onButton = event.target instanceof HTMLButtonElement && !event.target.closest("[data-ref=pad]");
+      const key = /^\d$/.test(event.key) ? event.key : event.key === "-" ? "minus" : event.key === "Backspace" ? "back" : event.key === "Enter" && !onButton ? "enter" : "";
+      if (key && !(key === "minus" && battle.grade < 6)) {
+        event.preventDefault();
+        press(key);
+      }
       return;
     }
     // The number keys pick a choice; on a number line, Tab and Enter pick a tick instead.

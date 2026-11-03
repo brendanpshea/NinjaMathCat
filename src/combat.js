@@ -63,13 +63,17 @@ export function streakMultiplier(streak) {
   return streak >= 8 ? 2 : streak >= 5 ? 1.5 : streak >= 3 ? 1.25 : 1;
 }
 
+/** How much harder an answer typed in hits than one chosen: it came from memory, with nothing to pick from. */
+export const TYPED_BONUS = 1.25;
+
 /**
  * How hard a right answer hits. A right answer on the second try hits half as
  * hard and never builds a streak, so guessing until it works is no strategy.
- * @param {{ attack: number, difficulty: number, streak: number, secondTry: boolean }} hit
+ * One typed in hits harder.
+ * @param {{ attack: number, difficulty: number, streak: number, secondTry: boolean, typed?: boolean }} hit
  */
-export function hitDamage({ attack, difficulty, streak, secondTry }) {
-  const bonus = DIFFICULTY_BONUS[difficulty] * (secondTry ? 0.5 : streakMultiplier(streak));
+export function hitDamage({ attack, difficulty, streak, secondTry, typed = false }) {
+  const bonus = DIFFICULTY_BONUS[difficulty] * (secondTry ? 0.5 : streakMultiplier(streak)) * (typed ? TYPED_BONUS : 1);
   return Math.round(attack * bonus);
 }
 

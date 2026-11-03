@@ -52,7 +52,7 @@
   /** On the battle screen, wait until a question can be answered, or the battle is over. */
   async function readyToAnswer() {
     await until(() => game().screen !== "battle"
-      || (($(".choice:not(:disabled)") || $(".picture .tappable")) && !$(".battle[data-busy]") && $("[data-ref=next]").hidden && $(".prompt")?.textContent === game().battle?.question?.prompt),
+      || (($(".choice:not(:disabled)") || $(".picture .tappable") || $(".numpad:not([hidden])")) && !$(".battle[data-busy]") && $("[data-ref=next]").hidden && $(".prompt")?.textContent === game().battle?.question?.prompt),
     "a question to answer");
   }
 
@@ -69,7 +69,17 @@
       tick.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       return;
     }
+    if (q.input === "type") {
+      await typeIn(choice);
+      return;
+    }
     $$(".choice")[q.choices.indexOf(choice)].click();
+  }
+
+  /** Type a number on the battle's number pad, key by key, and press Strike. */
+  async function typeIn(n) {
+    for (const key of String(n).split("").map(c => (c === "-" ? "minus" : c))) click(`.numpad [data-key="${key}"]`);
+    click(`.numpad [data-key="enter"]`);
   }
 
   /** Answer rightly until the battle is over. */
@@ -273,8 +283,13 @@
       click("[data-ref=next]");
       await on("battle", "the next level");
       report.after.title = $(".journey-title").textContent;
-      // The number keys answer, and leaving asks first.
+      // The number keys answer, and leaving asks first. A kind Sam already knows is typed, where
+      // the number keys type digits, so first a question with choices.
       await readyToAnswer();
+      for (let i = 0; i < 12 && game().battle.question.input; i++) {
+        await answer(true);
+        await readyToAnswer();
+      }
       const asked = game().battle.question;
       doc().dispatchEvent(new KeyboardEvent("keydown", { key: String(asked.choices.indexOf(asked.answer) + 1), bubbles: true }));
       await until(() => game().battle.question !== asked, "the number key to answer");
@@ -712,6 +727,49 @@
       return report;
     },
 
+    /**
+     * Typed answers: Maya knows multiplication and area well, so in her level
+     * their whole-number answers are typed on a number pad, not chosen.
+     */
+    async typed() {
+      localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify(await maya()));
+      await load("?test&seed=4");
+      const report = {};
+      click("[data-ref=continue]");
+      await on("battle");
+      for (let i = 0; i < 12; i++) {
+        await readyToAnswer();
+        if (game().battle.question.input === "type") break;
+        await answer(true);
+      }
+      const q = game().battle.question;
+      report.typed = q.input === "type";
+      report.padShown = Boolean($(".numpad:not([hidden])")) && $("[data-ref=choices]").hidden;
+      report.keys = $$(".numpad [data-key]").map(k => k.dataset.key);
+      // A wrong number that isn't even one of the choices.
+      const off = q.answer + 1000;
+      await typeIn(off);
+      await until(() => /Not quite/.test(text("[data-ref=feedback]")) && !$(".battle[data-busy]"), "the hint");
+      report.hint = text("[data-ref=feedback]");
+      report.tried = text("[data-ref=tried]");
+      report.cleared = text("[data-ref=field]") === "";
+      // The same wrong number again costs nothing.
+      const hp = game().battle.hero.hp;
+      await typeIn(off);
+      report.again = text("[data-ref=feedback]");
+      report.unhurt = game().battle.hero.hp === hp;
+      // The keyboard types too: the digits, then Enter. The battle may end with it.
+      const answers = game().battle.tally.answers.length;
+      for (const key of [...String(q.answer), "Enter"]) doc().dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+      await until(() => game().battle?.question !== q || game().screen !== "battle", "the typed answer to land");
+      const after = game().battle;
+      report.right = after ? after.tally.answers.length === answers + 1 && after.tally.answers.at(-1).outcome === "secondTry" : game().screen === "level-done";
+      report.landed = { screen: game().screen, outcome: after?.tally.answers.at(-1)?.outcome ?? null, field: text("[data-ref=field]") };
+      report.errors = errors;
+      return report;
+    },
+
     /** The one-minute challenge, made 5 seconds long: the start, a run with right and wrong answers, time up, and the best kept. */
     async challenge() {
       localStorage.clear();
@@ -876,8 +934,10 @@
           const q = game().battle.question;
           report.questions++;
           if ($(".review-tag:not([hidden])")) report.reviewTags = (report.reviewTags ?? 0) + 1;
+          if (q.input === "type") report.typed = (report.typed ?? 0) + 1;
+          if (q.input === "line") report.onLine = (report.onLine ?? 0) + 1;
           const where = `${title}: ${q.prompt}`;
-          if (q.input === "line" ? $$(".picture .tappable").length !== q.choices.length : $$(".choice").length !== 4 || $$(".choice-text").some(c => !c.textContent.trim())) problem(`${where}: choices missing or blank`);
+          if (q.input === "type" ? !$(".numpad:not([hidden])") : q.input === "line" ? $$(".picture .tappable").length !== q.choices.length : $$(".choice").length !== 4 || $$(".choice-text").some(c => !c.textContent.trim())) problem(`${where}: choices missing or blank`);
           if (q.visual) {
             report.kinds[q.visual.kind] = (report.kinds[q.visual.kind] ?? 0) + 1;
             const picture = $(".picture svg");
@@ -901,7 +961,7 @@
             await until(() => /Not quite/.test($(".feedback").textContent) && !$(".battle[data-busy]"), "the hint");
             await answer(false);
             await until(() => !$("[data-ref=next]").hidden, "the Next button");
-            if ($$(".choice.right, .picture .tappable.is-right").length !== 1) problem(`${where}: the right answer is not shown`);
+            if ($$(".choice.right, .picture .tappable.is-right, .numpad-field.right").length !== 1) problem(`${where}: the right answer is not shown`);
             // Where a teaching scene can show how, watch it, over the battle, and come back.
             const how = $("[data-ref=how]");
             if (how && !how.hidden) {

@@ -565,6 +565,23 @@ select {
 /* Mixed numbers and fractions in the same bold type as the other answers, not a thin serif. */
 .choice math { font-size: 1.35em; font-family: var(--display); font-weight: 800; }
 .choice-picture { font-size: 38px; line-height: 1; }
+/* A typed answer: its field with delete and Strike beside it, and a row of digits under them,
+   big enough for small fingers, that wraps to two rows on a phone. */
+.numpad { display: grid; gap: 8px; justify-items: center; }
+.numpad[hidden] { display: none; }
+.numpad-top { display: flex; gap: 8px; align-items: stretch; }
+.numpad-field {
+  display: block; min-width: 6ch; padding: 4px 16px;
+  border: 3px solid var(--line); border-radius: 12px; background: var(--surface);
+  font: 800 32px/1.3 var(--display); text-align: center; font-variant-numeric: tabular-nums;
+}
+.numpad-field.right { border-color: var(--right); background: var(--right-soft); }
+.numpad-field.wrong { border-color: var(--wrong); background: var(--wrong-soft); }
+.numpad-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 100%; }
+.numpad-key { width: 52px; min-height: 52px; padding: 0; font-size: 24px; font-weight: 800; }
+.numpad-enter { padding: 0 18px; font-size: 20px; }
+.numpad-note, .numpad-tried { margin: 0; color: var(--muted); font-size: 15px; font-weight: 700; text-align: center; }
+.numpad-tried:empty { display: none; }
 .choice.right { border-color: var(--right); background: var(--right-soft); }
 .choice.wrong { border-color: var(--wrong); background: var(--wrong-soft); color: #7f1d1d; }
 .choice.wrong .choice-text { text-decoration: line-through; }

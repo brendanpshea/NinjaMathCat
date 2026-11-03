@@ -301,8 +301,11 @@
  * @property {string} hint
  * @property {number} difficulty
  * @property {Record<string, string>} [slips]  for a wrong choice, by its text, the mistake it comes from
- * @property {"line"} [input]  answered by tapping a tick of the number line in `visual`; the
- *   choices are then what each tick stands for, in order along the line, from its first tick
+ * @property {Record<string, string>} [mistakes]  every wrong answer the question knows the mistake
+ *   behind, chosen or not, for an answer typed in
+ * @property {"line" | "type"} [input]  "line": answered by tapping a tick of the number line in
+ *   `visual`, the choices then being what each tick stands for, in order along the line, from its
+ *   first tick; "type": a whole number typed in, the choices not shown
  */
 
 /**
@@ -423,13 +426,22 @@ export function makeQuestion(rng, type, grade, focus) {
   if (kept.length < 3) {
     throw new Error(`${type.id} at grade ${grade} made only ${kept.length} wrong answers for "${draft.prompt}"`);
   }
-  // The mistakes behind the wrong choices made, the first for each where two would say it.
+  // The mistakes behind wrong answers, the first for each where two would say it: those among
+  // the choices, and all of them, for an answer typed in.
   /** @type {Record<string, string>} */
   const said = {};
+  /** @type {Record<string, string>} */
+  const mistakes = {};
   for (const [w, why] of slips) {
-    if (kept.some(k => String(k) === String(w)) && !(String(w) in said)) said[String(w)] = why;
+    if (String(w) === String(draft.answer) || String(w) in mistakes) continue;
+    mistakes[String(w)] = why;
+    if (kept.some(k => String(k) === String(w))) said[String(w)] = why;
   }
-  return { type: type.id, ...draft, choices: rng.shuffle([draft.answer, ...kept]), ...(Object.keys(said).length > 0 ? { slips: said } : {}) };
+  return {
+    type: type.id, ...draft, choices: rng.shuffle([draft.answer, ...kept]),
+    ...(Object.keys(said).length > 0 ? { slips: said } : {}),
+    ...(Object.keys(mistakes).length > 0 ? { mistakes } : {}),
+  };
 }
 
 /**

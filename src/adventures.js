@@ -13,7 +13,7 @@
 import { CURRICULUM, pickQuestion } from "./curriculum.js";
 import { MONSTERS } from "./monsters.js";
 import { createRng } from "./rng.js";
-import { need, steer, dueToday } from "./mastery.js";
+import { need, steer, dueToday, canType } from "./mastery.js";
 
 /** @import { Mix } from "./curriculum.js" */
 /** @import { Question } from "./questions/common.js" */
@@ -251,7 +251,12 @@ export function residents(setting) {
 function pitched(type, at, weight, most, mastery, focus) {
   const s = steer(mastery[type]);
   const hardest = Math.min(most, s.most);
-  return { type, grade: pitchFor(type, s.earlier ? at - 0.5 : at), weight, most: hardest, least: Math.min(s.least, hardest), ...(focus ? { focus } : {}) };
+  return {
+    type, grade: pitchFor(type, s.earlier ? at - 0.5 : at), weight, most: hardest, least: Math.min(s.least, hardest),
+    ...(focus ? { focus } : {}),
+    // Known well, its whole-number answers are typed in.
+    ...(canType(mastery[type], at) ? { typed: true } : {}),
+  };
 }
 
 /** The least share of review a kind gets, against the most needed, so none drops out of sight. */

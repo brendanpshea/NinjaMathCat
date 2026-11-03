@@ -37,9 +37,12 @@ question. Each level's review goes mostly to what they find hard or haven't
 practised lately, spaced out over days, the gaps growing as a topic gets
 stronger; a sitting's first level warms up with what is most due; shaky
 topics come easier, and strong ones harder; a kind they miss comes back a
-couple of questions later. A wrong answer that comes from a known mistake
-says which ("That adds the bottom numbers too"), and placing numbers on a
-number line is done by tapping it, not by picking a choice. The training
+couple of questions later. Once a topic is known, its whole-number answers
+are typed on a number pad rather than picked from choices, and hit harder:
+bringing an answer up from memory teaches more than recognising it, and
+can't be guessed. A wrong answer that comes from a known mistake says which
+("That adds the bottom numbers too"), and placing numbers on a number line
+is done by tapping it, not by picking a choice. The training
 ground builds a short battle from the topics that need it most, a progress
 report shows grown-ups how each topic is going, and after each level there is
 something for a grown-up and the child to talk about together.

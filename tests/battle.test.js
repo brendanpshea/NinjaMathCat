@@ -30,6 +30,50 @@ function deepFreeze(value) {
   return value;
 }
 
+describe("typed answers", () => {
+  // Multiplication at grade 3, known well enough to be typed.
+  const typedMix = [{ type: "multiplication", grade: 3, weight: 1, most: 3, typed: true }];
+
+  it("are asked for whole-number answers of a kind known well enough, and take any whole number", () => {
+    const { rng, battle } = begin({ grade: 3, mix: typedMix });
+    assert.equal(battle.question.input, "type");
+    const off = battle.question.answer + 1000; // not one of the choices, which a typed answer needn't be
+    const { battle: after, round } = answer(battle, off, rng);
+    assert.equal(round.then, "again");
+    assert.deepEqual(after.ruledOut, [off]);
+    assert.throws(() => answer(after, off, rng), RangeError, "the same wrong answer twice");
+    assert.throws(() => answer(battle, 2.5, rng), RangeError, "only whole numbers");
+    assert.equal(answer(after, after.question.answer, rng).round.correct, true);
+  });
+
+  it("name the mistake behind a typed answer the question knows, chosen or not", () => {
+    const { rng, battle } = begin({ grade: 3, mix: typedMix });
+    const question = { ...battle.question, slips: {}, mistakes: { [String(battle.question.answer + 7)]: "That adds instead of multiplying." } };
+    const typed = answer({ ...battle, question }, battle.question.answer + 7, rng);
+    assert.equal(typed.round.slip, "That adds instead of multiplying.");
+  });
+
+  it("hit harder than an answer picked from choices, since it came from memory", () => {
+    const { rng, battle } = begin({ grade: 3, mix: typedMix });
+    const chosen = { ...battle, question: { ...battle.question, input: undefined } };
+    const typedHit = answer(battle, battle.question.answer, rng).round.heroDamage;
+    const chosenHit = answer(chosen, battle.question.answer, createRng(1)).round.heroDamage;
+    assert.ok(typedHit > chosenHit, `${typedHit} > ${chosenHit}`);
+    assert.equal(hitDamage({ attack: 40, difficulty: 1, streak: 1, secondTry: false, typed: true }), 50);
+  });
+
+  it("aren't asked of a kind not marked as typed, of answers that aren't whole numbers, or of 'which' questions", () => {
+    assert.equal(begin({ grade: 3, mix: [{ type: "multiplication", grade: 3, weight: 1, most: 3 }] }).battle.question.input, undefined);
+    for (let seed = 1; seed <= 30; seed++) {
+      for (const type of ["fraction_arithmetic", "comparison", "odd_even", "time"]) {
+        const q = begin({ grade: 4, mix: [{ type, grade: 4, weight: 1, most: 3, typed: true }] }, seed).battle.question;
+        const fits = Number.isInteger(q.answer) && !/\bwhich\b/i.test(q.prompt);
+        assert.equal(q.input === "type", fits, `${type}, seed ${seed}: ${q.prompt}`);
+      }
+    }
+  });
+});
+
 describe("choosing questions", () => {
   it("brings in each kind it is told to open with, one of each, before any others", () => {
     const mix = typesForGrade(3).slice(0, 6).map(t => ({ type: t.id, grade: 3, weight: 1, most: 3 }));

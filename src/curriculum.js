@@ -133,8 +133,9 @@ export function generateQuestion(rng, grade, avoid) {
  * grade to pitch it at, how much of the time to ask it, and the range of
  * difficulty (1 to 3) to try for: no harder than `most`, and no easier than
  * `least` if given; and, if given, one of the type's focuses, to ask
- * something narrower.
- * @typedef {{ type: string, grade: number, weight: number, most: number, least?: number, focus?: string }[]} Mix
+ * something narrower. `typed`: the kind is known well enough that its
+ * whole-number answers are typed, not chosen (see canType in src/mastery.js).
+ * @typedef {{ type: string, grade: number, weight: number, most: number, least?: number, focus?: string, typed?: boolean }[]} Mix
  */
 
 /**
@@ -201,5 +202,14 @@ export function pickQuestion(rng, mix, avoid, asked = []) {
     const another = makeQuestion(rng, type, part.grade, part.focus);
     if (off(another) < off(nearest)) nearest = another;
   }
-  return nearest;
+  return part.typed && typeable(nearest) ? { ...nearest, input: "type" } : nearest;
+}
+
+/**
+ * Whether a question can be answered by typing it: a whole number, and not a
+ * question whose choices are what it asks about ("Which number is even?").
+ * @param {Question} q
+ */
+export function typeable(q) {
+  return !q.input && Number.isInteger(q.answer) && !/\bwhich\b/i.test(q.prompt);
 }
