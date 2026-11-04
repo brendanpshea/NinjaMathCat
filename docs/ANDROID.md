@@ -52,18 +52,45 @@ service worker.
    install, and you keep an upload key. A lost upload key can be replaced by
    asking Play support; a lost signing key, if you kept it yourself, can't.
 
-## Set up this computer (once)
+## Set up a computer (once)
 
 Bubblewrap runs with `npx`, pinned to a version in the commands below, so
-nothing is installed into the project.
+nothing is installed into the project. It needs a JDK and an Android SDK,
+named in `~/.bubblewrap/config.json`:
 
-1. Run `npx @bubblewrap/cli@1.27.0 doctor`. The first time, it asks whether
-   to download a JDK and the Android SDK into your home folder
-   (`~/.bubblewrap`). Say yes to both, and accept the Android SDK licence.
-   It needs JDK 17 exactly, so the JDK 25 already installed won't do, and
-   Android Studio's SDK folder isn't laid out the way it expects.
-2. To install the app on a phone you'll want `adb`, which Android Studio
-   already has: `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`.
+```json
+{
+  "jdkPath": "C:\\Users\\brend\\.bubblewrap\\jdk\\jdk-17.0.21+9",
+  "androidSdkPath": "C:\\Users\\brend\\.bubblewrap\\android_sdk"
+}
+```
+
+Brendan's computer has both (set up 4 November 2026), and
+`npx @bubblewrap/cli@1.27.0 doctor` says they are valid. For another
+computer: `doctor` offers to download them, but on Windows it fetches a
+32-bit JDK and 2020's SDK tools, so set them up by hand instead.
+
+1. **JDK 17**, exactly: Bubblewrap refuses any other version, so the JDK 25
+   on the PATH won't do. Unzip Temurin 17 for Windows x64, from
+   [adoptium.net](https://adoptium.net/temurin/releases/?version=17), into
+   `~/.bubblewrap/jdk`.
+2. **The Android command-line tools, version 22**
+   (`commandlinetools-win-15859902_latest.zip`, from
+   `https://dl.google.com/android/repository/`). Move what is inside its
+   `cmdline-tools` folder into `~/.bubblewrap/android_sdk`, so that
+   `bin\sdkmanager.bat` is directly inside it, where Bubblewrap looks.
+   Version 23 replaced sdkmanager with a stand-in for Google's new `android`
+   tool, which reads `build-tools;36.1.0` as two packages, so Bubblewrap
+   can't install with it. Android Studio's SDK has no command-line tools,
+   which is why Bubblewrap gets an SDK of its own.
+3. In PowerShell, with `JAVA_HOME` set to the JDK, in that folder:
+   `bin\sdkmanager.bat --sdk_root=$PWD --licenses` (this accepts the Android
+   SDK licence), then
+   `bin\sdkmanager.bat --sdk_root=$PWD --install "build-tools;36.1.0" "platforms;android-36" "platform-tools"`.
+4. Write `config.json` as above, and run `doctor`.
+
+`adb`, for putting the app on a phone, is then
+`~/.bubblewrap/android_sdk/platform-tools/adb.exe`.
 
 ## Make the upload key (once)
 
@@ -97,6 +124,20 @@ npx @bubblewrap/cli@1.27.0 build
   of new apps and updates from 31 August 2026. Play raises the level every
   August, so once a year move to the newest Bubblewrap, then update, build
   and upload.
+- The app runs on Android 7.0 (API level 24) and newer, the oldest that
+  androidbrowserhelper 2.7, the library the app is built on, allows.
+  Bubblewrap's own default, 21, fails the build.
+
+If the build stops:
+
+- **`'gradlew.bat' is not recognized`**: the terminal has
+  `NoDefaultCurrentDirectoryInExePath` set, so Windows won't run a program
+  from the folder it's in. Claude Code's shell sets it. Clear it for the
+  build (`env -u NoDefaultCurrentDirectoryInExePath npx ...` in bash).
+- **`Failed to find target with hash string 'android-36'`**: look in
+  `~/.bubblewrap/android_sdk/platforms` for a second copy, such as
+  `android-36-2`, delete it, and build again. This happened once, on the
+  first build.
 
 ## Prove the app and the site belong together
 

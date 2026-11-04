@@ -46,6 +46,12 @@ describe("the Android app", () => {
     assert.deepEqual(twa.shortcuts, []);
   });
 
+  it("asks for an Android new enough for the library the app is built on", () => {
+    // Bubblewrap 1.27's own default, 21, fails the build: androidbrowserhelper
+    // 2.7, which runs the app, needs Android 7.0 (API level 24).
+    assert.ok(twa.minSdkVersion >= 24, `minSdkVersion ${twa.minSdkVersion} is below 24`);
+  });
+
   it("keeps its signing key out of git", () => {
     assert.match(twa.signingKey.path, /\.keystore$/);
     const ignored = readFileSync(".gitignore", "utf8").split(/\r?\n/);
