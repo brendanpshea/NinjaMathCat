@@ -30,6 +30,9 @@ function choiceHtml(choice) {
   return `<math aria-label="${esc(choice)}"><mfrac><mn>${fraction[1]}</mn><mn>${fraction[2]}</mn></mfrac></math>`;
 }
 
+/** The game links its pictures from the site's top folder; this page is in out/. */
+const fromOut = (/** @type {string} */ svg) => svg.replaceAll('href="assets/', 'href="../assets/');
+
 function card(question, grade) {
   const dots = [1, 2, 3].map(d => `<span class="dot${d <= question.difficulty ? " on" : ""}"></span>`).join("");
   const choices = question.choices.map((c, i) =>
@@ -40,7 +43,7 @@ function card(question, grade) {
           <span class="grade">${esc(labelFor(grade))}</span>
           <span class="difficulty" title="Difficulty ${question.difficulty} of 3" aria-label="Difficulty ${question.difficulty} of 3">${dots}</span>
         </header>
-        <div class="paper">${renderVisual(question.visual)}</div>
+        <div class="paper">${fromOut(renderVisual(question.visual))}</div>
         <p class="prompt">${esc(question.prompt)}</p>
         <ol class="choices">${choices}</ol>
         <p class="hint"><span>Hint</span> ${esc(question.hint)}</p>

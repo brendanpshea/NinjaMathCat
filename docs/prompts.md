@@ -16,7 +16,9 @@ backgrounds.
 3. Check the sheet: nine separate icons in three rows of three; a flat
    magenta background with nothing touching the edges; no writing or numbers;
    no pink, magenta or purple inside an icon (it would be cut away with the
-   background); each icon what its line asks for. If one icon is wrong, ask
+   background), nor a pink haze around a glowing thing or showing through
+   glass (the magenta mixed in; it stays pink); each icon what its line asks
+   for. If one icon is wrong, ask
    for just that one again: "Keep everything else the same, but redraw the
    bottom-left icon as ..."
 4. Save it under the name given above its prompt. Sheets are source material
@@ -181,7 +183,7 @@ The nine icons, left to right, top row first:
 6. Middle right: A round gold tape measure with its midnight-blue tape pulled out, marked with gold ticks.
 7. Bottom left: A clear glass box filled with little gold cubes stacked in neat layers.
 8. Bottom middle: A square midnight-blue map with a gold grid of lines, and one bright star sitting where two lines cross.
-9. Bottom right: A tall gold scepter topped with a big glowing star. The grandest of the nine.
+9. Bottom right: A tall gold scepter topped with a big bright gold star, crisp-edged, with no glow around it. The grandest of the nine.
 ```
 
 ### Chapter treasures 7: 6th grade
@@ -414,7 +416,7 @@ The nine icons, left to right, top row first:
 3. Top right: A party popper bursting with gold and blue confetti and streamers.
 4. Middle left: A round blue teapot with a tiny grey rain cloud puffing out of its spout.
 5. Center: An orange and cream spiral snail shell with two little silver wings.
-6. Middle right: An old brass lantern glowing warm yellow.
+6. Middle right: An old brass lantern with a yellow flame behind solid amber glass that you can't see through, and no glow around it.
 7. Bottom left: A shiny golden-brown acorn with a tiny green sprout.
 8. Bottom middle: A diamond-shaped kite in blue and yellow with a ribbon tail.
 9. Bottom right: An open green and yellow striped umbrella, upside down, holding a little puddle of water.

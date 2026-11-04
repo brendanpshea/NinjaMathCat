@@ -27,6 +27,7 @@ describe("answer choices", () => {
 
   it("show a picture on its own as big as the question's pictures: a counter as a circle, named", () => {
     assert.match(choiceHtml("🔴"), /^<svg class="choice-picture" [^>]*role="img" aria-label="red counter"><circle [^>]*\/><\/svg>$/);
+    assert.match(choiceHtml("🍎"), /^<img class="choice-picture" src="assets\/pictures\/apple_red\.webp" alt="red apple">$/);
     assert.equal(choiceHtml("🦄"), '<span class="choice-picture">🦄</span>', "an emoji with no picture stays itself");
   });
 

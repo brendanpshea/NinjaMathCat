@@ -60,11 +60,14 @@ export function picturesIn(svg, className) {
   return [...elementsIn(svg, "text", className), ...elementsIn(svg, "image", className), ...elementsIn(svg, "circle", className)];
 }
 
+/** HTML's elements that never close, such as <img>. (SVG's <image> does, as XML.) */
+const VOID = new Set(["area", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
+
 /** Whether markup opens and closes its tags in order, with no stray & or <. */
 export function wellFormed(markup) {
   const open = [];
   for (const [tag, closing, name, selfClosing] of markup.matchAll(/<(\/?)([a-zA-Z]+)\b[^>]*?(\/?)>/g)) {
-    if (selfClosing) continue;
+    if (selfClosing || VOID.has(name)) continue;
     if (closing) {
       if (open.pop() !== name) return false;
     } else {

@@ -103,7 +103,9 @@ backgrounds.
 3. Check the sheet: nine separate icons in three rows of three; a flat
    magenta background with nothing touching the edges; no writing or numbers;
    no pink, magenta or purple inside an icon (it would be cut away with the
-   background); each icon what its line asks for. If one icon is wrong, ask
+   background), nor a pink haze around a glowing thing or showing through
+   glass (the magenta mixed in; it stays pink); each icon what its line asks
+   for. If one icon is wrong, ask
    for just that one again: "Keep everything else the same, but redraw the
    bottom-left icon as ..."
 4. Save it under the name given above its prompt. Sheets are source material
