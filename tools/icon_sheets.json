@@ -19,7 +19,7 @@
             { "id": "chapter-0-more", "look": "Two golden bells hanging side by side from one wooden bar, one big and one small." },
             { "id": "chapter-0-adding", "look": "A round glass jar with a cork, holding a heap of red gems and blue gems mixed together." },
             { "id": "chapter-0-taking", "look": "A wooden scoop holding three seashells, with two more seashells tumbling out of it." },
-            { "id": "chapter-0-pairs", "look": "A little wooden board with exactly ten round holes, in two rows of five, like a ten frame: seven holes hold red marbles and three are empty.", "redo": "The board came out with three rows of six holes, not two rows of five." },
+            { "id": "chapter-0-pairs", "look": "A little wooden board with exactly ten round holes, in two rows of five, like a ten frame: seven holes hold red marbles and three are empty." },
             { "id": "chapter-0-teens", "look": "A neat stack of ten gold coins, with four more gold coins in a little pile beside it." },
             { "id": "grade-0", "look": "A big plump golden star standing on a small round painted base, with a red ribbon tied around the base. The grandest of the nine." }
           ]
@@ -101,7 +101,7 @@
             { "id": "chapter-5-units", "look": "A round gold tape measure with its midnight-blue tape pulled out, marked with gold ticks." },
             { "id": "chapter-5-volume", "look": "A clear glass box filled with little gold cubes stacked in neat layers." },
             { "id": "chapter-5-coordinates", "look": "A square midnight-blue map with a gold grid of lines, and one bright star sitting where two lines cross." },
-            { "id": "grade-5", "look": "A tall, grand gold scepter topped with a big bright gold star, crisp-edged, with no glow around it.", "redo": "A pink haze around the star: its glow was painted over the magenta." }
+            { "id": "grade-5", "look": "A tall, grand gold scepter topped with a big bright gold star, crisp-edged, with no glow around it." }
           ]
         },
         {
@@ -250,7 +250,7 @@
             { "id": "forever_firework", "look": "A party popper bursting with gold and blue confetti and streamers." },
             { "id": "teapot_of_tiny_tempests", "look": "A round blue teapot with a tiny grey rain cloud puffing out of its spout." },
             { "id": "snail_shell_of_steady_speed", "look": "An orange and cream spiral snail shell with two little silver wings." },
-            { "id": "lantern_of_lost_things", "look": "An old brass lantern with a yellow flame behind solid amber glass that you can't see through, and no glow around it.", "redo": "Pink glass and a pink haze: its glow was painted over the magenta." },
+            { "id": "lantern_of_lost_things", "look": "An old brass lantern with a yellow flame behind solid amber glass that you can't see through, and no glow around it." },
             { "id": "acorn_of_ambitious_oaks", "look": "A shiny golden-brown acorn with a tiny green sprout." },
             { "id": "kite_of_kind_winds", "look": "A diamond-shaped kite in blue and yellow with a ribbon tail." },
             { "id": "umbrella_of_upside_down_weather", "look": "An open green and yellow striped umbrella, upside down, holding a little puddle of water." }
