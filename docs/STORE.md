@@ -56,6 +56,9 @@ Google Play's limits are in brackets; the counts are what each line uses.
 
 **Category**: Games › Educational. **Tags**: math, kids, education.
 
+**Contact email** (shown on the listing): euthyphro79@gmail.com, the same
+address as in the privacy policy.
+
 ## The pictures
 
 - **Icon**: `out/store/play-icon-512.png`, square and full-bleed; Play rounds
