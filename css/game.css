@@ -783,6 +783,18 @@ button.treasure:hover { border-color: var(--indigo); }
   .report-table td { display: flex; justify-content: space-between; gap: 12px; font-size: 16px; }
   .report-table td::before { content: attr(data-label); color: var(--muted); }
 }
+/* A teaching scene's bubble between the two of them needs room: below this,
+   the two side by side, and the bubble under them, its tail pointing up at
+   the speaker. */
+@media (max-width: 720px) {
+  .scene-cast { grid-template-columns: 1fr 1fr; grid-template-areas: "hero monster" "bubble bubble"; gap: 4px 8px; }
+  .scene-actor--hero { grid-area: hero; justify-self: start; }
+  .scene-actor--monster { grid-area: monster; justify-self: end; }
+  .scene-bubble { grid-area: bubble; }
+  .scene-bubble::after { bottom: auto; top: -11px; }
+  .scene-bubble[data-from="hero"]::after { left: 40px; rotate: 135deg; }
+  .scene-bubble[data-from="monster"]::after { left: auto; right: 40px; rotate: 135deg; }
+}
 @media (max-width: 480px) {
   /* Every pixel of width goes to the picture, which is as wide as it can be. */
   .panel { padding: 14px 12px; }
@@ -790,15 +802,8 @@ button.treasure:hover { border-color: var(--indigo); }
   .choices { grid-template-columns: minmax(0, 1fr); }
   .choice { min-height: 56px; font-size: 20px; }
   .banner .still { height: 110px; }
-  /* The two of them side by side, and the bubble under them, its tail pointing up at the speaker. */
-  .scene-cast { grid-template-columns: 1fr 1fr; grid-template-areas: "hero monster" "bubble bubble"; gap: 4px 8px; }
-  .scene-actor--hero { grid-area: hero; justify-self: start; }
-  .scene-actor--monster { grid-area: monster; justify-self: end; }
   .scene-actor .still { height: 88px; }
-  .scene-bubble { grid-area: bubble; min-height: 4.4em; padding: 10px 14px; }
-  .scene-bubble::after { bottom: auto; top: -11px; }
-  .scene-bubble[data-from="hero"]::after { left: 40px; rotate: 135deg; }
-  .scene-bubble[data-from="monster"]::after { left: auto; right: 40px; rotate: 135deg; }
+  .scene-bubble { min-height: 4.4em; padding: 10px 14px; }
   .scene-line { font-size: 20px; }
   .start-bar .primary { width: 100%; }
 }

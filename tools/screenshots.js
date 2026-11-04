@@ -2,6 +2,7 @@
 // headless Chrome or Edge by way of the test harness: out/screens/*.png.
 //
 //   npm run screens
+//   npm run screens -- store    Google Play's phone screenshots, in out/store/
 
 import { mkdirSync } from "node:fs";
 import { execFile } from "node:child_process";
@@ -38,9 +39,24 @@ const SHOTS = [
   ["line-negatives", 390, 1400, "phone-", "screen=line&chapter=6-negatives"],
   ["scene-4-check", 390, 1500, "phone-", "screen=scene&chapter=4-decimals&step=5&wrong"],
 ];
+// Google Play's phone screenshots, in the order docs/STORE.md tells the story
+// in: 9:16 and at least 1080 wide to be shown in Play's features, so a
+// 540 x 960 screen at twice the pixels, 1080 x 1920. (At 480 wide or less
+// the answers stack in one column, and a battle's run off the bottom.)
+const STORE = [
+  ["battle-k", "screen=battle&chapter=0-adding"], ["scene-k", "screen=scene&chapter=0-teens&step=1"], ["map"], ["level-done"],
+  ["battle-graphs", "screen=battle&chapter=1-graphs"], ["book"], ["report"], ["class"],
+];
+const [STORE_WIDTH, STORE_HEIGHT, STORE_SCALE] = [540, 960, 2];
+
 // npm run screens -- scene: only the shots whose screen has "scene" in its name.
 // npm run screens -- scene 2-money: every step of that chapter's scene, on a laptop and a phone.
 const [only, chapter] = process.argv.slice(2);
+const store = only === "store";
+if (store) {
+  SHOTS.length = 0;
+  STORE.forEach(([screen, query = `screen=${screen}`], i) => SHOTS.push([screen, STORE_WIDTH, STORE_HEIGHT, `phone-${i + 1}-`, `${query}&app`]));
+}
 if (only === "scene" && chapter) {
   const { sceneFor } = await import("../src/scenes.js");
   const { createRng } = await import("../src/rng.js");
@@ -61,19 +77,21 @@ if (!browser) {
   console.error("No Chrome or Edge found. Set NINJA_BROWSER to one.");
   process.exit(1);
 }
-mkdirSync("out/screens", { recursive: true });
+const folder = store ? "out/store" : "out/screens";
+mkdirSync(folder, { recursive: true });
 const server = await startServer();
 try {
-  for (const [screen, width, height, prefix = "", query = `screen=${screen}`] of SHOTS.filter(([screen]) => !only || String(screen).includes(only))) {
+  for (const [screen, width, height, prefix = "", query = `screen=${screen}`] of SHOTS.filter(([screen]) => store || !only || String(screen).includes(only))) {
     const profile = mkdtempSync(join(tmpdir(), "ninja-shot-"));
-    const file = resolve(`out/screens/${prefix}${screen}.png`);
+    const file = resolve(`${folder}/${prefix}${screen}.png`);
     await promisify(execFile)(browser, [
       "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", "--mute-audio", "--hide-scrollbars",
+      ...(store ? [`--force-device-scale-factor=${STORE_SCALE}`] : []),
       `--user-data-dir=${profile}`, `--window-size=${width},${height}`, "--virtual-time-budget=120000", `--screenshot=${file}`,
       `${server.origin}/__harness.html?scenario=pose&${query}&width=${width}&height=${height}`,
     ], { timeout: 120000 });
     rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
-    console.log(`out/screens/${prefix}${screen}.png`);
+    console.log(`${folder}/${prefix}${screen}.png`);
   }
 } finally {
   await server.close();

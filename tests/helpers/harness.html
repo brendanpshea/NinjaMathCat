@@ -434,7 +434,8 @@
         localStorage.setItem("ninja-math-cat", JSON.stringify({ ...save, locked: screen === "lock" }));
       }
       // A challenge a few minutes long, so the shot catches it mid-run.
-      await load(screen === "challenge" ? "?test&seed=11&challenge=170" : "?test&seed=11");
+      // ?app: as the Android app shows it (for Google Play's screenshots).
+      await load(`${screen === "challenge" ? "?test&seed=11&challenge=170" : "?test&seed=11"}${params.has("app") ? "&app=android" : ""}`);
       if (screen === "line") {
         // A question answered on the number line, from a chapter's first level, tried wrong once.
         click("[data-ref=continue]");
