@@ -884,6 +884,36 @@
       return report;
     },
 
+    /** A small tablet on its side, 1024 x 576: every answer to a battle's questions in view, with no scrolling. */
+    async shortScreen() {
+      frame.style.width = "1024px";
+      frame.style.height = "576px";
+      const report = { asked: 0, low: [] };
+      for (const chapter of ["0-adding", "1-graphs"]) {
+        localStorage.clear();
+        localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(chapter)));
+        await load("?test&seed=3&app=android");
+        click("[data-ref=continue]");
+        await on("scene");
+        click("[data-ref=skip]");
+        await on("battle");
+        for (let i = 0; i < 5; i++) {
+          await readyToAnswer();
+          if (game().screen !== "battle") break;
+          const q = game().battle.question;
+          const view = doc().defaultView;
+          const answers = q.input === "type" ? $$(".numpad-key, .numpad-enter") : q.input === "line" ? $$(".picture .tappable") : $$(".choice");
+          const below = answers.filter(a => a.getBoundingClientRect().bottom + view.scrollY > view.innerHeight);
+          report.asked++;
+          if (below.length) report.low.push(`${chapter}: ${q.prompt} (${below.length} of ${answers.length} below)`);
+          await answer(true);
+          await wait(20);
+        }
+      }
+      report.errors = errors;
+      return report;
+    },
+
     /** 1st grade's picture graphs, in battle: every picture in a graph shows, drawn or emoji. */
     async graphs() {
       localStorage.clear();

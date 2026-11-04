@@ -2,7 +2,8 @@
 // headless Chrome or Edge by way of the test harness: out/screens/*.png.
 //
 //   npm run screens
-//   npm run screens -- store    Google Play's phone screenshots, in out/store/
+//   npm run screens -- store    Google Play's screenshots, in out/store/
+//   npm run screens -- store tablet7    just one device's: phone, tablet7, tablet10 or desktop
 
 import { mkdirSync } from "node:fs";
 import { execFile } from "node:child_process";
@@ -39,23 +40,40 @@ const SHOTS = [
   ["line-negatives", 390, 1400, "phone-", "screen=line&chapter=6-negatives"],
   ["scene-4-check", 390, 1500, "phone-", "screen=scene&chapter=4-decimals&step=5&wrong"],
 ];
-// Google Play's phone screenshots, in the order docs/STORE.md tells the story
-// in: 9:16 and at least 1080 wide to be shown in Play's features, so a
-// 540 x 960 screen at twice the pixels, 1080 x 1920. (At 480 wide or less
-// the answers stack in one column, and a battle's run off the bottom.)
+// Google Play's screenshots, in the order docs/STORE.md tells the story in,
+// as the Android app shows them. Play wants 16:9 or 9:16 for every device.
 const STORE = [
   ["battle-k", "screen=battle&chapter=0-adding"], ["scene-k", "screen=scene&chapter=0-teens&step=1"], ["map"], ["level-done"],
   ["battle-graphs", "screen=battle&chapter=1-graphs"], ["book"], ["report"], ["class"],
 ];
-const [STORE_WIDTH, STORE_HEIGHT, STORE_SCALE] = [540, 960, 2];
+/** Each device's screen, in CSS pixels, and how many pixels to each. */
+const STORE_DEVICES = [
+  // 1080 x 1920, at least 1080 wide so Play can feature it. (At 480 wide or
+  // less the answers stack in one column, and a battle's run off the bottom.)
+  ["phone", 540, 960, 2],
+  // A 7-inch tablet on its side: 1920 x 1080.
+  ["tablet7", 1024, 576, 1.875],
+  // A 10-inch tablet on its side: 2560 x 1440 (each side at least 1080).
+  ["tablet10", 1280, 720, 2],
+  // A laptop, for Google Play Games on PC and for desktops: 1920 x 1080.
+  ["desktop", 1536, 864, 1.25],
+];
 
 // npm run screens -- scene: only the shots whose screen has "scene" in its name.
 // npm run screens -- scene 2-money: every step of that chapter's scene, on a laptop and a phone.
 const [only, chapter] = process.argv.slice(2);
+// npm run screens -- store [device]: Google Play's screenshots, for every device or one.
 const store = only === "store";
+/** @type {Map<string, number>} each shot's pixels to a CSS pixel, by file */
+const scales = new Map();
 if (store) {
   SHOTS.length = 0;
-  STORE.forEach(([screen, query = `screen=${screen}`], i) => SHOTS.push([screen, STORE_WIDTH, STORE_HEIGHT, `phone-${i + 1}-`, `${query}&app`]));
+  for (const [device, width, height, scale] of STORE_DEVICES.filter(([d]) => !chapter || d === chapter)) {
+    STORE.forEach(([screen, query = `screen=${screen}`], i) => {
+      SHOTS.push([screen, width, height, `${device}-${i + 1}-`, `${query}&app`]);
+      scales.set(`${device}-${i + 1}-${screen}`, scale);
+    });
+  }
 }
 if (only === "scene" && chapter) {
   const { sceneFor } = await import("../src/scenes.js");
@@ -86,7 +104,7 @@ try {
     const file = resolve(`${folder}/${prefix}${screen}.png`);
     await promisify(execFile)(browser, [
       "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", "--mute-audio", "--hide-scrollbars",
-      ...(store ? [`--force-device-scale-factor=${STORE_SCALE}`] : []),
+      ...(store ? [`--force-device-scale-factor=${scales.get(`${prefix}${screen}`)}`] : []),
       `--user-data-dir=${profile}`, `--window-size=${width},${height}`, "--virtual-time-budget=120000", `--screenshot=${file}`,
       `${server.origin}/__harness.html?scenario=pose&${query}&width=${width}&height=${height}`,
     ], { timeout: 120000 });

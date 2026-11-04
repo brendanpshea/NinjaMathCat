@@ -60,13 +60,22 @@ address as in the privacy policy.
   `npm run card`, which also makes `assets/social-card.png`, the picture a
   shared link shows. The feature graphic leaves off "Free" and "No ads":
   Google keeps promotional words off a listing's pictures.
-- **Phone screenshots**: `npm run screens -- store` makes eight,
-  `out/store/phone-1-battle-k.png` to `phone-8-class.png`, as the Android app
-  shows them: 1080 × 1920 (9:16, and 1080 wide, so Play can feature them).
-  Upload them in order; it tells the story: a kindergarten battle, a teaching
+- **Screenshots**: `npm run screens -- store` makes eight for each device
+  Play asks about, in `out/store/`, as the Android app shows them. Upload
+  each set in order; it tells the story: a kindergarten battle, a teaching
   scene, the map, a level's end with its treasures, a picture-graph battle,
   the monster book, and for grown-ups, the report and the class view. The
   first two or three are the ones most people see.
+  - Phone: `phone-1-battle-k.png` to `phone-8-class.png`, 1080 × 1920 (9:16,
+    and 1080 wide, so Play can feature them).
+  - 7-inch tablet: `tablet7-*.png`, 1920 × 1080, a 1024 × 576 screen on its
+    side.
+  - 10-inch tablet: `tablet10-*.png`, 2560 × 1440, a 1280 × 720 screen.
+  - Desktop, and Google Play Games on PC if the game is ever offered there:
+    `desktop-*.png`, 1920 × 1080, a 1536 × 864 laptop.
+- **Google Play Games on PC**: its logo (600 × 400, see-through) and its
+  text-free feature graphic are needed only if the game is offered on Play
+  Games on PC. It isn't: on a PC, the website plays in any browser.
 
 ## The answers Google asks for
 

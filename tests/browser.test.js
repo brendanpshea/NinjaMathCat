@@ -20,13 +20,13 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android, graphs;
+  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android, graphs, shortScreen;
 
   before(async () => {
     server = await startServer();
     // The offline test takes its server offline, so it has one to itself.
     lonely = await startServer();
-    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android, graphs] = await Promise.all([
+    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android, graphs, shortScreen] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
@@ -39,6 +39,7 @@ describe("in a real browser", { skip }, () => {
       runScenario(browser, server.origin, "treasures"),
       runScenario(browser, server.origin, "android"),
       runScenario(browser, server.origin, "graphs"),
+      runScenario(browser, server.origin, "shortScreen"),
     ]);
   });
 
@@ -57,6 +58,12 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(treasures.errors, []);
     assert.deepEqual(android.errors, []);
     assert.deepEqual(graphs.errors, []);
+    assert.deepEqual(shortScreen.errors, []);
+  });
+
+  it("on a small tablet on its side, keeps every answer in view without scrolling", () => {
+    assert.ok(shortScreen.asked >= 8, `${shortScreen.asked} questions asked`);
+    assert.deepEqual(shortScreen.low, []);
   });
 
   it("shows every picture in a picture graph, drawn ones too (an <image> is :empty)", () => {
