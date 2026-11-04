@@ -229,6 +229,7 @@ const FILES = [
   "css/stage.css",
   "index.html",
   "manifest.webmanifest",
+  "privacy.html",
   "src/adventures.js",
   "src/backdrops.js",
   "src/battle.js",

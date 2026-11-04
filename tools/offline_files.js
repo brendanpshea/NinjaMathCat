@@ -31,6 +31,7 @@ export function offlineFiles() {
   return [...new Set([
     "./",
     "index.html",
+    "privacy.html",
     "manifest.webmanifest",
     ...filesIn("assets/icons", [".png"]),
     ...filesIn("css", [".css"]),

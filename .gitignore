@@ -4,3 +4,12 @@ out/
 assets/backdrops/sheets/
 assets/treasures/sheets/
 assets/pictures/sheets/
+# The Android app: Bubblewrap makes the project from twa-manifest.json each
+# time, and the signing key must never be committed.
+android/*
+!android/twa-manifest.json
+!android/README.md
+*.keystore
+*.jks
+*.apk
+*.aab

@@ -20,13 +20,13 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures;
+  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android;
 
   before(async () => {
     server = await startServer();
     // The offline test takes its server offline, so it has one to itself.
     lonely = await startServer();
-    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures] = await Promise.all([
+    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
@@ -37,6 +37,7 @@ describe("in a real browser", { skip }, () => {
       runScenarioLive(browser, lonely.origin, "offline"),
       runScenario(browser, server.origin, "typed"),
       runScenario(browser, server.origin, "treasures"),
+      runScenario(browser, server.origin, "android"),
     ]);
   });
 
@@ -53,6 +54,14 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(offline.errors, []);
     assert.deepEqual(typed.errors, []);
     assert.deepEqual(treasures.errors, []);
+    assert.deepEqual(android.errors, []);
+  });
+
+  it("as the Android app, links nowhere outside the game, and keeps progress on the device", () => {
+    assert.deepEqual(android.web.links, ["privacy.html", "https://github.com/brendanpshea/NinjaMathCat", "legacy/"]);
+    assert.match(android.web.kept, /saved in this browser only\.$/);
+    assert.deepEqual(android.app.links, ["privacy.html"], "only the privacy policy, a page of the game's own site");
+    assert.match(android.app.kept, /saved on this device only\.$/);
   });
 
   it("gives a chapter's treasure for beating its boss, and a keepsake when something learned days ago sticks", () => {

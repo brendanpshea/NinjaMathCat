@@ -167,8 +167,10 @@ function treasureCount(player) {
  * @param {Speaker} [options.speech]  to read aloud, where the browser can
  * @param {Rng} options.rng
  * @param {number} [options.challengeSeconds]  how long the one-minute challenge lasts; shorter in the tests
+ * @param {boolean} [options.inApp]  in the Android app: progress is "on this device", not "in this
+ *   browser", and nothing links out to the web, as Google Play's rules for children's apps ask
  */
-export function createApp(root, { storage, sound, speech, rng, challengeSeconds = CHALLENGE_SECONDS }) {
+export function createApp(root, { storage, sound, speech, rng, challengeSeconds = CHALLENGE_SECONDS, inApp = false }) {
   /** @type {Save} */
   let save = loadSave(storage);
   sound.enabled = !save.muted;
@@ -184,6 +186,8 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
   const REST_AFTER = 15;
   /** How many battles go by before a level's end suggests keeping a copy of the progress again. */
   const BACKUP_EVERY = 8;
+  /** Where progress is kept, as the screens say it: an app keeps it on the device, a website in the browser. */
+  const kept = inApp ? { where: "on this device", whose: "this device's" } : { where: "in this browser", whose: "this browser's" };
 
   root.innerHTML = `
     <header class="top">
@@ -319,10 +323,10 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
           </div>` : ""}
         </section>
         <footer class="title-footer">
-          <p>Each grade's adventure follows the Common Core math standards, from kindergarten to 6th grade, in forty short levels. It is free, with nothing to sign up for: everyone's progress is saved in this browser only.</p>
+          <p>Each grade's adventure follows the Common Core math standards, from kindergarten to 6th grade, in forty short levels. It is free, with nothing to sign up for: everyone's progress is saved ${kept.where} only.</p>
           <p class="install" data-ref="install" hidden></p>
           <p><button type="button" class="link" data-ref="class">For teachers: the class view</button></p>
-          <p><a href="https://github.com/brendanpshea/NinjaMathCat">Source code</a> · <a href="legacy/">The original Ninja Math Cat</a> · Free software (GPL-3.0)</p>
+          <p><a href="privacy.html">Privacy</a> · ${inApp ? "" : `<a href="https://github.com/brendanpshea/NinjaMathCat">Source code</a> · <a href="legacy/">The original Ninja Math Cat</a> · `}Free software (GPL-3.0)</p>
         </footer>
       </section>`);
     part("banner-hero").replaceChildren(still(heroSprite(hero), hero.name));
@@ -506,7 +510,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         </div>
         ${player ? `<div class="card" data-ref="code-out">
           <h2 class="card-title">Keep a copy, or move to another device</h2>
-          <p class="field-hint">A progress code carries ${esc(player.name)}'s hero, levels and treasures. Keep it in a note, or email it to yourself, in case this browser's data is ever cleared. To move to another browser, choose "Have a progress code from another device?" there, and paste it in.</p>
+          <p class="field-hint">A progress code carries ${esc(player.name)}'s hero, levels and treasures. Keep it in a note, or email it to yourself, in case ${kept.whose} data is ever cleared. To move to another ${inApp ? "device" : "browser"}, choose "Have a progress code from another device?" there, and paste it in.</p>
           <button type="button" class="quiet" data-act="show">Show the progress code</button>
         </div>` : ""}
         ${player ? `<div class="card remove" data-ref="remove">
@@ -1110,7 +1114,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
           <p><strong>That's ${minutes} minutes of play.</strong> A good time for a stretch, a drink of water, or a break. Everything is saved.</p>
         </div>` : ""}
         ${backup ? `<div class="card backup-offer" data-ref="backup">
-          <p><strong>For grown-ups: keep a copy of ${esc(player.name)}'s progress.</strong> It is saved in this browser only, so clearing the browser's data would lose it. A progress code is a copy: keep it in a note, or email it to yourself.</p>
+          <p><strong>For grown-ups: keep a copy of ${esc(player.name)}'s progress.</strong> It is saved ${kept.where} only, so clearing ${kept.whose} data would lose it. A progress code is a copy: keep it in a note, or email it to yourself.</p>
           <button type="button" class="quiet" data-act="show">Show the progress code</button>
         </div>` : ""}
         ${stars === 1 ? `<div class="card training-offer">

@@ -73,6 +73,8 @@ Google Play's limits are in brackets; the counts are what each line uses.
 
 ## The answers Google asks for
 
+- **Privacy policy**: `https://brendanpshea.github.io/NinjaMathCat/privacy.html`
+  (`privacy.html`, linked from the title screen).
 - **Target audience**: ages 5 to 8 and 9 to 12, so the Families policy
   applies. With no ads, no purchases and no data collected, there is little
   to declare; that is also what makes an app eligible for Google's "Teacher
@@ -89,20 +91,8 @@ Google Play's limits are in brackets; the counts are what each line uses.
 Play takes an Android app, and Whiskerblade is a web app that installs
 itself (a PWA). A Trusted Web Activity wraps it as one, with no second copy
 of the game to keep up: the Android app opens the website, full-screen.
-
-1. **Make the Android package**: PWABuilder (pwabuilder.com) takes the
-   game's address and makes the package, with a signing key. Keep the key
-   safe: every update must be signed with it.
-2. **Prove the site and the app belong together**: the package comes with an
-   `assetlinks.json` that must be served at
-   `https://<domain>/.well-known/assetlinks.json`, at the root of the domain.
-   The game is now at `brendanpshea.github.io/NinjaMathCat/`, a folder, so
-   either give it a domain of its own (such as whiskerblade.app, set up in
-   the repository's Pages settings), or put the file in a
-   `brendanpshea.github.io` repository. Without it, the app shows a browser
-   bar along its top.
-3. **A Play developer account**: a one-time fee. New personal accounts must
-   run a closed test with a dozen or so testers for two weeks before the
-   first release; check the current numbers in the Play Console.
-4. **The listing**: paste the text above, add the pictures, answer the
-   questions, and send it for review.
+It is made with Bubblewrap from `android/twa-manifest.json`, and
+[ANDROID.md](ANDROID.md) has every step: the decisions to make first, the
+signing key, building, proving the site and app belong together, trying it
+on a phone, and the closed test Play requires of a new personal account
+(12 testers for 14 days) before the first release.

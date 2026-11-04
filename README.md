@@ -112,6 +112,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | --- | --- |
 | `index.html`, `src/main.js` | The page, and what starts the game on it. |
 | `manifest.webmanifest`, `sw.js`, `assets/icons/` | Installing it as an app: its name and icons, and the service worker that keeps a copy of every file for offline play. `tools/offline_files.js` says which files; `npm run pwa` writes them into `sw.js`, and a test fails until it has. |
+| `android/twa-manifest.json` | The Android app for Google Play, a Trusted Web Activity made with Bubblewrap; [`docs/ANDROID.md`](docs/ANDROID.md) says how to build and publish it, and [`docs/STORE.md`](docs/STORE.md) has the listing. Opened as the app (`?app=android`), the game links nowhere outside itself. |
+| `privacy.html` | The privacy policy: nothing is collected. |
 | `src/ui/app.js`, `src/ui/battle_screen.js`, `css/game.css` | The screens: title (hero and grade), battle (the stage and the question), victory, and the treasures. |
 | `src/save.js` | What the browser remembers: each player, with their hero, grade, experience, keepsakes and progress in every grade's adventure. A save from before there were players becomes the first player. |
 | `src/adventures.js` | Each grade's adventure: its chapters, with their notes and the question types each brings in; the levels in each chapter, what each asks (pitched by the player's mastery) and which monsters it fights; training levels; and progress, stars and which levels are open. |

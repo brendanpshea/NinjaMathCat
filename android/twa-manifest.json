@@ -1,0 +1,43 @@
+{
+  "packageId": "io.github.brendanpshea.whiskerblade",
+  "host": "brendanpshea.github.io",
+  "name": "Whiskerblade",
+  "launcherName": "Whiskerblade",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#DFEAFF",
+  "themeColorDark": "#DFEAFF",
+  "navigationColor": "#FFF3DF",
+  "navigationColorDark": "#FFF3DF",
+  "navigationDividerColor": "#00000000",
+  "navigationDividerColorDark": "#00000000",
+  "backgroundColor": "#DFEAFF",
+  "enableNotifications": false,
+  "startUrl": "/NinjaMathCat/?app=android",
+  "iconUrl": "https://brendanpshea.github.io/NinjaMathCat/assets/icons/icon-512.png",
+  "maskableIconUrl": "https://brendanpshea.github.io/NinjaMathCat/assets/icons/maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "whiskerblade"
+  },
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://brendanpshea.github.io/NinjaMathCat/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": false,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://brendanpshea.github.io/NinjaMathCat/",
+  "minSdkVersion": 21,
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": []
+}

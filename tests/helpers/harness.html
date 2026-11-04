@@ -853,6 +853,18 @@
       return report;
     },
 
+    /** The title, as the website and as the Android app opens it: the app links nowhere outside the game, and says where progress is kept. */
+    async android() {
+      const report = {};
+      for (const [name, query] of [["web", "?test&seed=7"], ["app", "?test&seed=7&app=android"]]) {
+        localStorage.clear();
+        await load(query);
+        report[name] = { links: $$(".title-footer a").map(a => a.getAttribute("href")), kept: text(".title-footer p") };
+      }
+      report.errors = errors;
+      return report;
+    },
+
     /** The one-minute challenge, made 5 seconds long: the start, a run with right and wrong answers, time up, and the best kept. */
     async challenge() {
       localStorage.clear();
