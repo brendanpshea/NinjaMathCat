@@ -39,11 +39,17 @@ describe("the Android app", () => {
     assert.ok(web.icons.some(i => i.purpose === "maskable" && i.src === fileFor(twa.maskableIconUrl)));
   });
 
-  it("keeps to what a children's app needs: no notifications, no way into the browser's settings", () => {
+  it("keeps to what a children's app needs: no notifications, no shortcuts into the game", () => {
     assert.equal(twa.enableNotifications, false);
-    assert.equal(twa.enableSiteSettingsShortcut, false, "clearing the site's data there would lose every child's progress");
     assert.match(twa.packageId, /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/);
     assert.deepEqual(twa.shortcuts, []);
+  });
+
+  it("keeps the site-settings shortcut, which the app can't start without", () => {
+    // androidbrowserhelper 2.7 switches its "manage data" screen on or off at
+    // every launch. With the shortcut off, Bubblewrap leaves that screen out of
+    // the app, and the app crashes before the game opens.
+    assert.equal(twa.enableSiteSettingsShortcut, true);
   });
 
   it("asks for an Android new enough for the library the app is built on", () => {

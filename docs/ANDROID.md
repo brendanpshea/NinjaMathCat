@@ -21,9 +21,13 @@ service worker.
   title screen leaves out its links to GitHub and the original game, so
   nothing in the app leads out to the web. `tests/android.test.js` keeps the
   settings in step with `manifest.webmanifest`.
-- Notifications are off, and so is the shortcut into the browser's site
-  settings: clearing the site's data there would lose every child's
-  progress.
+- Notifications are off. The shortcut into the browser's site settings
+  (holding the app's icon shows it) has to stay on: androidbrowserhelper
+  2.7, the library the app is built on, switches that screen on or off at
+  every launch, and with the setting off Bubblewrap leaves the screen out,
+  so the app crashes before the game opens. Clearing the site's data from
+  there would lose the progress on that phone, as it would from Chrome's own
+  settings; a progress code brings it back.
 - A child's progress lives in the browser's storage for the game's address,
   the same storage as the website's in Chrome on that phone. Uninstalling
   the app doesn't remove it; clearing Chrome's data for the site does.
@@ -138,6 +142,10 @@ If the build stops:
   `~/.bubblewrap/android_sdk/platforms` for a second copy, such as
   `android-36-2`, delete it, and build again. This happened once, on the
   first build.
+- **`EBUSY: resource busy or locked`** during `update`: the Gradle daemon
+  from the last build still holds a file. Run `gradlew.bat --stop` in
+  `android/` first. If the failed `update` has already deleted `gradlew.bat`,
+  restart the computer, or end the `java.exe` that is the Gradle daemon.
 
 ## Prove the app and the site belong together
 
@@ -155,10 +163,17 @@ If the build stops:
 ## Try it on a phone
 
 Turn on developer options and USB debugging on an Android phone, plug it
-in, and `adb install app-release-signed.apk`. Then check that:
+in, and `adb install app-release-signed.apk`. Or use Android Studio's
+emulator, which has a phone with Play and Chrome:
+`emulator -avd Medium_Phone_API_36.1 -read-only` (from
+`%LOCALAPPDATA%\Android\Sdk\emulator`; `-read-only` forgets what was
+installed). If Chrome has never been opened on the phone, its welcome
+screen comes first. Then check that:
 
 - it opens full-screen, with no address bar (if there is one, the
-  `assetlinks.json` isn't right yet);
+  `assetlinks.json` isn't right yet, or doesn't have this key's
+  fingerprint);
+- holding the icon shows Site Settings, and nothing else;
 - the title screen has no Source code link, and says progress is saved on
   this device;
 - it plays with the phone in airplane mode, once it has been opened online;
