@@ -4,13 +4,12 @@
   "name": "Whiskerblade",
   "launcherName": "Whiskerblade",
   "display": "standalone",
-  "orientation": "default",
   "themeColor": "#DFEAFF",
   "themeColorDark": "#DFEAFF",
   "navigationColor": "#FFF3DF",
   "navigationColorDark": "#FFF3DF",
-  "navigationDividerColor": "#00000000",
-  "navigationDividerColorDark": "#00000000",
+  "navigationDividerColor": "#FFF3DF",
+  "navigationDividerColorDark": "#FFF3DF",
   "backgroundColor": "#DFEAFF",
   "enableNotifications": false,
   "startUrl": "/NinjaMathCat/?app=android",
@@ -21,7 +20,7 @@
     "path": "./android.keystore",
     "alias": "whiskerblade"
   },
-  "appVersion": "1.0.0",
+  "appVersionName": "1.0.0",
   "appVersionCode": 1,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
@@ -36,8 +35,19 @@
   "isMetaQuest": false,
   "fullScopeUrl": "https://brendanpshea.github.io/NinjaMathCat/",
   "minSdkVersion": 24,
-  "fingerprints": [],
+  "orientation": "default",
+  "fingerprints": [
+    {
+      "name": "Google Play app signing key",
+      "value": "18:83:18:7E:74:4A:A8:08:A3:B4:72:06:FA:8E:D6:79:90:64:67:AF:C7:3D:29:D0:1F:62:16:47:AF:8D:56:22"
+    },
+    {
+      "name": "Upload key",
+      "value": "30:8F:53:96:29:8D:9E:7D:29:7E:AC:8B:1F:44:E0:C0:1E:BA:F0:48:D8:D7:49:AC:98:A7:BE:89:86:E4:AF:7A"
+    }
+  ],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
-  "displayOverride": []
+  "displayOverride": [],
+  "appVersion": "1.0.0"
 }

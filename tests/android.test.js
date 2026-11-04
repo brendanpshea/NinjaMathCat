@@ -58,6 +58,22 @@ describe("the Android app", () => {
     assert.ok(twa.minSdkVersion >= 24, `minSdkVersion ${twa.minSdkVersion} is below 24`);
   });
 
+  it("draws no line over the navigation bar", () => {
+    // Bubblewrap drops a colour's alpha, so a see-through divider comes out black.
+    assert.equal(twa.navigationDividerColor, twa.navigationColor);
+    assert.equal(twa.navigationDividerColorDark, twa.navigationColorDark);
+  });
+
+  it("names the keys whose apps the site trusts: Google Play's signing key and the upload key", () => {
+    // tools: `npx @bubblewrap/cli@1.27.0 fingerprint generateAssetLinks` makes the
+    // site's /.well-known/assetlinks.json from these (docs/ANDROID.md).
+    assert.equal(twa.fingerprints.length, 2);
+    for (const { name, value } of twa.fingerprints) {
+      assert.ok(name, "each fingerprint says whose key it is");
+      assert.match(value, /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/, `${name}: a SHA-256, 32 pairs`);
+    }
+  });
+
   it("keeps its signing key out of git", () => {
     assert.match(twa.signingKey.path, /\.keystore$/);
     const ignored = readFileSync(".gitignore", "utf8").split(/\r?\n/);

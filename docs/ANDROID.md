@@ -32,29 +32,24 @@ service worker.
   the same storage as the website's in Chrome on that phone. Uninstalling
   the app doesn't remove it; clearing Chrome's data for the site does.
 
-## Decide before the first release
+## What was decided (4 November 2026)
 
-1. **The package name**: `io.github.brendanpshea.whiskerblade`. It can't be
-   changed once an app is uploaded to Play.
-2. **Where the game lives.** The app trusts one address, and that address
-   must serve a file proving it, at `/.well-known/assetlinks.json` from the
-   very top of the domain. Without it the app shows a browser bar. Two ways:
-   - **Keep `brendanpshea.github.io`.** No cost. The file goes in the
-     `brendanpshea/brendanpshea.github.io` repository (the CV site), as
-     `.well-known/assetlinks.json`, with an empty `.nojekyll` file at its top,
-     because GitHub Pages otherwise skips folders whose names start with a
-     dot.
-   - **A domain of its own**, such as whiskerblade.app, set in this
-     repository's Pages settings; the file then lives in this repository.
-     A domain costs a yearly fee.
-
-   Choose before children use the app. Browser storage belongs to an
-   address, so moving the game later leaves saved progress behind at the old
-   one (a progress code still carries it across).
-3. **The signing key.** Use Play App Signing, which Play offers when the
-   first bundle is uploaded: Google keeps the key that signs what people
-   install, and you keep an upload key. A lost upload key can be replaced by
-   asking Play support; a lost signing key, if you kept it yourself, can't.
+1. **The package name**: `io.github.brendanpshea.whiskerblade`, in Play since
+   the first upload. It can never change.
+2. **Where the game lives: `brendanpshea.github.io`.** The app trusts one
+   address, and that address must serve a file proving it, at
+   `/.well-known/assetlinks.json` from the very top of the domain; without
+   it the app shows a browser bar. So the file is in the
+   `brendanpshea/brendanpshea.github.io` repository (the CV site), with an
+   empty `.nojekyll` file at its top, because GitHub Pages otherwise skips
+   folders whose names start with a dot. Browser storage belongs to an
+   address, so moving the game to a domain of its own later would leave
+   saved progress behind at this one (a progress code still carries it
+   across).
+3. **Play App Signing.** Google keeps the key that signs what people
+   install; `android/android.keystore` is the upload key, kept out of git
+   and backed up in a password manager. A lost upload key can be replaced
+   by asking Play support.
 
 ## Set up a computer (once)
 
@@ -149,16 +144,26 @@ If the build stops:
 
 ## Prove the app and the site belong together
 
+Done: both keys' fingerprints are in `twa-manifest.json` (they aren't
+secret), and `https://brendanpshea.github.io/.well-known/assetlinks.json`
+lists them. To do it again, for a new key:
+
 1. Get the SHA-256 fingerprint of each key. The upload key's:
-   `keytool -list -v -keystore android.keystore -alias whiskerblade`. The
-   signing key's, once the app is in Play: Play Console, the app, Test and
-   release, App integrity, App signing.
-2. Add each: `npx @bubblewrap/cli@1.27.0 fingerprint add <SHA-256>` (they are
-   kept in `twa-manifest.json`; fingerprints aren't secret), then
+   `keytool -list -v -keystore android.keystore -alias whiskerblade`. Google
+   Play's signing key's: Play Console, the app, Test and release, Setup, App
+   signing (also reached from "Protected with Play"), the SHA-256 under "App
+   signing key certificate" (not the SHA-1 above it).
+2. Add each, with a name saying whose it is:
+   `npx @bubblewrap/cli@1.27.0 fingerprint add <SHA-256> --name="..."`, then
    `npx @bubblewrap/cli@1.27.0 fingerprint generateAssetLinks`, which writes
-   `assetlinks.json`.
-3. Publish it at `https://<the game's domain>/.well-known/assetlinks.json`,
-   as decided above.
+   `assetlinks.json`. Bubblewrap rewrites all of `twa-manifest.json` as it
+   saves; that's fine.
+3. Put it in the `brendanpshea.github.io` repository as
+   `.well-known/assetlinks.json`.
+
+The navigation bar's divider is set to the bar's own colour:
+Bubblewrap drops a colour's alpha, so its see-through default comes out as
+a black line above the navigation bar.
 
 ## Try it on a phone
 
