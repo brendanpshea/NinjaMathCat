@@ -14,7 +14,11 @@
  * @property {string} setting  where it lives: a backdrop in src/backdrops.js
  */
 
-/** @type {readonly Monster[]} */
+/**
+ * Progress codes (src/progress_code.js) keep the monster book by where each
+ * monster comes in this list, so a new monster goes at the end.
+ * @type {readonly Monster[]}
+ */
 export const MONSTERS = [
   { id: "evil_duck", name: "Sneaky Duck", tier: 1, setting: "meadow", description: "A duck with a very sneaky plan." },
   { id: "broom", name: "Swishy Broom", tier: 1, setting: "attic", description: "It sweeps up anything in its way." },

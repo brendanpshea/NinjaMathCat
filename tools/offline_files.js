@@ -11,6 +11,7 @@ import { BACKDROPS } from "../src/backdrops.js";
 import { HEROES, heroSprite } from "../src/heroes.js";
 import { MONSTERS, monsterSprite } from "../src/monsters.js";
 import { DRAWN } from "../src/treasure_art.js";
+import { DRAWN as DRAWN_PICTURES } from "../src/picture_art.js";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
@@ -38,5 +39,6 @@ export function offlineFiles() {
     ...HEROES.map(heroSprite),
     ...MONSTERS.map(monsterSprite),
     ...[...DRAWN].map(id => `assets/treasures/${id}.webp`),
+    ...[...DRAWN_PICTURES].map(id => `assets/pictures/${id}.webp`),
   ])].sort();
 }

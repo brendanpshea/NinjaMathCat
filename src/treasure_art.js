@@ -1,5 +1,5 @@
-// Written by tools/cut_icons.py: the treasures that have a picture in
-// assets/treasures/. The rest show their emoji until they're drawn.
+// Written by tools/cut_icons.py: the treasures drawn so far, in assets/treasures/.
+// The rest show their emoji until they're drawn.
 
 /** @type {ReadonlySet<string>} */
 export const DRAWN = new Set([

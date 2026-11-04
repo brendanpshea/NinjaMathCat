@@ -10,7 +10,7 @@ import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { startServer, findBrowser, runScenario, runScenarioLive } from "./helpers/browser.js";
 import { KEEPSAKES, chapterTreasure } from "../src/treasures.js";
-import { ADVENTURE_GRADES, chaptersFor, levelsFor } from "../src/adventures.js";
+import { ADVENTURE_GRADES, chaptersFor, levelsFor, residents } from "../src/adventures.js";
 import { offlineFiles } from "../tools/offline_files.js";
 
 const browser = findBrowser();
@@ -81,6 +81,16 @@ describe("in a real browser", { skip }, () => {
     assert.ok(treasures.shelf.closeFocused && treasures.shelf.closed, "Close takes focus, and gives it back");
     assert.equal(treasures.shelf.keepsake.kicker, "It stuck!");
     assert.match(treasures.shelf.keepsake.line, /^You remembered .+ after 6 days\.$/);
+  });
+
+  it("keeps a monster book a tab away: every monster beaten, by where it lives", () => {
+    const candy = residents(chaptersFor(3)[0].setting);
+    assert.ok(treasures.book.selected);
+    assert.deepEqual(treasures.book.pages, ["Candy Hills"], "only the places visited");
+    assert.deepEqual(treasures.book.met, candy.slice(0, 3).map(m => m.name), "chapter 1's five levels meet its three monsters");
+    assert.equal(treasures.book.unmet, candy.length - 3);
+    assert.equal(treasures.book.drawn, 3);
+    assert.ok(treasures.book.arrowBack, "the arrow keys move between the tabs");
   });
 
   it("asks for typed answers once a kind is known: a number pad, any number taken, a repeat free, the keyboard too", () => {

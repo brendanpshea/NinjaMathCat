@@ -260,10 +260,10 @@
     },
     {
       "id": "pictures",
-      "title": "Question pictures (optional)",
+      "title": "Question pictures",
       "folder": "assets/pictures",
       "size": 128,
-      "about": "The things questions ask children to count, compare and spot patterns in, which are emoji now and look different on every device. Not used by the game yet: worth making once the treasures are done.",
+      "about": "The things questions ask children to count, compare and spot patterns in. Each shows as its emoji, which looks different on every device, until its picture is made; then the game uses the picture. (Coloured counters need none: the game draws them as circles.)",
       "style": "They are counting pictures for young children, so each must be recognisable at a glance even when small: one simple object, a clear silhouette, little detail, no scenery, no ground or shadow beneath it, and no sparkles.",
       "sheets": [
         {

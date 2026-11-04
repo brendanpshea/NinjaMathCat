@@ -1,7 +1,7 @@
 // The visuals the questions started with: counters, patterns, money, clocks
 // and shapes.
 
-import { svg, el, text, hit, COLORS, num } from "./svg.js";
+import { svg, el, text, glyph, hit, COLORS, num } from "./svg.js";
 import { describeVisual } from "./describe.js";
 
 /** @import { Visual } from "../questions/common.js" */
@@ -19,7 +19,7 @@ export function objects(v) {
   const gone = v.count - (v.crossed ?? 0);
   const counters = Array.from({ length: v.count }, (_, i) => {
     const [x, y] = [8 + (i % perRow) * CELL + CELL / 2, 8 + Math.floor(i / perRow) * CELL + CELL / 2];
-    const counter = text({ x, y, "font-size": 34, "text-anchor": "middle", "dominant-baseline": "central", class: "counter", "data-part": `item-${i}`, "aria-label": `picture ${i + 1}`, ...(i >= gone ? { opacity: 0.45 } : {}) }, v.emoji);
+    const counter = glyph({ x, y, size: 34, class: "counter", "data-part": `item-${i}`, "aria-label": `picture ${i + 1}`, ...(i >= gone ? { opacity: 0.45 } : {}) }, v.emoji);
     if (i < gone) return counter;
     const cross = { stroke: COLORS.point, "stroke-width": 4, "stroke-linecap": "round", "pointer-events": "none" };
     return el("g", { class: "crossed", "data-marks": "crossed" }, counter, el("line", { x1: x - 16, y1: y - 16, x2: x + 16, y2: y + 16, ...cross }), el("line", { x1: x + 16, y1: y - 16, x2: x - 16, y2: y + 16, ...cross }));
@@ -34,12 +34,10 @@ export function objects(v) {
  */
 export function groups(v) {
   const longest = Math.max(...v.rows.map(r => r.count));
-  const things = v.rows.flatMap((row, j) => Array.from({ length: row.count }, (_, i) => text({
+  const things = v.rows.flatMap((row, j) => Array.from({ length: row.count }, (_, i) => glyph({
     x: 8 + i * CELL + CELL / 2,
     y: 8 + j * CELL + CELL / 2,
-    "font-size": 34,
-    "text-anchor": "middle",
-    "dominant-baseline": "central",
+    size: 34,
     class: "counter",
     "data-row": j,
   }, row.emoji)));
@@ -55,7 +53,7 @@ export function pattern(v) {
   const cells = v.items.map((item, i) => {
     const x = 8 + i * CELL;
     if (item !== null) {
-      return text({ x: x + CELL / 2, y: 8 + CELL / 2, "font-size": 32, "text-anchor": "middle", "dominant-baseline": "central", "data-part": `item-${i}`, "aria-label": `picture ${i + 1}` }, item);
+      return glyph({ x: x + CELL / 2, y: 8 + CELL / 2, size: 32, "data-part": `item-${i}`, "aria-label": `picture ${i + 1}` }, item);
     }
     return el("g", { class: "gap", "data-part": "gap", "aria-label": "the missing picture" },
       el("rect", { x: x + 4, y: 12, width: CELL - 8, height: CELL - 8, rx: 8, fill: COLORS.paper, stroke: COLORS.accent, "stroke-width": 3, "stroke-dasharray": "6 4" }),

@@ -606,6 +606,7 @@ details[open] > .chapter-line::after { rotate: 225deg; margin-bottom: -4px; }
 /* Mixed numbers and fractions in the same bold type as the other answers, not a thin serif. */
 .choice math { font-size: 1.35em; font-family: var(--display); font-weight: 800; }
 .choice-picture { font-size: 38px; line-height: 1; }
+:is(img, svg).choice-picture { width: 46px; height: 46px; object-fit: contain; vertical-align: middle; }
 /* A typed answer: its field with delete and Strike beside it, and a row of digits under them,
    big enough for small fingers, that wraps to two rows on a phone. */
 .numpad { display: grid; gap: 8px; justify-items: center; }
@@ -701,7 +702,37 @@ button.treasure:hover { border-color: var(--indigo); }
   from { transform: scale(0.3) rotate(-14deg); opacity: 0; }
   to { transform: none; opacity: 1; }
 }
+/* The treasures and the monster book, a tab each. */
+.tabs { display: flex; gap: 4px; justify-self: start; padding: 4px; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; }
+.tab { padding: 8px 16px; border: 0; border-radius: 10px; background: none; font-weight: 800; color: var(--muted); }
+.tab[aria-selected="true"] { background: var(--indigo); color: #fff; }
+.tab-panel { display: grid; gap: 18px; }
+.tab-panel[hidden] { display: none; }
+.book-page { display: grid; gap: 10px; }
+.monster-shelf { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.monster-card {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  padding: 10px 8px 12px;
+  text-align: center;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+}
+.monster-still { display: grid; place-items: center; height: 88px; }
+.monster-still .still { height: 88px; }
+.monster-name { font-weight: 800; font-size: 15px; line-height: 1.25; }
+.monster-line { font-size: 14px; line-height: 1.35; color: var(--muted); }
+.monster-card.is-unmet { background: transparent; border-style: dashed; color: var(--muted); }
+.monster-unknown { display: grid; place-items: center; height: 88px; font: 800 40px var(--display); opacity: 0.4; }
 @media (max-width: 480px) {
+  .monster-shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .monster-card { padding: 8px 4px 10px; }
+  .monster-still, .monster-still .still, .monster-unknown { height: 64px; }
+  .monster-name { font-size: 14px; }
+  .monster-line { font-size: 13px; }
   .treasure-shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .treasure-shelf .treasure-art { width: 72px; height: 72px; }
   .treasure-reveal { flex-direction: column; text-align: center; gap: 10px; }

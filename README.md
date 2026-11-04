@@ -54,7 +54,8 @@ which says what the chapter taught ("You can find area by counting rows of
 squares"), and finishing every chapter wins the grade's own. A keepsake
 comes as a surprise, at most one a day, when a child gets something right
 that they last met days ago: "It stuck! You remembered telling time after 6
-days."
+days." Every monster beaten goes in a monster book, a page for each place,
+with its picture and a line about it.
 
 For children still learning to read, questions can be read aloud (on to begin
 with up to 2nd grade), and every question and chapter note has a "Read to me"
@@ -129,6 +130,8 @@ from JSDoc comments, and `tsc` checks them without compiling anything.
 | `src/combat.js` | The numbers: health, attack, damage, streaks, experience and levels. |
 | `src/monsters.js`, `src/heroes.js` | Who you fight (four tiers, each with a name and a line for young readers) and who you can play as. |
 | `src/treasures.js`, `src/treasure_art.js` | The chapter treasures, each saying what its chapter taught; the keepsakes, and when something has stuck; and which treasures have their picture yet. |
+| `src/monster_book.js` | Who a child has met, from the levels done (which always fight the same monsters) and every monster beaten since, and the book's pages, one per place. |
+| `src/pictures.js`, `src/picture_art.js` | The game's own pictures for the emoji questions show (apples, cats, balls), used once drawn, and coloured counters drawn as circles. |
 | `src/backdrops.js` | The sixteen settings battles happen in. Each is home to three monsters, and a chapter of an adventure happens in one; its backdrop goes behind the fight. |
 | `src/stage.js` | A round as a sequence of timed beats (the hero lunges, the monster reels…) and as a sentence for screen readers. |
 | `src/ui/stage_view.js`, `css/stage.css` | The battle stage on the page: plays a round's beats with CSS animations, and does nothing at all under reduced motion. |
@@ -219,8 +222,9 @@ background can be cut away:
    and dark. A treasure without a picture shows its emoji. Then `npm run pwa`,
    so the pictures work offline.
 
-The same file has optional sheets of pictures for questions (apples, cats,
-balls) that would replace their emoji; the game doesn't use them yet.
+The same file has sheets of the pictures questions show (apples, cats,
+balls), cut into `assets/pictures/` and listed in `src/picture_art.js` the
+same way. Until a picture is made, its emoji shows.
 
 ## License
 

@@ -19,6 +19,7 @@ function maya() {
     played: 9,
     treasures: [KEEPSAKES[5].id, KEEPSAKES[0].id, KEEPSAKES[40].id],
     remembered: { [KEEPSAKES[40].id]: { type: "multiplication", after: 8, day: 20761 } },
+    met: ["evil_duck", "mimic", "goblin"],
     adventures: { 2: second, 3: third },
     mastery: { multiplication: { score: 0.734, seen: 12, last: 9, day: 20760 }, division: { score: 0.2, seen: 4, last: 6 } },
     challenges: { 3: 14 },
@@ -36,8 +37,8 @@ describe("progress codes", () => {
     assert.equal(moved.id, "p2", "a new id on the new device");
     assert.equal(currentPlayer(there.save), moved);
     assert.deepEqual(
-      [moved.name, moved.heroId, moved.grade, moved.xp, moved.played, moved.readAloud, moved.treasures, moved.remembered],
-      [player.name, player.heroId, player.grade, player.xp, player.played, player.readAloud, player.treasures, player.remembered],
+      [moved.name, moved.heroId, moved.grade, moved.xp, moved.played, moved.readAloud, moved.treasures, moved.remembered, moved.met],
+      [player.name, player.heroId, player.grade, player.xp, player.played, player.readAloud, player.treasures, player.remembered, player.met],
     );
     for (const grade of [2, 3]) {
       for (const level of levelsFor(grade)) assert.equal(moved.adventures[grade].done[level.id]?.stars, player.adventures[grade].done[level.id]?.stars, level.id);

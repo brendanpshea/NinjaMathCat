@@ -27,7 +27,8 @@ backgrounds.
    `out/icons.html` to check them.
 
 The chapter treasures come first, because each says what a chapter taught,
-then the keepsakes. The question pictures are optional, for later.
+then the keepsakes, then the pictures questions show. Whatever isn't made
+yet shows as its emoji, so the sheets can come in any order.
 
 ## Chapter treasures
 
@@ -419,9 +420,9 @@ The nine icons, left to right, top row first:
 9. Bottom right: An open green and yellow striped umbrella, upside down, holding a little puddle of water.
 ```
 
-## Question pictures (optional)
+## Question pictures
 
-The things questions ask children to count, compare and spot patterns in, which are emoji now and look different on every device. Not used by the game yet: worth making once the treasures are done.
+The things questions ask children to count, compare and spot patterns in. Each shows as its emoji, which looks different on every device, until its picture is made; then the game uses the picture. (Coloured counters need none: the game draws them as circles.)
 
 ### Question pictures 1
 

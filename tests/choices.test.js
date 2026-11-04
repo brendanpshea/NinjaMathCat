@@ -25,8 +25,9 @@ describe("answer choices", () => {
     assert.equal(choiceHtml("What is my teacher's favorite color?"), "What is my teacher&#39;s favorite color?");
   });
 
-  it("show a picture on its own as big as the question's pictures", () => {
-    assert.equal(choiceHtml("🔴"), '<span class="choice-picture">🔴</span>');
+  it("show a picture on its own as big as the question's pictures: a counter as a circle, named", () => {
+    assert.match(choiceHtml("🔴"), /^<svg class="choice-picture" [^>]*role="img" aria-label="red counter"><circle [^>]*\/><\/svg>$/);
+    assert.equal(choiceHtml("🦄"), '<span class="choice-picture">🦄</span>', "an emoji with no picture stays itself");
   });
 
   it("are well formed for every question the game asks", () => {

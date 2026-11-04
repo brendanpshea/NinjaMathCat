@@ -129,7 +129,7 @@
     const save = await maya();
     save.players.push({ id: "p2", name: "Ben", heroId: "owl_wizard", grade: 3, xp: 400, played: 6, treasures: [], adventures: {}, mastery: { division: { score: 0.3, seen: 5, last: 6 } } });
     const zoe = done => encodePlayer({
-      name: "Zoe", heroId: "cat_ninja", grade: 3, xp: 900, played: 12, readAloud: false, treasures: [], remembered: {},
+      name: "Zoe", heroId: "cat_ninja", grade: 3, xp: 900, played: 12, readAloud: false, treasures: [], remembered: {}, met: [],
       adventures: { 3: { done: Object.fromEntries(levelsFor(3).slice(0, done).map(l => [l.id, { stars: 3, firstTry: 8, asked: 8 }])), opened: 0 } },
       mastery: { division: { score: 0.25, seen: 9, last: 11 } }, challenges: { 3: 12 },
     });
@@ -500,6 +500,12 @@
           click("[data-ref=note]");
           break;
         case "treasures": click("[data-ref=treasures]"); break;
+        case "book":
+          click("[data-ref=treasures]");
+          await on("treasures");
+          click("#tab-monsters");
+          await until(() => $$(".monster-still .still.is-ready").length === $$(".monster-still").length, "the monsters' pictures");
+          break;
         case "report": click("[data-ref=report]"); break;
         case "lock":
           click("[data-ref=report]");
@@ -832,6 +838,17 @@
       await until(() => $(".treasure-dialog[open]"), "the keepsake to open");
       report.shelf.keepsake = { kicker: text(".treasure-dialog .reveal-kicker"), line: text(".treasure-dialog .reveal-line") };
       click(".treasure-dialog [data-act=close]");
+      // The monster book, a tab away: the places visited, who has been met there, and who not yet.
+      click("#tab-monsters");
+      report.book = {
+        selected: $("#tab-monsters").getAttribute("aria-selected") === "true" && $("#panel-treasures").hidden && !$("#panel-monsters").hidden,
+        pages: $$(".book-page .card-title").map(h => h.textContent),
+        met: $$(".monster-card:not(.is-unmet) .monster-name").map(n => n.textContent),
+        unmet: $$(".monster-card.is-unmet").length,
+        drawn: $$(".monster-still .still").length,
+      };
+      $("#tab-monsters").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      report.book.arrowBack = $("#tab-treasures").getAttribute("aria-selected") === "true" && doc().activeElement === $("#tab-treasures") && $("#panel-monsters").hidden;
       report.errors = errors;
       return report;
     },
@@ -1003,7 +1020,7 @@
           if (q.input === "type") report.typed = (report.typed ?? 0) + 1;
           if (q.input === "line") report.onLine = (report.onLine ?? 0) + 1;
           const where = `${title}: ${q.prompt}`;
-          if (q.input === "type" ? !$(".numpad:not([hidden])") : q.input === "line" ? $$(".picture .tappable").length !== q.choices.length : $$(".choice").length !== 4 || $$(".choice-text").some(c => !c.textContent.trim())) problem(`${where}: choices missing or blank`);
+          if (q.input === "type" ? !$(".numpad:not([hidden])") : q.input === "line" ? $$(".picture .tappable").length !== q.choices.length : $$(".choice").length !== 4 || $$(".choice-text").some(c => !c.textContent.trim() && !c.querySelector("img[alt], svg[aria-label]"))) problem(`${where}: choices missing or blank`);
           if (q.visual) {
             report.kinds[q.visual.kind] = (report.kinds[q.visual.kind] ?? 0) + 1;
             const picture = $(".picture svg");

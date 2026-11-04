@@ -11,6 +11,7 @@ import { formatNumber } from "../questions/common.js";
 import { createStage } from "./stage_view.js";
 import { icon } from "./icons.js";
 import { questionSpeech } from "../speech.js";
+import { pictureOf, counterOf } from "../pictures.js";
 
 /** @import { Battle, Round } from "../battle.js" */
 /** @import { Answer } from "../questions/common.js" */
@@ -28,7 +29,12 @@ import { questionSpeech } from "../speech.js";
  */
 export function choiceHtml(choice) {
   if (typeof choice === "number") return esc(formatNumber(choice));
-  if (!/[\p{L}\p{N}]/u.test(choice)) return `<span class="choice-picture">${esc(choice)}</span>`;
+  if (!/[\p{L}\p{N}]/u.test(choice)) {
+    const counter = counterOf(choice);
+    if (counter) return `<svg class="choice-picture" viewBox="0 0 40 40" role="img" aria-label="${esc(counter.name)}"><circle cx="20" cy="20" r="16" fill="${counter.fill}" stroke="${counter.edge}" stroke-width="2.5"/></svg>`;
+    const picture = pictureOf(choice);
+    return picture ? `<img class="choice-picture" src="${picture.file}" alt="${esc(picture.name)}">` : `<span class="choice-picture">${esc(choice)}</span>`;
+  }
   const fraction = choice.match(/^(-?)(?:(\d+) )?(\d+)\/(\d+)$/);
   if (!fraction) return esc(choice);
   const [, minus, whole, top, bottom] = fraction;

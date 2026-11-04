@@ -10,7 +10,7 @@ import { escapeXml } from "../src/visuals/svg.js";
 import { rulerText } from "../src/questions/rational.js";
 import { CURRICULUM } from "../src/curriculum.js";
 import { SHAPES, SOLID_PARTS } from "../src/questions/shapes.js";
-import { questionsOf, elementsIn, wellFormed } from "./helpers.js";
+import { questionsOf, elementsIn, picturesIn, wellFormed } from "./helpers.js";
 
 /** Every visual the questions make, with its question. */
 function* visuals() {
@@ -69,14 +69,14 @@ describe("scales", () => {
 
 describe("drawing", () => {
   it("counters: one per thing to count", () => {
-    for (const { v, svg, at } of rendered("objects")) assert.equal(elementsIn(svg, "text", "counter").length, v.count, at);
+    for (const { v, svg, at } of rendered("objects")) assert.equal(picturesIn(svg, "counter").length, v.count, at);
   });
 
   it("rows of pictures: every picture, and a gap where one is missing", () => {
     for (const { v, svg, at } of rendered("pattern")) {
       assert.equal(elementsIn(svg, "g", "gap").length, v.items.filter(i => i === null).length, at);
       // A picture for each item, and a "?" in the gap, which is one of them.
-      assert.equal(elementsIn(svg, "text").length, v.items.length, at);
+      assert.equal(picturesIn(svg).length, v.items.length, at);
     }
   });
 
@@ -112,7 +112,7 @@ describe("drawing", () => {
       const rows = svg.split('<g class="row"').slice(1).map(chunk => chunk.slice(0, chunk.indexOf("</g>")));
       assert.equal(rows.length, v.rows.length, at);
       rows.forEach((chunk, i) => {
-        assert.equal(elementsIn(chunk, "text", "picture").length, v.rows[i].value / v.each, at);
+        assert.equal(picturesIn(chunk, "picture").length, v.rows[i].value / v.each, at);
       });
     }
   });
@@ -264,7 +264,7 @@ describe("drawing", () => {
 
   it("groups: a row for each group, with a picture for each thing in it, and no counts said", () => {
     for (const { v, svg, at } of rendered("groups")) {
-      const things = elementsIn(svg, "text", "counter");
+      const things = picturesIn(svg, "counter");
       v.rows.forEach((row, j) => assert.equal(things.filter(t => t["data-row"] === String(j)).length, row.count, at));
       assert.ok(!/\d/.test(describeVisual(v)), `${at}: "${describeVisual(v)}" gives the counts away`);
     }
@@ -394,7 +394,7 @@ describe("drawing", () => {
 
   it("crossed-out counters: the last ones crossed, and every counter still there", () => {
     for (const { v, svg, at } of rendered("objects")) {
-      assert.equal(elementsIn(svg, "text", "counter").length, v.count, at);
+      assert.equal(picturesIn(svg, "counter").length, v.count, at);
       assert.equal((svg.match(/class="crossed"/g) ?? []).length, v.crossed ?? 0, at);
     }
   });

@@ -50,6 +50,16 @@ export function elementsIn(svg, tag, className) {
   return found;
 }
 
+/**
+ * The things drawn to count or match (src/visuals/svg.js glyph), with this
+ * class if given: an emoji as text, its picture as an image once drawn, or a
+ * coloured counter as a circle.
+ * @returns {Record<string, string>[]}
+ */
+export function picturesIn(svg, className) {
+  return [...elementsIn(svg, "text", className), ...elementsIn(svg, "image", className), ...elementsIn(svg, "circle", className)];
+}
+
 /** Whether markup opens and closes its tags in order, with no stray & or <. */
 export function wellFormed(markup) {
   const open = [];

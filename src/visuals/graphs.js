@@ -1,6 +1,6 @@
 // Picture graphs, bar graphs, histograms and line plots.
 
-import { svg, el, text, hit, COLORS, FONT, escapeXml } from "./svg.js";
+import { svg, el, text, glyph, hit, COLORS, FONT, escapeXml } from "./svg.js";
 import { linear, niceStep } from "./scale.js";
 import { describeVisual } from "./describe.js";
 import { rulerText } from "../questions/rational.js";
@@ -26,12 +26,10 @@ export function pictureGraph(v) {
     parts.push(el("g", { class: "row", "data-label": row.label, "data-value": row.value, "data-pictures": pictures, "data-part": `row-${i}`, "aria-label": row.label },
       el("rect", { x: 4, y, width: WIDTH - 8, height: rowHeight, fill: i % 2 === 0 ? "#f3f4f6" : COLORS.paper }),
       text({ x: 14, y: y + rowHeight / 2, "font-size": 18, "font-weight": 600, "dominant-baseline": "central" }, row.label),
-      ...Array.from({ length: pictures }, (_, j) => text({
+      ...Array.from({ length: pictures }, (_, j) => glyph({
         x: labelWidth + 12 + j * 42 + 21,
         y: y + rowHeight / 2,
-        "font-size": 30,
-        "text-anchor": "middle",
-        "dominant-baseline": "central",
+        size: 30,
         class: "picture",
       }, row.icon))));
   });

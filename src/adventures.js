@@ -295,17 +295,27 @@ export function planLevel(level, mastery = {}, now = 0, { today, warmUp = false 
     ...fresh.map(type => pitched(type, chapter.at, freshShare / fresh.length, plan.most, mastery, chapter.focus?.[type])),
     ...earlier.map((type, i) => pitched(type, chapter.at, ((1 - freshShare) * needs[i]) / allNeed, 3, mastery)),
   ];
-  const who = residents(settingFor(level.grade, level.chapter));
-  if (who.length < 3) throw new RangeError(`The setting for ${chapter.id} needs three residents`);
   return {
     mix,
-    adventure: plan.foes.map(i => who[i]),
+    adventure: monstersOf(level),
     pitch: plan.pitch,
     toughness: plan.toughness,
     // A learn level brings in each of the chapter's topics before anything else, after any warm-up.
     opening: [...warm, ...(level.kind === "learn" ? fresh : [])],
     warmUp: warm,
   };
+}
+
+/**
+ * The monsters a level is fought against, always the same ones: residents of
+ * its chapter's setting, as the kind of level picks them, weakest first.
+ * @param {Level} level
+ * @returns {Monster[]}
+ */
+export function monstersOf(level) {
+  const who = residents(settingFor(level.grade, level.chapter));
+  if (who.length < 3) throw new RangeError(`The setting for ${chaptersFor(level.grade)[level.chapter].id} needs three residents`);
+  return LEVEL_PLANS[level.kind].foes.map(i => who[i]);
 }
 
 /** How many kinds from earlier chapters a sitting's first level warms up with. */
@@ -317,7 +327,7 @@ export const TRAINING_KINDS = 4;
 /**
  * A training level: review of the kinds that need it most, out of those met
  * in the adventure so far, at the point in the year reached. It doesn't count
- * on the map, but earns experience and treasure like any battle. Before
+ * on the map, but earns experience like any battle. Before
  * anything has been met, it practises the chapter being played.
  * @param {number} grade
  * @param {AdventureProgress} progress

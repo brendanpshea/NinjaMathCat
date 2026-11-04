@@ -12,6 +12,7 @@ import { HEROES, DEFAULT_HERO } from "./heroes.js";
 import { KEEPSAKES } from "./treasures.js";
 import { ADVENTURE_GRADES, levelsFor, newProgress } from "./adventures.js";
 import { CURRICULUM } from "./curriculum.js";
+import { MONSTERS } from "./monsters.js";
 
 /** @import { AdventureProgress } from "./adventures.js" */
 /** @import { Mastery } from "./mastery.js" */
@@ -34,6 +35,7 @@ export const MOST_CODES = 60;
  * @property {number} xp  all the experience ever earned
  * @property {string[]} treasures  the keepsakes had, by id, in the order found
  * @property {Record<string, Remembered>} remembered  for each keepsake found by remembering, by id, what it was for
+ * @property {string[]} met  monsters beaten, by id, in the order first beaten, for the monster book (src/monster_book.js)
  * @property {Record<string, AdventureProgress>} adventures  progress in each grade's adventure, by grade
  * @property {Mastery} mastery  how well they know each kind of question
  * @property {number} played  battles started, the clock that review is timed by
@@ -88,6 +90,7 @@ export function addPlayer(save, { name, heroId, grade, readAloud }) {
     xp: 0,
     treasures: [],
     remembered: {},
+    met: [],
     adventures: {},
     mastery: {},
     played: 0,
@@ -259,6 +262,7 @@ function cleanPlayer(stored, seen) {
     xp: Number.isInteger(stored.xp) && stored.xp >= 0 ? stored.xp : 0,
     treasures,
     remembered,
+    met: Array.isArray(stored.met) ? [...new Set(stored.met.filter((/** @type {unknown} */ id) => MONSTERS.some(m => m.id === id)))] : [],
     adventures,
     mastery,
     played,

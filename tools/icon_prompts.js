@@ -114,7 +114,8 @@ backgrounds.
    \`out/icons.html\` to check them.
 
 The chapter treasures come first, because each says what a chapter taught,
-then the keepsakes. The question pictures are optional, for later.
+then the keepsakes, then the pictures questions show. Whatever isn't made
+yet shows as its emoji, so the sheets can come in any order.
 
 ${sections}
 `;

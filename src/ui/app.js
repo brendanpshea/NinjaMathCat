@@ -15,6 +15,7 @@ import { startBattle } from "../battle.js";
 import { levelForXp } from "../combat.js";
 import { KEEPSAKES, chapterTreasure, gradeTreasure, treasuresWon, newlyWon } from "../treasures.js";
 import { DRAWN } from "../treasure_art.js";
+import { monstersMet, bookPages } from "../monster_book.js";
 import {
   ADVENTURE_GRADES, chaptersFor, levelsFor, levelName, planLevel, planTraining, settingFor, exampleFor,
   recordLevel, levelStates, nextLevel, openChapter, starsFor, residents,
@@ -1039,11 +1040,14 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         learned = b.tally.answers.length;
         // A keepsake found by remembering is kept with what it was for, and the day, as one comes a day.
         const found = b.stuck?.keepsake && !me().remembered[b.stuck.keepsake.id] ? b.stuck : null;
+        // Every monster beaten goes in the monster book.
+        const met = b.adventure.slice(0, b.beaten).map(m => m.id).filter(id => !me().met.includes(id));
         change({
           xp: b.hero.xp,
           treasures: b.treasures,
           mastery,
           ...(found?.keepsake ? { remembered: { ...me().remembered, [found.keepsake.id]: { type: found.type, after: found.after, day: b.memory?.today ?? dayNumber(Date.now()) } } } : {}),
+          ...(met.length > 0 ? { met: [...me().met, ...met] } : {}),
         });
       },
       onWin,
@@ -1364,10 +1368,12 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
    * The treasures: for each grade played, a shelf of its chapters' treasures,
    * with a locked place for each chapter not finished yet; then the
    * keepsakes, newest first. A shelf shows only pictures and names: tapping
-   * one opens it, with what it was won for.
+   * one opens it, with what it was won for. A second tab is the monster book.
    */
   function treasures() {
     const player = me();
+    const met = monstersMet(player);
+    const pages = bookPages().filter(page => page.monsters.some(m => met.has(m.id)));
     /** @type {Map<string, { t: { id: string, emoji: string, name: string }, kicker: string, line: string }>} */
     const opened = new Map();
     /**
@@ -1400,23 +1406,67 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
     show("treasures", `
       <section class="treasures-screen">
         <h1 tabindex="-1">${esc(player.name)}'s treasures</h1>
-        ${shelves.join("")}
-        <section class="treasure-set">
-          <h2 class="card-title">Keepsakes</h2>
-          ${keepsakes.length > 0
-            ? `<ul class="treasure-shelf">${keepsakes.map(k => item(k, player.remembered[k.id] ? "It stuck!" : "Keepsake", player.remembered[k.id] ? rememberedLine(player.remembered[k.id]) : "Found on an earlier adventure.")).join("")}</ul>`
-            : `<p class="field-hint">None yet. They're surprises, for remembering something you learned on another day.</p>`}
-        </section>
+        <div class="tabs" role="tablist" aria-label="Treasures or monsters">
+          <button type="button" class="tab" role="tab" id="tab-treasures" aria-controls="panel-treasures" aria-selected="true" data-tab="treasures">Treasures</button>
+          <button type="button" class="tab" role="tab" id="tab-monsters" aria-controls="panel-monsters" aria-selected="false" tabindex="-1" data-tab="monsters">Monster book</button>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-treasures" aria-labelledby="tab-treasures">
+          ${shelves.join("")}
+          <section class="treasure-set">
+            <h2 class="card-title">Keepsakes</h2>
+            ${keepsakes.length > 0
+              ? `<ul class="treasure-shelf">${keepsakes.map(k => item(k, player.remembered[k.id] ? "It stuck!" : "Keepsake", player.remembered[k.id] ? rememberedLine(player.remembered[k.id]) : "Found on an earlier adventure.")).join("")}</ul>`
+              : `<p class="field-hint">None yet. They're surprises, for remembering something you learned on another day.</p>`}
+          </section>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-monsters" aria-labelledby="tab-monsters" hidden>
+          ${pages.length > 0 ? pages.map(page => `<section class="book-page">
+            <h2 class="card-title">${esc(page.place)}</h2>
+            <ul class="monster-shelf">${page.monsters.map(m => met.has(m.id)
+              ? `<li class="monster-card"><span class="monster-still" data-monster="${m.id}"></span><span class="monster-name">${esc(m.name)}</span><span class="monster-line">${esc(m.description)}</span></li>`
+              : `<li class="monster-card is-unmet"><span class="monster-unknown" aria-hidden="true">?</span><span class="monster-name">Not met yet</span></li>`).join("")}</ul>
+          </section>`).join("") : `<p class="field-hint">Every monster you beat goes in your monster book.</p>`}
+        </div>
         <button type="button" class="primary" data-ref="back">Back to the map</button>
       </section>`);
     onTap(part("back"), () => map());
-    screenEl.querySelector(".treasures-screen")?.addEventListener("click", event => {
+    const screen = /** @type {HTMLElement} */ (screenEl.querySelector(".treasures-screen"));
+    screen.addEventListener("click", event => {
       const button = /** @type {HTMLElement} */ (event.target).closest("[data-treasure]");
       const shown = button && opened.get(/** @type {HTMLElement} */ (button).dataset.treasure ?? "");
       if (!shown) return;
       sound.play("click");
       openTreasure(shown.t, shown.kicker, shown.line, /** @type {HTMLElement} */ (button));
     });
+    // The tabs, as tabs work: a tap or the arrow keys pick one, and only the chosen one is in the tab order.
+    const tabs = /** @type {HTMLElement[]} */ ([...screen.querySelectorAll("[role=tab]")]);
+    let drawn = false;
+    /** @param {HTMLElement} tab */
+    const choose = tab => {
+      for (const t of tabs) {
+        const on = t === tab;
+        t.setAttribute("aria-selected", String(on));
+        t.tabIndex = on ? 0 : -1;
+        /** @type {HTMLElement} */ (screen.querySelector(`#${t.getAttribute("aria-controls")}`)).hidden = !on;
+      }
+      // The monsters' pictures are drawn the first time the book is opened.
+      if (tab.dataset.tab === "monsters" && !drawn) {
+        drawn = true;
+        for (const spot of screen.querySelectorAll("[data-monster]")) {
+          const monster = MONSTERS.find(m => m.id === /** @type {HTMLElement} */ (spot).dataset.monster);
+          if (monster) spot.replaceChildren(still(monsterSprite(monster)));
+        }
+      }
+    };
+    for (const tab of tabs) {
+      tab.addEventListener("click", () => { sound.play("click"); choose(tab); });
+      tab.addEventListener("keydown", event => {
+        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+        const next = tabs[(tabs.indexOf(tab) + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+        choose(next);
+        next.focus();
+      });
+    }
   }
 
   /**

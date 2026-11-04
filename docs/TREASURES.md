@@ -22,6 +22,12 @@ work and why, so that later changes keep to it.
 - **Nothing else.** Monsters drop nothing. Nothing is random but which
   keepsake comes. There are no daily rewards, streak prizes or countdowns to
   the next treasure.
+- **A monster book, as a record.** Every monster beaten goes in the monster
+  book, a tab beside the treasures: a page for each place visited, with each
+  monster's picture and a line about it, and a "Not met yet" card for the
+  rest who live there. It shows no total to complete. Levels always fight
+  the same monsters, so the book fills from the levels done, as well as from
+  quick battles.
 - **Shown quietly.** The treasures screen shows pictures and names only;
   tapping one opens it with what it was won for. At a level's end the stars
   and the note on how each topic went come first, then any treasure as one

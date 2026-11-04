@@ -24,7 +24,7 @@ describe("the save", () => {
 
   it("adds players, each new one the current one, and names a blank one by number", () => {
     let { save, player } = addPlayer(newSave(), owl);
-    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, readAloud: false, xp: 0, treasures: [], remembered: {}, adventures: {}, mastery: {}, played: 0, backedUp: 0, challenges: {} });
+    assert.deepEqual(player, { id: "p1", name: "Maya", heroId: "owl_wizard", grade: 3, readAloud: false, xp: 0, treasures: [], remembered: {}, met: [], adventures: {}, mastery: {}, played: 0, backedUp: 0, challenges: {} });
     ({ save, player } = addPlayer(save, { name: "   ", heroId: "dragon_king", grade: 9 }));
     assert.deepEqual([player.name, player.heroId, player.grade], ["Player 2", "cat_ninja", 0]);
     // Questions are read aloud for the youngest, unless chosen otherwise.
@@ -54,7 +54,7 @@ describe("the save", () => {
     const level = levelsFor(3)[0];
     const progress = recordLevel(progressIn(player, 3), level, { firstTry: 7, secondTry: 1, missed: 0, knockouts: 0, byType: {} });
     save = updatePlayer({ ...save, muted: true, locked: true, classCodes: ["NMC1-abc"] }, player.id, {
-      xp: 730, treasures: [KEEPSAKES[3].id, KEEPSAKES[0].id], remembered: { [KEEPSAKES[0].id]: { type: "addition", after: 6, day: 20759 } }, adventures: { 3: progress },
+      xp: 730, treasures: [KEEPSAKES[3].id, KEEPSAKES[0].id], remembered: { [KEEPSAKES[0].id]: { type: "addition", after: 6, day: 20759 } }, met: ["evil_duck", "mimic"], adventures: { 3: progress },
       mastery: { addition: { score: 0.72, seen: 9, last: 4, day: 20760 } }, played: 5, backedUp: 4, challenges: { 3: 17 },
     });
     assert.equal(writeSave(storage, save), true);
@@ -76,6 +76,8 @@ describe("the save", () => {
               [KEEPSAKES[5].id]: { type: "addition", after: 4, day: 20750 },
               nope: { type: "addition", after: 4, day: 20750 },
             },
+            // Monsters met: only ones the game has, each once.
+            met: ["goblin", "no_such_monster", "goblin", 4],
             challenges: { 3: 14, 4: -2, 5: "lots", 6: 2.5, 12: 9 },
             mastery: { addition: { score: 0.4, seen: 2, last: 9 }, subtraction: { score: 7, seen: 1, last: 0 }, gone_type: { score: 0.5, seen: 1, last: 0 }, shapes: { score: 0.9, seen: 0, last: 1 } },
             adventures: { 2: { done: { [level]: { stars: 2, firstTry: 6, asked: 8 }, "2-gone.1": { stars: 3, firstTry: 8, asked: 8 }, [levelsFor(2)[1].id]: { stars: 9, firstTry: 1, asked: 1 } }, opened: 99 }, 12: { done: {} } } },
@@ -93,6 +95,7 @@ describe("the save", () => {
     assert.deepEqual(save.players[0], {
       id: "p1", name: "Player 1", heroId: "cat_ninja", grade: 0, readAloud: true, xp: 0, treasures: [KEEPSAKES[1].id, KEEPSAKES[2].id],
       remembered: { [KEEPSAKES[1].id]: { type: "addition", after: 4, day: 20750 } },
+      met: ["goblin"],
       adventures: { 2: { done: { [level]: { stars: 2, firstTry: 6, asked: 8 } }, opened: 7 } },
       // A kind's last time can't be after the battles played; a score outside 0 to 1, a kind
       // the game no longer has, or one never seen, is dropped.
@@ -112,7 +115,7 @@ describe("the save", () => {
     });
     const save = loadSave(storage);
     assert.deepEqual(save, {
-      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, readAloud: true, xp: 730, treasures: [KEEPSAKES[3].id], remembered: {}, adventures: {}, mastery: {}, played: 0, backedUp: 0, challenges: {} }],
+      players: [{ id: "p1", name: "Player 1", heroId: "owl_wizard", grade: 2, readAloud: true, xp: 730, treasures: [KEEPSAKES[3].id], remembered: {}, met: [], adventures: {}, mastery: {}, played: 0, backedUp: 0, challenges: {} }],
       current: "p1",
       muted: true,
       locked: false,

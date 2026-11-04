@@ -10,6 +10,7 @@
 // right, as a save from storage is (src/save.js).
 
 import { KEEPSAKES } from "./treasures.js";
+import { MONSTERS } from "./monsters.js";
 import { levelsFor } from "./adventures.js";
 
 /** @import { Player } from "./save.js" */
@@ -36,7 +37,8 @@ function fromBase64(code) {
  * A player's progress as a code. Levels are kept as their stars, one digit
  * each in the order of the adventure; keepsakes by where they come in the
  * list of keepsakes, so new ones go at its end, and what each one found by
- * remembering was for.
+ * remembering was for; monsters met by their place in the list of monsters,
+ * which also only grows at its end.
  * @param {Player} player
  */
 export function encodePlayer(player) {
@@ -50,6 +52,7 @@ export function encodePlayer(player) {
     r: player.readAloud ? 1 : 0,
     t: player.treasures.map(place).filter(i => i >= 0),
     k: Object.entries(player.remembered).map(([id, r]) => [place(id), r.type, r.after, r.day]).filter(([i]) => Number(i) >= 0),
+    o: player.met.map(id => MONSTERS.findIndex(m => m.id === id)).filter(i => i >= 0),
     a: Object.fromEntries(Object.entries(player.adventures).map(([grade, progress]) => [
       grade,
       [levelsFor(Number(grade)).map(l => progress.done[l.id]?.stars ?? 0).join(""), progress.opened],
@@ -111,6 +114,7 @@ export function decodePlayer(code) {
     readAloud: c.r === 1,
     treasures: Array.isArray(c.t) ? c.t.map((/** @type {unknown} */ i) => KEEPSAKES[Number(i)]?.id) : [],
     remembered,
+    met: Array.isArray(c.o) ? c.o.map((/** @type {unknown} */ i) => MONSTERS[Number(i)]?.id) : [],
     adventures,
     mastery,
     challenges: c.c,

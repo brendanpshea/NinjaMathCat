@@ -1,6 +1,8 @@
 // Small helpers for writing SVG as text. Visuals are built as strings so they
 // can be made, and tested, without a browser; the UI puts them into the page.
 
+import { pictureOf, counterOf } from "../pictures.js";
+
 /**
  * The colours every visual shares. Shading never carries meaning by colour
  * alone (it is also outlined and patterned by position), so children who
@@ -55,6 +57,25 @@ export function el(name, attrs = {}, ...children) {
  */
 export function text(attrs, content) {
   return el("text", { "font-family": FONT, fill: COLORS.ink, ...attrs }, escapeXml(content));
+}
+
+/**
+ * A thing to count or match, centred on (x, y): its picture where one is
+ * drawn (src/pictures.js), its emoji until then, and a coloured counter as a
+ * circle. Any way it is drawn, it carries the same attributes, so it is
+ * counted, tapped and read the same.
+ * @param {{ x: number, y: number, size: number } & Record<string, string | number | undefined>} at
+ *   size: the emoji's font size; a picture is drawn a little bigger, as an emoji's glyph is
+ * @param {string} emoji
+ * @param {ReadonlySet<string>} [drawn]  the pictures made so far, if not the game's own list
+ */
+export function glyph({ x, y, size, ...attrs }, emoji, drawn) {
+  const counter = counterOf(emoji);
+  if (counter) return el("circle", { cx: x, cy: y, r: size * 0.46, fill: counter.fill, stroke: counter.edge, "stroke-width": 2.5, "data-emoji": emoji, ...attrs });
+  const picture = pictureOf(emoji, drawn);
+  if (!picture) return text({ x, y, "font-size": size, "text-anchor": "middle", "dominant-baseline": "central", ...attrs }, emoji);
+  const side = size * 1.2;
+  return el("image", { href: picture.file, x: x - side / 2, y: y - side / 2, width: side, height: side, "data-emoji": emoji, ...attrs });
 }
 
 /**

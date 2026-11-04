@@ -11,9 +11,9 @@ off the grid still come out whole; where no gap can be found, the sheet is cut
 into equal thirds. Each icon is trimmed, centred on a square and saved as
 <folder>/<id>.webp at the group's size.
 
-Then it writes src/treasure_art.js, the list of treasures with a picture, and
-out/icons.html, every cut icon on a light and a dark background to check.
-Needs Pillow.
+Then it writes the lists of what is drawn, src/treasure_art.js and
+src/picture_art.js, and out/icons.html, every cut icon on a light and a dark
+background to check. Needs Pillow.
 """
 
 import json
@@ -24,7 +24,11 @@ from PIL import Image, ImageChops, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 SHEETS = ROOT / "tools" / "icon_sheets.json"
-ART_LIST = ROOT / "src" / "treasure_art.js"
+# For each folder of pictures: the list the game reads of which are drawn, and what they are.
+ART_LISTS = {
+    "assets/treasures": (ROOT / "src" / "treasure_art.js", "treasures"),
+    "assets/pictures": (ROOT / "src" / "picture_art.js", "question pictures"),
+}
 REVIEW = ROOT / "out" / "icons.html"
 SMALLEST_CELL = 300  # a cell smaller than this makes a soft icon
 MARGIN = 0.06  # empty space kept around an icon, as a share of its square
@@ -74,12 +78,13 @@ def gaps(profile, count):
 
 
 def profile(alpha, axis):
-    """How many opaque pixels each column (axis 0) or row (axis 1) holds."""
-    width, height = alpha.size
-    data = alpha.point(lambda a: 1 if a > 128 else 0).load()
-    if axis == 0:
-        return [sum(data[x, y] for y in range(0, height, 2)) for x in range(width)]
-    return [sum(data[x, y] for x in range(0, width, 2)) for y in range(height)]
+    """How full of opaque pixels each column (axis 0) or row (axis 1) is, from 0 to 255.
+
+    Squashing the mask to one row (or column) averages each column (or row) in Pillow itself.
+    """
+    mask = alpha.point(lambda a: 255 if a > 128 else 0)
+    line = mask.resize((mask.width, 1) if axis == 0 else (1, mask.height), Image.Resampling.BOX)
+    return list(getattr(line, "get_flattened_data", line.getdata)())  # the new name, from Pillow 12
 
 
 def cells(alpha):
@@ -140,23 +145,24 @@ def cut(group, sheet):
     return True
 
 
-def write_art_list(groups):
-    """src/treasure_art.js: every treasure that has a picture."""
-    drawn = sorted(
-        item["id"]
-        for group in groups if group["folder"] == "assets/treasures"
-        for sheet in group["sheets"] for item in sheet["items"]
-        if (ROOT / group["folder"] / f"{item['id']}.webp").exists()
-    )
-    body = "".join(f'  "{i}",\n' for i in drawn)
-    ART_LIST.write_text(
-        "// Written by tools/cut_icons.py: the treasures that have a picture in\n"
-        "// assets/treasures/. The rest show their emoji until they're drawn.\n\n"
-        "/** @type {ReadonlySet<string>} */\n"
-        f"export const DRAWN = new Set([\n{body}]);\n",
-        encoding="utf-8", newline="\n",
-    )
-    print(f"{ART_LIST.relative_to(ROOT)}: {len(drawn)} treasures drawn")
+def write_art_lists(groups):
+    """src/treasure_art.js and src/picture_art.js: every picture drawn so far, in each folder."""
+    for folder, (path, what) in ART_LISTS.items():
+        drawn = sorted(
+            item["id"]
+            for group in groups if group["folder"] == folder
+            for sheet in group["sheets"] for item in sheet["items"]
+            if (ROOT / folder / f"{item['id']}.webp").exists()
+        )
+        body = "".join(f'  "{i}",\n' for i in drawn)
+        path.write_text(
+            f"// Written by tools/cut_icons.py: the {what} drawn so far, in {folder}/.\n"
+            "// The rest show their emoji until they're drawn.\n\n"
+            "/** @type {ReadonlySet<string>} */\n"
+            f"export const DRAWN = new Set([\n{body}]);\n",
+            encoding="utf-8", newline="\n",
+        )
+        print(f"{path.relative_to(ROOT)}: {len(drawn)} {what} drawn")
 
 
 def write_review(groups):
@@ -197,7 +203,7 @@ def main():
                 done += cut(group, sheet)
     if done == 0:
         print("No sheets saved yet: see docs/prompts.md for where to save them.")
-    write_art_list(groups)
+    write_art_lists(groups)
     write_review(groups)
 
 
