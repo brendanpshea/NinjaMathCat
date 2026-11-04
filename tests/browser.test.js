@@ -20,13 +20,13 @@ if (!browser && process.env.NINJA_REQUIRE_BROWSER) {
 const skip = browser ? false : "NO BROWSER FOUND: the real-browser tests did not run. Install Chrome or Edge, or set NINJA_BROWSER.";
 
 describe("in a real browser", { skip }, () => {
-  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android;
+  let server, lonely, played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android, graphs;
 
   before(async () => {
     server = await startServer();
     // The offline test takes its server offline, so it has one to itself.
     lonely = await startServer();
-    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android] = await Promise.all([
+    [played, still, marathon, showHow, grownUps, challenge, classView, offline, typed, treasures, android, graphs] = await Promise.all([
       runScenario(browser, server.origin, "adventure"),
       runScenario(browser, server.origin, "still", ["--force-prefers-reduced-motion"]),
       runScenario(browser, server.origin, "marathon&grade=0"),
@@ -38,6 +38,7 @@ describe("in a real browser", { skip }, () => {
       runScenario(browser, server.origin, "typed"),
       runScenario(browser, server.origin, "treasures"),
       runScenario(browser, server.origin, "android"),
+      runScenario(browser, server.origin, "graphs"),
     ]);
   });
 
@@ -55,6 +56,12 @@ describe("in a real browser", { skip }, () => {
     assert.deepEqual(typed.errors, []);
     assert.deepEqual(treasures.errors, []);
     assert.deepEqual(android.errors, []);
+    assert.deepEqual(graphs.errors, []);
+  });
+
+  it("shows every picture in a picture graph, drawn ones too (an <image> is :empty)", () => {
+    assert.ok(graphs.graphs >= 1 && graphs.pictures > 0, `${graphs.graphs} picture graphs, ${graphs.pictures} pictures`);
+    assert.deepEqual(graphs.hidden, []);
   });
 
   it("as the Android app, links nowhere outside the game, and keeps progress on the device", () => {

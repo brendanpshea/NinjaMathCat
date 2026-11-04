@@ -565,8 +565,10 @@ details[open] > .chapter-line::after { rotate: 225deg; margin-bottom: -4px; }
 .arrival { margin: 0; color: var(--muted); font-weight: 700; }
 .ask { display: grid; gap: 12px; }
 .prompt { margin: 0; font: 800 clamp(22px, 3.4vw, 28px)/1.3 var(--display); }
-.picture { display: grid; place-items: center; padding: 8px; background: #f7f9fc; border-radius: 12px; }
-.picture:empty { display: none; }
+/* The box a question's picture goes in: div.picture, since a picture graph's
+   pictures have the class too, and an <image> is :empty. */
+div.picture { display: grid; place-items: center; padding: 8px; background: #f7f9fc; border-radius: 12px; }
+div.picture:empty { display: none; }
 .picture svg { width: 100%; max-width: 560px; max-height: 230px; height: auto; }
 /* Graphs, grids, protractors and dials are read by their small print, so they get
    more room; squeezed to 230 pixels, a coordinate grid's numbers were 7 pixels high. */
@@ -784,7 +786,7 @@ button.treasure:hover { border-color: var(--indigo); }
 @media (max-width: 480px) {
   /* Every pixel of width goes to the picture, which is as wide as it can be. */
   .panel { padding: 14px 12px; }
-  .picture { padding: 4px; }
+  div.picture { padding: 4px; }
   .choices { grid-template-columns: minmax(0, 1fr); }
   .choice { min-height: 56px; font-size: 20px; }
   .banner .still { height: 110px; }

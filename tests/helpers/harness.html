@@ -420,7 +420,9 @@
       localStorage.clear();
       // A chapter's teaching scene (?chapter=), at a step (?step=, from 0), perhaps tried wrong once (?wrong).
       const sceneShot = screen === "scene";
-      if (sceneShot || screen === "how") localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "0-teens")));
+      // A battle in a chapter (?chapter=), just past its opening, at a question with a picture.
+      const chapterBattle = screen === "battle" && params.has("chapter");
+      if (sceneShot || screen === "how" || chapterBattle) localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "0-teens")));
       else if (screen === "line") localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave(params.get("chapter") ?? "2-lines")));
       else if (screen === "class") {
         const { save, zoe } = await classSave();
@@ -448,6 +450,22 @@
         await answer(false);
         await until(() => /Not quite/.test($(".feedback").textContent) && !$(".battle[data-busy]"), "the hint");
         await wait(400);
+        return {};
+      }
+      if (chapterBattle) {
+        click("[data-ref=continue]");
+        await on("scene");
+        click("[data-ref=skip]");
+        await on("battle");
+        await until(() => $$(".stage .sprite.is-ready").length === 2, "both sprites to load");
+        // Past the first question, whose monster's introduction takes the room.
+        for (let i = 0; i < 8; i++) {
+          await readyToAnswer();
+          if (i >= 1 && game().battle.question.visual) break;
+          await answer(true);
+          await wait(1500);
+        }
+        await wait(1500);
         return {};
       }
       if (screen === "how") {
@@ -860,6 +878,37 @@
         localStorage.clear();
         await load(query);
         report[name] = { links: $$(".title-footer a").map(a => a.getAttribute("href")), kept: text(".title-footer p") };
+      }
+      report.errors = errors;
+      return report;
+    },
+
+    /** 1st grade's picture graphs, in battle: every picture in a graph shows, drawn or emoji. */
+    async graphs() {
+      localStorage.clear();
+      localStorage.setItem("ninja-math-cat", JSON.stringify(await sceneSave("1-graphs")));
+      await load("?test&seed=3");
+      click("[data-ref=continue]");
+      await on("scene");
+      click("[data-ref=skip]");
+      await on("battle");
+      const report = { graphs: 0, pictures: 0, hidden: [] };
+      for (let i = 0; i < 10 && report.graphs < 3; i++) {
+        await readyToAnswer();
+        if (game().screen !== "battle") break;
+        const q = game().battle.question;
+        if (q.visual?.kind === "picture_graph") {
+          report.graphs++;
+          for (const p of $$(".picture svg .picture")) {
+            report.pictures++;
+            const box = p.getBoundingClientRect();
+            if (doc().defaultView.getComputedStyle(p).display === "none" || box.width < 10 || box.height < 10) {
+              report.hidden.push(`${q.prompt} ${p.tagName} ${p.getAttribute("href") ?? p.textContent}`);
+            }
+          }
+        }
+        await answer(true);
+        await wait(20);
       }
       report.errors = errors;
       return report;
