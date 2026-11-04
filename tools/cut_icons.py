@@ -2,9 +2,12 @@
 
     python tools/cut_icons.py                every saved sheet
     python tools/cut_icons.py chapters-k     just the sheets named
+    python tools/cut_icons.py fixes          the fix-up sheet: the icons marked "redo"
 
 A sheet is a 3 x 3 grid of icons on flat magenta (see docs/prompts.md, built
-from tools/icon_sheets.json). The magenta becomes see-through, with a soft
+from tools/icon_sheets.json). A fix-up sheet holds the icons marked "redo",
+in rows of three, and replaces just those; it is cut only when named, since
+one left from before would be cut into whatever is marked now. The magenta becomes see-through, with a soft
 edge and the pink fringe taken out of it. The rows are found where a band
 across the sheet is empty, then the columns within each row, so icons a little
 off the grid still come out whole; where no gap can be found, the sheet is cut
@@ -87,21 +90,26 @@ def profile(alpha, axis):
     return list(getattr(line, "get_flattened_data", line.getdata)())  # the new name, from Pillow 12
 
 
-def cells(alpha):
-    """The nine cells, as (left, top, right, bottom), in reading order."""
+def rows_of(n):
+    """How a fix-up sheet of n icons is laid out: rows of three, the last one shorter (rowsOf in tools/icon_prompts.js)."""
+    return [3] * (n // 3) + ([n % 3] if n % 3 else [])
+
+
+def cells(alpha, rows=(3, 3, 3)):
+    """The cells, as (left, top, right, bottom), in reading order, for rows of so many icons each."""
     width, height = alpha.size
-    rows = gaps(profile(alpha, 1), 3)
-    if rows is None:
-        print("  no clear gap between rows: cutting into equal thirds")
-        rows = [round(height * i / 3) for i in range(4)]
+    ys = gaps(profile(alpha, 1), len(rows))
+    if ys is None:
+        print("  no clear gap between rows: cutting into equal rows")
+        ys = [round(height * i / len(rows)) for i in range(len(rows) + 1)]
     found = []
-    for top, bottom in zip(rows, rows[1:]):
+    for (top, bottom), count in zip(zip(ys, ys[1:]), rows):
         band = alpha.crop((0, top, width, bottom))
-        cols = gaps(profile(band, 0), 3)
-        if cols is None:
-            print(f"  no clear gap between icons in the row at {top}: cutting into equal thirds")
-            cols = [round(width * i / 3) for i in range(4)]
-        found += [(left, top, right, bottom) for left, right in zip(cols, cols[1:])]
+        xs = gaps(profile(band, 0), count)
+        if xs is None:
+            print(f"  no clear gap between icons in the row at {top}: cutting into equal parts")
+            xs = [round(width * i / count) for i in range(count + 1)]
+        found += [(left, top, right, bottom) for left, right in zip(xs, xs[1:])]
     return found
 
 
@@ -117,17 +125,20 @@ def square(icon, size):
     return canvas.resize((size, size), Image.Resampling.LANCZOS)
 
 
-def cut(group, sheet):
-    folder = ROOT / group["folder"]
-    found = [p for ext in ("png", "jpg", "jpeg", "webp") if (p := folder / "sheets" / f"{sheet['id']}.{ext}").exists()]
-    if not found:
-        return False
-    image = Image.open(found[0]).convert("RGB")
-    print(f"{sheet['id']}: {found[0].name}, {image.width} x {image.height}")
+def saved(folder, name):
+    """Where the sheet called name is saved in folder/sheets, if it is."""
+    found = [p for ext in ("png", "jpg", "jpeg", "webp") if (p := ROOT / folder / "sheets" / f"{name}.{ext}").exists()]
+    return found[0] if found else None
+
+
+def cut_sheet(path, placed, rows):
+    """Cut a saved sheet into its icons: placed is (group, item) for each, in reading order."""
+    image = Image.open(path).convert("RGB")
+    print(f"{path.stem}: {path.name}, {image.width} x {image.height}")
     alpha = magenta_alpha(image)
     clean = despill(image, alpha)
     clean.putalpha(alpha)
-    for item, box in zip(sheet["items"], cells(alpha)):
+    for (group, item), box in zip(placed, cells(alpha, rows)):
         cell = clean.crop(box)
         if min(cell.size) < SMALLEST_CELL:
             print(f"  {item['id']}: its cell is only {cell.width} x {cell.height}, so it may look soft")
@@ -138,11 +149,28 @@ def cut(group, sheet):
         edge = cell.getchannel("A").point(lambda a: 255 if a > 128 else 0)
         w, h = edge.size
         touches = any(edge.crop(b).getbbox() for b in ((0, 0, w, 2), (0, h - 2, w, h), (0, 0, 2, h), (w - 2, 0, w, h)))
-        out = folder / f"{item['id']}.webp"
+        out = ROOT / group["folder"] / f"{item['id']}.webp"
         icon.save(out, "WEBP", quality=88, method=6)
         note = "  (touches its cell's edge: check it isn't cut off)" if touches else ""
         print(f"  {item['id']} -> {out.relative_to(ROOT)} ({out.stat().st_size // 1024} KB){note}")
-    return True
+
+
+def fix_sheets(groups):
+    """The fix-up sheets: every icon marked "redo", in order, by folder, nine to a sheet (fixSheets in tools/icon_prompts.js).
+
+    Each is (folder, name, [(group, item)]), named fixes, fixes-2 and on.
+    """
+    by_folder = {}
+    for group in groups:
+        for sheet in group["sheets"]:
+            for item in sheet["items"]:
+                if item.get("redo"):
+                    by_folder.setdefault(group["folder"], []).append((group, item))
+    return [
+        (folder, "fixes" if k == 0 else f"fixes-{k + 1}", placed[k * 9:k * 9 + 9])
+        for folder, placed in by_folder.items()
+        for k in range((len(placed) + 8) // 9)
+    ]
 
 
 def write_art_lists(groups):
@@ -199,10 +227,21 @@ def main():
     done = 0
     for group in groups:
         for sheet in group["sheets"]:
-            if not wanted or sheet["id"] in wanted:
-                done += cut(group, sheet)
+            path = saved(group["folder"], sheet["id"])
+            if path and (not wanted or sheet["id"] in wanted):
+                cut_sheet(path, [(group, item) for item in sheet["items"]], (3, 3, 3))
+                done += 1
+    # A fix-up sheet is cut only when named: one left from before would
+    # otherwise be cut into whatever is marked "redo" now.
+    for folder, name, placed in fix_sheets(groups):
+        path = saved(folder, name)
+        if path and (name in wanted or "fixes" in wanted):
+            cut_sheet(path, placed, rows_of(len(placed)))
+            done += 1
+        elif path:
+            print(f"{name}: not cut; name it to cut it (python tools/cut_icons.py {name})")
     if done == 0:
-        print("No sheets saved yet: see docs/prompts.md for where to save them.")
+        print("No sheets cut: see docs/prompts.md for where to save them.")
     write_art_lists(groups)
     write_review(groups)
 

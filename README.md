@@ -214,8 +214,13 @@ The treasures are drawn by Gemini nine to a picture, on magenta so the
 background can be cut away:
 
 1. `tools/icon_sheets.json` describes each treasure, nine to a sheet, and each
-   chapter set's material. `npm run icon-prompts` turns it into the prompts in
-   [`docs/prompts.md`](docs/prompts.md); a test fails until it has.
+   chapter set's material. `npm run icon-prompts` turns what is still to draw
+   into the prompts in [`docs/prompts.md`](docs/prompts.md); a test fails
+   until it has. (`npm run icon-prompts -- --all` writes every sheet's prompt
+   to `out/all-prompts.md`.) To have a picture drawn again, give it a
+   `"redo"` saying what went wrong: every such picture goes on one fix-up
+   sheet, `fixes.png`, and `python tools/cut_icons.py fixes` replaces just
+   those.
 2. Save each sheet as `assets/treasures/sheets/<sheet>.png` (or `.jpg`). The
    sheets stay out of git.
 3. `python tools/cut_icons.py` (it needs Pillow) cuts each sheet into nine

@@ -9,7 +9,7 @@ import {
 } from "../src/treasures.js";
 import { ADVENTURES, ADVENTURE_GRADES, levelsFor, newProgress, recordLevel } from "../src/adventures.js";
 import { DRAWN } from "../src/treasure_art.js";
-import { buildPrompts } from "../tools/icon_prompts.js";
+import { buildPrompts, buildAllPrompts, fixPrompt, fixSheets, rowsOf } from "../tools/icon_prompts.js";
 import { createRng } from "../src/rng.js";
 
 /** Every chapter and grade treasure in the game. */
@@ -112,5 +112,49 @@ describe("treasure pictures", () => {
 
   it("have prompts in docs/prompts.md that match tools/icon_sheets.json (npm run icon-prompts)", () => {
     assert.equal(readFileSync("docs/prompts.md", "utf8").replace(/\r\n/g, "\n"), buildPrompts());
+  });
+
+  it("say what went wrong with each one to draw again, and keep every sheet's prompt for --all", () => {
+    for (const group of groups) {
+      for (const item of group.sheets.flatMap(s => s.items)) {
+        if ("redo" in item) assert.match(item.redo, /^[A-Z].{10,}\.$/, `${item.id}: a "redo" says what's wrong, as a sentence`);
+      }
+    }
+    const all = buildAllPrompts();
+    for (const sheet of groups.flatMap(g => g.sheets)) assert.ok(all.includes(`/${sheet.id}.png\``), sheet.id);
+  });
+});
+
+describe("the fix-up sheet, for icons to draw again", () => {
+  /** @param {string} folder @param {string} style @param {number} n */
+  const group = (folder, style, n) => ({
+    id: style, title: style, folder, size: 256, about: "", style: `They are ${style}.`,
+    sheets: [{ id: `${style}-1`, set: "polished oak", items: Array.from({ length: n }, (_, i) => ({ id: `${style}${i}`, look: `A ${style} number ${i}.`, redo: "It came out wrong." })) }],
+  });
+
+  it("lays its icons out in rows of three, the last one shorter (as tools/cut_icons.py cuts them)", () => {
+    assert.deepEqual([1, 2, 3, 4, 5, 7, 9].map(rowsOf), [[1], [2], [3], [3, 1], [3, 2], [3, 3, 1], [3, 3, 3]]);
+  });
+
+  it("holds the icons marked redo, by folder, nine to a sheet", () => {
+    const groups = [group("assets/treasures", "cups", 7), group("assets/pictures", "hats", 2), group("assets/treasures", "keys", 4)];
+    groups[0].sheets[0].items[1].redo = "";
+    const fixes = fixSheets(groups);
+    assert.deepEqual(fixes.map(f => [f.folder, f.name, f.items.length]), [["assets/treasures", "fixes", 9], ["assets/treasures", "fixes-2", 1], ["assets/pictures", "fixes", 2]]);
+    assert.deepEqual(fixes[0].items.map(p => p.item.id), ["cups0", "cups2", "cups3", "cups4", "cups5", "cups6", "keys0", "keys1", "keys2"]);
+  });
+
+  it("asks for each icon once, in its own group's style and its sheet's material", () => {
+    for (const n of [1, 3, 5, 9]) {
+      const [fixes] = fixSheets([group("assets/treasures", "cups", Math.min(n, 2)), group("assets/treasures", "keys", n - Math.min(n, 2))].filter(g => g.sheets[0].items.length));
+      const prompt = fixPrompt(fixes);
+      const listed = prompt.match(/^\d+\. .*$/gm) ?? [];
+      assert.equal(listed.length, n, prompt);
+      for (const { item } of fixes.items) assert.equal(listed.filter(line => line.includes(item.look)).length, 1, item.id);
+      assert.ok(listed.every(line => line.endsWith("Made of polished oak.")));
+      assert.ok(prompt.includes("They are cups."));
+      if (n > 2) assert.ok(prompt.includes("They are keys.") && prompt.includes("About icons 1 and 2:"), prompt);
+      assert.match(prompt, n === 1 || n === 9 ? /square picture, 1:1/ : n === 3 ? /wide picture, 16:9/ : /picture, 3:2/);
+    }
   });
 });
