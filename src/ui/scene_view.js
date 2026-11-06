@@ -125,7 +125,9 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
     ref("bubble").dataset.from = who;
     ref("hero").classList.toggle("is-speaking", who === "hero");
     ref("monster").classList.toggle("is-speaking", who === "monster");
+    // A new line: anything still being read was the last one.
     if (readAloud) speech?.say(text, { pitch: PITCH[who] });
+    else speech?.stop();
   }
 
   function show() {
@@ -177,6 +179,8 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
     const check = steps[index].check;
     if (!check || cleared) return;
     target.classList.add(right ? "is-right" : "is-wrong");
+    // A try is an answer, so whatever was being read stops.
+    speech?.stop();
     // A sparkle for the right one; a wrong try is only a click, with nothing lost.
     sound.play(right ? "drop" : "click");
     if (right) {

@@ -228,6 +228,8 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
    * @param {string} markup
    */
   function show(name, markup) {
+    // Whatever was being read out belongs to the screen being left.
+    speech?.stop();
     battleScreen?.destroy();
     battleScreen = null;
     challengeScreen?.destroy();

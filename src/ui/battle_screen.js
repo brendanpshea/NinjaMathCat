@@ -261,7 +261,9 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     ref("how").hidden = true;
     teach = null;
     setBusy(false);
+    // A new question: anything still being read was about the last one.
     if (readAloud) readQuestion();
+    else speaker?.stop();
   }
 
   /** After an answer is shown, the way to see how it's done, if there is one. */
@@ -297,9 +299,11 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     const result = answer(battle, choice, rng);
     battle = result.battle;
     onProgress(battle);
-    // Said at once, while the stage acts it out: children should know straight away.
+    // Said at once, while the stage acts it out: children should know straight away. Answering
+    // also stops the question being read, with the feedback, if it is read, in its place.
     ref("feedback").textContent = feedbackFor(result.round);
     if (readAloud && result.round.then !== "next") speaker?.say(feedbackFor(result.round));
+    else speaker?.stop();
     await stage.play(result.round, before, battle, hero, { onBeat: beat => sound.play(sfxFor(beat)) });
     showJourney();
 
