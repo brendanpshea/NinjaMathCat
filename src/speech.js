@@ -84,11 +84,41 @@ export class Speaker {
   /** @param {SpeechSynthesis | undefined} [synth] */
   constructor(synth = globalThis.speechSynthesis) {
     this.synth = synth;
+    /**
+     * What is being said, until it ends or is stopped. Held on to as well, since
+     * some browsers forget an utterance nothing holds, and never say it ended.
+     * @type {SpeechSynthesisUtterance | null}
+     */
+    this._saying = null;
+    /** @type {Set<(speaking: boolean) => void>} */
+    this._watchers = new Set();
   }
 
   /** Whether this browser can speak. */
   get available() {
     return Boolean(this.synth && typeof globalThis.SpeechSynthesisUtterance === "function");
+  }
+
+  /** Whether something is being said now. */
+  get speaking() {
+    return this._saying !== null;
+  }
+
+  /**
+   * Hear each time it starts or stops speaking.
+   * @param {(speaking: boolean) => void} watcher
+   * @returns {() => void}  stops the watching
+   */
+  watch(watcher) {
+    this._watchers.add(watcher);
+    return () => { this._watchers.delete(watcher); };
+  }
+
+  /** @param {SpeechSynthesisUtterance | null} utterance */
+  _now(utterance) {
+    const was = this.speaking;
+    this._saying = utterance;
+    if (was !== this.speaking) for (const watcher of [...this._watchers]) watcher(this.speaking);
   }
 
   /**
@@ -101,10 +131,39 @@ export class Speaker {
     const utterance = new SpeechSynthesisUtterance(speakable(text, options));
     utterance.rate = 0.9;
     if (options?.pitch !== undefined) utterance.pitch = options.pitch;
+    // Only the latest counts: one that was cut off says it ended after the next has begun.
+    utterance.onend = utterance.onerror = () => { if (this._saying === utterance) this._now(null); };
+    this._now(utterance);
     this.synth.speak(utterance);
   }
 
   stop() {
-    if (this.available) this.synth?.cancel();
+    if (!this.available) return;
+    this.synth?.cancel();
+    this._now(null);
   }
+}
+
+/**
+ * Make a "Read to me" button into the way to stop reading too: while anything
+ * is being read, by the button or by itself, it says Stop, and a tap stops it.
+ * Otherwise a tap reads, with `read`.
+ * @param {HTMLElement | null | undefined} button
+ * @param {Speaker | undefined} speaker
+ * @param {() => void} read
+ */
+export function readButton(button, speaker, read) {
+  if (!button || !speaker) return;
+  // Both labels, in one place, with the one not meant hidden (css/game.css): the button keeps
+  // the wider one's width, so nothing beside it moves as reading starts and stops.
+  button.innerHTML = `<span class="read-say">${button.innerHTML}</span><span class="read-stop"><span aria-hidden="true">⏹</span> Stop</span>`;
+  button.classList.add("can-stop");
+  /** @param {boolean} speaking */
+  const show = speaking => { button.toggleAttribute("data-speaking", speaking); };
+  const unwatch = speaker.watch(speaking => {
+    if (button.isConnected) show(speaking);
+    else unwatch(); // its screen is gone
+  });
+  show(speaker.speaking);
+  button.addEventListener("click", () => (speaker.speaking ? speaker.stop() : read()));
 }

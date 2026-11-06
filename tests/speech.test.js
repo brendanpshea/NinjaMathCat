@@ -1,7 +1,7 @@
 // tests/speech.test.js — reading aloud (src/speech.js): math as a child hears it.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { speakable, questionSpeech, Speaker } from "../src/speech.js";
+import { speakable, questionSpeech, Speaker, readButton } from "../src/speech.js";
 import { CURRICULUM } from "../src/curriculum.js";
 import { questionsOf } from "./helpers.js";
 
@@ -80,4 +80,76 @@ describe("reading aloud", () => {
       globalThis.SpeechSynthesisUtterance = before;
     }
   });
+
+  it("knows while it is speaking, to the end of what it says, not of what it cut off", () => {
+    const { synth, restore } = fakeSynth();
+    try {
+      const speaker = new Speaker(synth);
+      const heard = [];
+      speaker.watch(speaking => heard.push(speaking));
+      speaker.say("What is 1 + 4?");
+      const [first] = synth.spoken;
+      speaker.say("Not quite!");
+      first.onerror(); // the browser says the cut-off one ended, late
+      assert.equal(speaker.speaking, true);
+      synth.spoken[1].onend();
+      assert.equal(speaker.speaking, false);
+      speaker.say("Again");
+      speaker.stop();
+      assert.equal(speaker.speaking, false);
+      assert.deepEqual(heard, [true, false, true, false]);
+    } finally {
+      restore();
+    }
+  });
+
+  it("makes Read to me the way to stop reading, too, while anything is read", () => {
+    const { synth, restore } = fakeSynth();
+    try {
+      const speaker = new Speaker(synth);
+      const button = fakeButton("Read to me");
+      const stopping = () => button.hasAttribute("data-speaking");
+      let reads = 0;
+      readButton(/** @type {any} */ (button), speaker, () => { reads++; speaker.say("What is 1 + 4?"); });
+      assert.match(button.innerHTML, /Read to me.*Stop/, "both labels, so the button keeps one width");
+      button.dispatchEvent(new Event("click"));
+      assert.equal(reads, 1);
+      assert.ok(stopping());
+      button.dispatchEvent(new Event("click"));
+      assert.equal(speaker.speaking, false, "a tap on Stop stops it");
+      assert.equal(reads, 1);
+      assert.ok(!stopping());
+      speaker.say("Read by itself"); // the question read as it comes, not by the button
+      assert.ok(stopping());
+      synth.spoken.at(-1).onend();
+      assert.ok(!stopping());
+      button.isConnected = false; // its screen is gone: it stops watching
+      speaker.say("On the next screen");
+      assert.ok(!stopping());
+    } finally {
+      restore();
+    }
+  });
 });
+
+/** Just enough of a button for readButton. @param {string} label */
+function fakeButton(label) {
+  const attributes = new Set();
+  return Object.assign(new EventTarget(), {
+    innerHTML: label,
+    isConnected: true,
+    classList: { add() {} },
+    /** @param {string} name @param {boolean} on */
+    toggleAttribute(name, on) { if (on) attributes.add(name); else attributes.delete(name); return on; },
+    /** @param {string} name */
+    hasAttribute: name => attributes.has(name),
+  });
+}
+
+/** A speech engine that only keeps what it is asked to say, with an utterance to match. */
+function fakeSynth() {
+  const synth = /** @type {any} */ ({ spoken: [], speak(u) { this.spoken.push(u); }, cancel() {} });
+  const before = globalThis.SpeechSynthesisUtterance;
+  globalThis.SpeechSynthesisUtterance = /** @type {any} */ (class { constructor(text) { this.text = text; this.pitch = 1; } });
+  return { synth, restore: () => { globalThis.SpeechSynthesisUtterance = before; } };
+}

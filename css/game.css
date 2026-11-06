@@ -249,6 +249,11 @@ select {
 .check input { width: 24px; height: 24px; margin: 0; accent-color: var(--orange); }
 /* Read to me: at the top of the question, out of the way of the answers. */
 .read-aloud { justify-self: start; font-size: 16px; white-space: nowrap; }
+/* Read to me, or Stop while reading (readButton in src/speech.js): both laid out in one place, so
+   the button is as wide as the wider, and the other hidden. */
+.can-stop { display: inline-grid; justify-items: center; }
+.can-stop > span { grid-area: 1 / 1; }
+.can-stop:not([data-speaking]) > .read-stop, .can-stop[data-speaking] > .read-say { visibility: hidden; }
 .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .panel-head .read-aloud { flex: none; }
 .code-box {

@@ -31,6 +31,7 @@ import { sceneFor } from "../scenes.js";
 import { startChallenge, recordChallenge, CHALLENGE_FROM, CHALLENGE_SECONDS } from "../challenge.js";
 import { classView, codesIn, addCodes, playerFromCode } from "../classroom.js";
 import { talkAbout } from "../talk.js";
+import { readButton } from "../speech.js";
 import { icon } from "./icons.js";
 import { createChallengeScreen } from "./challenge_screen.js";
 
@@ -790,7 +791,7 @@ export function createApp(root, { storage, sound, speech, rng, challengeSeconds 
         </div>
       </section>`);
     const answerText = typeof example.answer === "number" ? String(example.answer) : example.answer;
-    part("read")?.addEventListener("click", () => speech?.say(`${chapter.title}. ${chapter.note} For example: ${example.prompt} The answer: ${answerText}. Tip: ${example.hint}`));
+    readButton(part("read"), speech, () => speech?.say(`${chapter.title}. ${chapter.note} For example: ${example.prompt} The answer: ${answerText}. Tip: ${example.hint}`));
     onTap(part("start"), () => { speech?.stop(); play(level); });
     onTap(part("map"), () => { speech?.stop(); map(); });
   }

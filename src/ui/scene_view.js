@@ -8,6 +8,7 @@
 
 import { heroSprite } from "../heroes.js";
 import { monsterSprite } from "../monsters.js";
+import { readButton } from "../speech.js";
 import { escapeXml as esc } from "../visuals/svg.js";
 import { choiceHtml, pictureHtml } from "./battle_screen.js";
 import { still } from "./sprites.js";
@@ -224,7 +225,7 @@ export function runScene(root, { kicker, title, steps, hero, monster, speech, so
     index++;
     show();
   });
-  ref("again")?.addEventListener("click", () => speech?.say(said.text, { pitch: PITCH[said.who] }));
+  readButton(ref("again"), speech, () => speech?.say(said.text, { pitch: PITCH[said.who] }));
   ref("skip")?.addEventListener("click", () => { sound.play("click"); speech?.stop(); onStart(); });
   ref("note")?.addEventListener("click", () => { sound.play("click"); speech?.stop(); onNote?.(); });
   ref("map")?.addEventListener("click", () => { sound.play("click"); speech?.stop(); onMap?.(); });

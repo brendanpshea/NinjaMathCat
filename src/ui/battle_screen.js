@@ -10,7 +10,7 @@ import { escapeXml as esc } from "../visuals/svg.js";
 import { formatNumber } from "../questions/common.js";
 import { createStage } from "./stage_view.js";
 import { icon } from "./icons.js";
-import { questionSpeech } from "../speech.js";
+import { questionSpeech, readButton } from "../speech.js";
 import { pictureOf, counterOf } from "../pictures.js";
 
 /** @import { Battle, Round } from "../battle.js" */
@@ -367,7 +367,7 @@ export function createBattleScreen(root, { battle: start, hero, rng, sound, titl
     event.preventDefault();
     tick.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   });
-  ref("read")?.addEventListener("click", () => readQuestion());
+  readButton(ref("read"), speaker, readQuestion);
   ref("how").addEventListener("click", () => {
     if (!teach) return;
     sound.play("click");
