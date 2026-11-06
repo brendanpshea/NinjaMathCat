@@ -3,8 +3,12 @@
 //
 // A sound is only worth playing at the moment it belongs to, so the audio is
 // kept ready ahead of it: every press wakes it (so it is running by the time
-// the answer that press leads to wants a sound), and a sound that cannot start
-// at once is dropped rather than played late.
+// the answer that press leads to wants a sound), a sound that cannot start
+// at once is dropped rather than played late, and while the audio is awake it
+// never goes quiet. Browsers and devices turn their sound output off after ten
+// seconds or so of silence, and turning it back on takes a second or more, so
+// a child who stopped to think would see the swing and hear it well after. A
+// steady level too quiet to hear (AWAKE_LEVEL) keeps the output on instead.
 
 import { buildSamples, ZZFX_SAMPLE_RATE } from "./zzfx.js";
 
@@ -37,6 +41,10 @@ export const SFX = {
 const MASTER = 0.3; // ZzFX's own master volume
 const IDLE_MS = 120000; // no press for this long: let the audio sleep, so the device can too
 const LATE_MS = 120; // a sound still waiting on the audio device after this long is dropped
+// Played the whole time the audio is awake: two steps of 16-bit sound (about −84 dB), far below
+// hearing, and steady, so it has no pitch at all. Silence to the ear, but not the zeros that tell a
+// browser or device its output can be turned off.
+const AWAKE_LEVEL = 2 / 32768;
 
 export class SoundSystem {
   constructor() {
@@ -55,6 +63,11 @@ export class SoundSystem {
     for (const type of ["pointerdown", "keydown", "click"]) {
       globalThis.document?.addEventListener?.(type, wake, { capture: true, passive: true });
     }
+    // A hidden page has nothing to be heard: let the audio, and the level that keeps it awake,
+    // sleep. The next press wakes it.
+    globalThis.document?.addEventListener?.("visibilitychange", () => {
+      if (globalThis.document.hidden) this._sleep();
+    });
   }
 
   get enabled() { return this._enabled; }
@@ -84,6 +97,11 @@ export class SoundSystem {
         this._ctx = ctx;
         // Build every sound now, off the press that woke the audio, so none is built as it plays.
         setTimeout(() => { for (const name in SFX) this._buffer(ctx, name); }, 0);
+        try {
+          keepAwake(ctx);
+        } catch {
+          // The sounds still play, only without the output kept on between them.
+        }
       }
       const ctx = this._ctx;
       if (ctx.state !== "running") ctx.resume().catch(() => {});
@@ -143,6 +161,22 @@ export class SoundSystem {
     src.connect(this._master);
     src.start();
   }
+}
+
+/**
+ * Play AWAKE_LEVEL for as long as the context lives. It pauses whenever the context is suspended,
+ * so it only costs anything while the audio is awake.
+ * @param {BaseAudioContext} ctx
+ */
+export function keepAwake(ctx) {
+  const buffer = ctx.createBuffer(1, 128, ctx.sampleRate);
+  buffer.getChannelData(0).fill(AWAKE_LEVEL);
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  src.loop = true;
+  src.connect(ctx.destination);
+  src.start();
+  return src;
 }
 
 /**
